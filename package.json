@@ -1,0 +1,21 @@
+{
+  "name": "etl-utility",
+  "version": "1.0.0",
+  "author": "John Alibudbud",
+  "description": "Reusable module and functions for an ETL service",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    
+  },
+  "scripts": {
+    "watch": "nodemon --config nodemon.json",
+    "build": "tsc --noEmit && sh -c '[ -d dist ] && rm -R dist' && pnpm tsc --build tsconfig.prod.json",
+    "ts": "tsc --build tsconfig.prod.json",
+    "push": "pnpm build && git add . && git commit -m 'build' && git push",
+    "test": "jest",
+    "test:prod": "jest --testPathPattern=dist/tests --detectOpenHandles",
+    "test:dev": "jest --testPathPattern=src/tests --detectOpenHandles",
+    "updatemods": "pnpm up @alshaya/list-data-reader --latest"
+  }
+}
