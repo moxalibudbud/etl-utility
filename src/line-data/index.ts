@@ -1,13 +1,12 @@
-import { LineBase, LineBaseOptions, LineObject } from './line-base';
+import { LineBase, LineBaseOptions } from './line-base';
 import { mapFields, lineDataToJSON, validateLine } from '../utils';
+import { JSONObject } from '../utils/types';
 
-export class LineMapper extends LineBase {
+export class LineData extends LineBase {
   line: string[];
-  // separator: string = utils.SEPARATOR;
   separator: string;
-  // columns: string[] = utils.COLUMNS;
   columns: string[];
-  jsonLine?: LineObject;
+  jsonLine: JSONObject;
   options: LineBaseOptions;
 
   constructor(line: string, options: LineBaseOptions) {
@@ -22,7 +21,7 @@ export class LineMapper extends LineBase {
     this.jsonLine = options?.toJSON?.(this.line) ?? this.toJSON();
   }
 
-  toJSON(): LineObject {
+  toJSON(): JSONObject {
     const lineData = lineDataToJSON(this.options.columns, this.line);
     return lineData;
   }

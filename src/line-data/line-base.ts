@@ -1,13 +1,11 @@
-export interface LineObject {
-  [key: string]: string;
-}
+import { JSONObject } from '../utils/types';
 
 export type LineBaseOptions = {
   currentLineNumber: number;
   columns: string[];
   mandatoryFields: string[];
-  identifierMappings?: Record<string, string>;
-  outputMappings: Record<string, string>;
+  identifierMappings?: JSONObject;
+  outputMappings: JSONObject;
   toJSON?: (line: string[]) => any;
   separator?: string;
   withHeader?: string;
@@ -15,7 +13,7 @@ export type LineBaseOptions = {
 
 export abstract class LineBase {
   abstract line: string[];
-  abstract jsonLine?: LineObject;
+  abstract jsonLine?: JSONObject;
   abstract validate(): void;
   abstract get isValid(): boolean;
   abstract get error(): string;
