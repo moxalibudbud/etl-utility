@@ -11,12 +11,11 @@ export class LineData extends LineBase {
 
   constructor(line: string, options: LineBaseOptions) {
     super();
-    this.options = { ...DEFAULT_OPTIONS, ...options };
 
+    this.options = { ...DEFAULT_OPTIONS, ...options };
     this.currentLineNumber = options.currentLineNumber;
     this.separator = options?.separator || ';';
     this.columns = options.columns || [];
-
     this.line = line.split(this.separator).map((value) => value.replace(/^"|"$/g, ''));
     this.jsonLine = options?.toJSON?.(this.line) ?? this.toJSON();
   }
