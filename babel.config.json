@@ -10,6 +10,7 @@
         "root": ["./src"],
         "alias": {
           "@file-generator": "./src/file-generator",
+          "@file-reader": "./src/file-reader",
           "@functions": "./src/functions"
         }
       }
