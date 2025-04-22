@@ -19,18 +19,8 @@
     "paths": {
       "@functions": ["./src/functions"],
       "@functions/*": ["./src/functions/*"],
-      "@config": ["./src/config"],
-      "@config/*": ["./src/config/*"],
-      "@lib": ["./src/lib"],
-      "@lib/*": ["./src/lib/*"],
-      "@queue": ["./src/queue"],
-      "@queue/*": ["./src/queue/*"],
-      "@service": ["./src/service"],
-      "@service/*": ["./src/service/*"],
-      "@tests": ["./src/tests"],
-      "@tests/*": ["./src/tests/*"],
-      "@utils": ["./src/utils"],
-      "@utils/*": ["./src/utils/*"]
+      "@file-generator": ["./src/file-generator"],
+      "@file-generator/*": ["./src/file-generator/*"]
     }
   },
   "include": ["src/**/*.ts"],
