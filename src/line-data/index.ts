@@ -9,7 +9,7 @@ export class LineData extends LineBase {
   jsonLine: JSONObject;
   options: LineBaseOptions;
 
-  constructor(line: string, options: LineBaseOptions) {
+  constructor(line: string, options: LineBaseOptions & { currentLineNumber: number }) {
     super();
 
     this.options = { ...DEFAULT_OPTIONS, ...options };

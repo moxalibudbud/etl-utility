@@ -1,34 +1,50 @@
 import { AzureBlobContainers } from '@etl/core/enums';
 import { ErrorReport } from '../file-generator/error-report';
-import { ReadLineInterface, readLineInterface, ReadLineInterfaceType } from '../util/readline-interface-factory';
-import { DatascanItemMaster } from '../file-generator/datascan-item-master';
-import lineModelFactory, { ItemMasterLineModel } from '../util/line-model-factory';
+import { ReadLineInterface, readLineInterface, ReadLineInterfaceType } from '../file-reader/readline-interface-factory';
+// import { RmsCountFile, SiocsCountFile } from '../file-generator/count-file';
 import { ETLType } from '../util/etl-factory';
-import { ETLResult, JSONObject, ItemMasterERPSource, ItemMasterETLLineModel, ItemMasterIdentifier } from '@utils/types';
+import { countFileReaderFactory } from '../util/line-model-factory';
+import {
+  ETLResult,
+  JSONObject,
+  CountFileETLOutputFileWriter,
+  CountFileDestinationContainers,
+  CountFileETLOptions,
+  CountFileETLLineModel,
+  CountFileIdentifier,
+} from '@utils/types';
+import { LineData } from '../line-data';
+import { LineBaseOptions } from '../line-data/line-base';
+import { FlatFileBaseLazy } from '../file-generator/flat-file-base-lazy';
 
-export type DatascanItemMasterETLOptions = {
-  fileType: AzureBlobContainers;
-} & ({ blobURL: string; file?: never } | { file: string; blobURL?: never });
+type ETLOptions = {
+  line: LineBaseOptions;
+  etl: { blobURL: string; file?: never } | { file: string; blobURL?: never };
+};
 
-export class DatascanItemMasterETL {
+export class SampleETL {
+  outputFileWriter: FlatFileBaseLazy;
   errorReportWriter: ErrorReport;
-  outputFileWriter: DatascanItemMaster;
   lineReader: ReadLineInterface;
 
   fileSource: string;
-  fileType: ItemMasterERPSource;
+  // destinationContainer: CountFileDestinationContainers;
+  // fileType: AzureBlobContainers.DATASCAN_COUNT_FILE;
   valid: boolean = true;
   lineIndex = 0;
   sampleLineData?: JSONObject;
-  identifiers?: ItemMasterIdentifier;
+  identifiers?: CountFileIdentifier;
+  options: ETLOptions;
 
-  constructor(args: DatascanItemMasterETLOptions) {
-    this.fileSource = args.blobURL ?? (args.file as string);
-    this.fileType = args.fileType as ItemMasterERPSource;
+  constructor(args: ETLOptions, outputFileWriter: FlatFileBaseLazy) {
+    this.options = args;
+    this.fileSource = args.etl.blobURL ?? (args.etl.file as string);
+    // this.destinationContainer = args.destinationContainer;
+    // this.fileType = args.fileType;
 
-    this.lineReader = this.initiateReadlineInterface(args.blobURL);
+    this.lineReader = this.initiateReadlineInterface(args.etl.blobURL);
     this.errorReportWriter = this.initiateErrorReportWriter();
-    this.outputFileWriter = new DatascanItemMaster();
+    this.outputFileWriter = outputFileWriter;
   }
 
   initiateReadlineInterface(blobUrl?: string | undefined) {
@@ -44,8 +60,16 @@ export class DatascanItemMasterETL {
   onLineHandler(chunk: string) {
     try {
       this.lineIndex++;
-      const lineModel = ItemMasterLineModel[this.fileType];
-      this.populate(new lineModel(chunk, { currentLineNumber: this.lineIndex, fileSource: this.fileSource }));
+
+      // const lineModel = countFileReaderFactory[this.fileType];
+      // this.populate(new lineModel(chunk, { currentLineNumber: this.lineIndex }));
+      const options = {
+        currentLineNumber: this.lineIndex,
+        ...this.options.line,
+      };
+
+      const lineModel = new LineData(chunk, options);
+      this.populate(lineModel);
     } catch (error) {
       this.lineReader.readlineInterface?.emit('error', error);
     }
@@ -53,9 +77,13 @@ export class DatascanItemMasterETL {
 
   onCloseHandler(resolve: Function) {
     resolve({});
+
+    if (this.outputFileWriter instanceof RmsCountFile || this.outputFileWriter instanceof SiocsCountFile) {
+      this.outputFileWriter.pushFooter(this.lineIndex);
+    }
   }
 
-  populate(line: ItemMasterETLLineModel) {
+  populate(line: CountFileETLLineModel) {
     line.validate();
 
     // Populate error report.
@@ -65,7 +93,7 @@ export class DatascanItemMasterETL {
 
     // Populate output file only if valid row and if current line is not header
     if (line.isValid && !line.isHeader) {
-      this.outputFileWriter.push(line.output);
+      this.outputFileWriter.push(line);
     }
 
     // Set sample line data and identifiers if not yet set
@@ -79,7 +107,7 @@ export class DatascanItemMasterETL {
     this.sampleLineData = args;
   }
 
-  setIdentifier(identifiers: ItemMasterIdentifier) {
+  setIdentifier(identifiers: CountFileIdentifier) {
     this.identifiers = identifiers;
   }
 
@@ -113,10 +141,11 @@ export class DatascanItemMasterETL {
   }
 
   validateFinalResult() {
-    // Validation to check if file is empty or not
-    if (!this.sampleLineData || !this.identifiers) {
+    const withErrors = !!this.errorReportWriter.invalidRows;
+
+    if (!this.sampleLineData || !this.identifiers || withErrors) {
       this.valid = false;
-      this.errorReportWriter.push('Unable to get data. File content is empty or all rows are invalid');
+      this.errorReportWriter.push('Unable to get data. File content is empty or some rows are invalid');
     }
   }
 
@@ -129,13 +158,14 @@ export class DatascanItemMasterETL {
       localOutputFilename: this.outputFileWriter.filename as string,
       localErrorReportFile: this.errorReportWriter.filepath,
       localErrorReportFilename: this.errorReportWriter.filename,
-      destinationContainer: AzureBlobContainers.DATASCAN_ITEM_MASTER,
-      fileType: ETLType.ITEM_MASTER,
+      // destinationContainer: this.destinationContainer,
+      destinationContainer: 'na',
+      fileType: ETLType.COUNT_FILE,
       metadata: { ...this.sampleLineData, ...this.identifiers },
     };
   }
 
-  async process(): Promise<ETLResult | never> {
+  async process() {
     try {
       await this.lineReader.initiateInterface();
       await this.processLines();

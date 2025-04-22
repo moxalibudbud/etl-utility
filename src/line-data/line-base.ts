@@ -1,7 +1,6 @@
 import { JSONObject } from '../utils/types';
 
 export type LineBaseOptions = {
-  currentLineNumber: number;
   columns: string[];
   mandatoryFields: string[];
   identifierMappings: JSONObject;
