@@ -1,4 +1,4 @@
-import { LineBase, LineBaseOptions } from './line-base';
+import { LineBase, LineBaseOptions, DEFAULT_OPTIONS } from './line-base';
 import { mapFields, lineDataToJSON, validateLine } from '../utils';
 import { JSONObject } from '../utils/types';
 
@@ -11,7 +11,7 @@ export class LineData extends LineBase {
 
   constructor(line: string, options: LineBaseOptions) {
     super();
-    this.options = options;
+    this.options = { ...DEFAULT_OPTIONS, ...options };
 
     this.currentLineNumber = options.currentLineNumber;
     this.separator = options?.separator || ';';

@@ -4,11 +4,17 @@ export type LineBaseOptions = {
   currentLineNumber: number;
   columns: string[];
   mandatoryFields: string[];
-  identifierMappings?: JSONObject;
+  identifierMappings: JSONObject;
   outputMappings: JSONObject;
+  separator: string;
+  withHeader: string;
   toJSON?: (line: string[]) => any;
-  separator?: string;
-  withHeader?: string;
+};
+
+export const DEFAULT_OPTIONS = {
+  identifierMappings: {},
+  outputMappings: {},
+  separator: ';',
 };
 
 export abstract class LineBase {
