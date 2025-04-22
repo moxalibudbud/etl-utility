@@ -1,14 +1,12 @@
 import { LineBase, LineBaseOptions, LineObject } from './line-base';
-// import * as utils from '../util/gold-onhand-utils';
-import { validateLine } from '../util/line-validator';
-import { mapFields } from '../utils/map';
+import { mapFields, lineDataToJSON, validateLine } from '../utils';
 
 export class LineMapper extends LineBase {
   line: string[];
   // separator: string = utils.SEPARATOR;
   separator: string;
   // columns: string[] = utils.COLUMNS;
-  columns: string[]
+  columns: string[];
   jsonLine?: LineObject;
   options: LineBaseOptions;
 
@@ -21,9 +19,12 @@ export class LineMapper extends LineBase {
     this.columns = options.columns || [];
 
     this.line = line.split(this.separator).map((value) => value.replace(/^"|"$/g, ''));
+    this.jsonLine = options?.toJSON?.(this.line) ?? this.toJSON();
+  }
 
-    // TODO: We can move toJSON as a method in this class. And ask client to pass a config/rules how to convert this.line into object.
-    this.jsonLine = options.toJSON(this.line);
+  toJSON(): LineObject {
+    const lineData = lineDataToJSON(this.options.columns, this.line);
+    return lineData;
   }
 
   validate() {
@@ -49,8 +50,7 @@ export class LineMapper extends LineBase {
   }
 
   get output() {
-    // TODO: We can move mapData as a method in this class. And ask client to pass a config/rules how to map the data;
-    return utils.mapData(this.jsonLine);
+    return mapFields(this.jsonLine || {}, this.options.outputMappings);
   }
 
   get isHeader(): boolean {
@@ -60,8 +60,10 @@ export class LineMapper extends LineBase {
   }
 
   get identifiers() {
-    // TODO: We can move mapData as a method in this class. And ask client to pass a config/rules how to map the data;
-    // return utils.mapIdentifiers(this.jsonLine);
-    return mapFields(this.jsonLine, this.options?.identifierMappings || {})
+    if (this.options?.identifierMappings) {
+      return mapFields(this.jsonLine || {}, this.options.identifierMappings);
+    }
+
+    return this.jsonLine;
   }
 }

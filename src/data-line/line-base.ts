@@ -6,7 +6,9 @@ export type LineBaseOptions = {
   currentLineNumber: number;
   columns: string[];
   mandatoryFields: string[];
-  toJSON: (line: string[], options?: Record<string, any>) => any;
+  identifierMappings?: Record<string, string>;
+  outputMappings: Record<string, string>;
+  toJSON?: (line: string[]) => any;
   separator?: string;
   withHeader?: string;
 };
