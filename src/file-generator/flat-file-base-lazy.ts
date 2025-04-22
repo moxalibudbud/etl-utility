@@ -7,6 +7,7 @@ export type FlatFileBaseLazyOptions = {
 export interface FlatFileBaseLazyMethods {
   push(...args: any[]): any;
   setFilename(args: any): any;
+  pushFooter?(...args: any[]): void;
 }
 
 export class FlatFileBaseLazy {

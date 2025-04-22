@@ -15,7 +15,7 @@ import {
 } from '@utils/types';
 import { LineData } from '../line-data';
 import { LineBaseOptions } from '../line-data/line-base';
-import { FlatFileBaseLazy } from '../file-generator/flat-file-base-lazy';
+import { FlatFileBaseLazy, FlatFileBaseLazyMethods } from '../file-generator/flat-file-base-lazy';
 
 type ETLOptions = {
   line: LineBaseOptions;
@@ -23,7 +23,7 @@ type ETLOptions = {
 };
 
 export class SampleETL {
-  outputFileWriter: FlatFileBaseLazy;
+  outputFileWriter: FlatFileBaseLazy & FlatFileBaseLazyMethods;
   errorReportWriter: ErrorReport;
   lineReader: ReadLineInterface;
 
@@ -36,7 +36,7 @@ export class SampleETL {
   identifiers?: CountFileIdentifier;
   options: ETLOptions;
 
-  constructor(args: ETLOptions, outputFileWriter: FlatFileBaseLazy) {
+  constructor(args: ETLOptions, outputFileWriter: FlatFileBaseLazy & FlatFileBaseLazyMethods) {
     this.options = args;
     this.fileSource = args.etl.blobURL ?? (args.etl.file as string);
     // this.destinationContainer = args.destinationContainer;
@@ -78,8 +78,8 @@ export class SampleETL {
   onCloseHandler(resolve: Function) {
     resolve({});
 
-    if (this.outputFileWriter instanceof RmsCountFile || this.outputFileWriter instanceof SiocsCountFile) {
-      this.outputFileWriter.pushFooter(this.lineIndex);
+    if (typeof this.outputFileWriter.pushFooter === 'function') {
+      this.outputFileWriter?.pushFooter();
     }
   }
 
