@@ -4,14 +4,9 @@ type BuildLineOptions = {
   appendNewline?: boolean;
 };
 
-export function buildLineFromTemplate(
-  line: Record<string, any>,
-  options: Record<string, any>,
-  config: BuildLineOptions
-): string {
-  const merged = { ...line, ...options };
+export function buildLineFromTemplate(line: Record<string, string>, config: BuildLineOptions): string {
   let output = config.template.replace(/\{(\w+)\}/g, (_, key) => {
-    return merged[key] != null ? merged[key] : '';
+    return line[key] != null ? line[key] : '';
   });
 
   if (config.appendNewline) {
