@@ -14,15 +14,17 @@ export class LineData extends LineBase {
 
     this.options = { ...DEFAULT_OPTIONS, ...options };
     this.currentLineNumber = options.currentLineNumber;
-    this.separator = options?.separator || ';';
-    this.columns = options.columns || [];
+    this.separator = options.separator;
+    this.columns = options.columns;
     this.line = line.split(this.separator).map((value) => value.replace(/^"|"$/g, ''));
-    this.jsonLine = options?.toJSON?.(this.line) ?? this.toJSON();
+    this.jsonLine = this.toJSON();
   }
 
   toJSON(): JSONObject {
-    const lineData = lineDataToJSON(this.options.columns, this.line);
-    return lineData;
+    if (this.options?.toJSON) {
+      return this.options.toJSON(this.line);
+    }
+    return lineDataToJSON(this.options.columns, this.line);
   }
 
   validate() {
