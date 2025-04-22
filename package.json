@@ -5,9 +5,7 @@
   "description": "Reusable module and functions for an ETL service",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
-  "exports": {
-    
-  },
+  "exports": {},
   "scripts": {
     "watch": "nodemon --config nodemon.json",
     "build": "tsc --noEmit && sh -c '[ -d dist ] && rm -R dist' && pnpm tsc --build tsconfig.prod.json",
@@ -17,5 +15,24 @@
     "test:prod": "jest --testPathPattern=dist/tests --detectOpenHandles",
     "test:dev": "jest --testPathPattern=src/tests --detectOpenHandles",
     "updatemods": "pnpm up @alshaya/list-data-reader --latest"
+  },
+  "dependencies": {
+    "dotenv": "^16.5.0"
+  },
+  "devDependencies": {
+    "@babel/cli": "^7.24.8",
+    "@babel/core": "^7.25.2",
+    "@babel/preset-env": "^7.25.3",
+    "@babel/preset-typescript": "^7.24.7",
+    "@jest/globals": "^29.7.0",
+    "@types/node": "^22.0.2",
+    "babel-plugin-module-resolver": "^5.0.2",
+    "jest": "^29.7.0",
+    "nodemon": "^3.1.4",
+    "ts-jest": "^29.2.4",
+    "ts-node": "^10.9.2",
+    "tsconfig-paths": "^4.2.0",
+    "tslib": "^2.6.3",
+    "typescript": "^5.8.3"
   }
 }

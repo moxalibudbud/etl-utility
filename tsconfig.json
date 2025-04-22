@@ -1,0 +1,42 @@
+{
+  "compilerOptions": {
+    "baseUrl": "./",
+    "emitDecoratorMetadata": true,
+    "resolveJsonModule": true,
+    "esModuleInterop": true,
+    "experimentalDecorators": true,
+    "importHelpers": true,
+    "module": "node16",
+    "outDir": "dist",
+    "removeComments": true,
+    "declaration": true,
+    "sourceMap": true,
+    "strict": true,
+    "target": "es6",
+    "moduleResolution": "node16",
+    "types": ["node"],
+    "typeRoots": ["node_modules/@types"],
+    "paths": {
+      "@functions": ["./src/functions"],
+      "@functions/*": ["./src/functions/*"],
+      "@config": ["./src/config"],
+      "@config/*": ["./src/config/*"],
+      "@lib": ["./src/lib"],
+      "@lib/*": ["./src/lib/*"],
+      "@queue": ["./src/queue"],
+      "@queue/*": ["./src/queue/*"],
+      "@service": ["./src/service"],
+      "@service/*": ["./src/service/*"],
+      "@tests": ["./src/tests"],
+      "@tests/*": ["./src/tests/*"],
+      "@utils": ["./src/utils"],
+      "@utils/*": ["./src/utils/*"]
+    }
+  },
+  "include": ["src/**/*.ts"],
+  "exclude": [],
+  "ts-node": {
+    // Do not forget to `npm i -D tsconfig-paths`
+    "require": ["tsconfig-paths/register"]
+  }
+}

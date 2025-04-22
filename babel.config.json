@@ -1,0 +1,25 @@
+{
+  "presets": [
+    "@babel/preset-env",
+    "@babel/preset-typescript"
+  ],
+  "plugins": [
+    [
+      "module-resolver",
+      {
+        "root": ["./src"],
+        "alias": {
+          "@config": "./src/config",
+          "@enums": "./src/enums",
+          "@functions": "./src/functions",
+          "@lib": "./src/lib",
+          "@queue": "./src/queue",
+          "@redis": "./src/redis",
+          "@service": "./src/service",
+          "@tests": "./src/tests",
+          "@utils": "./src/utils"
+        }
+      }
+    ]
+  ]
+}
