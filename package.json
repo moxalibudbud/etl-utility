@@ -5,7 +5,10 @@
   "description": "Reusable module and functions for an ETL service",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
-  "exports": {},
+  "exports": {
+    "./functions": "./dist/functions/index.js",
+    "./mongodb": "./dist/mongodb/index.js"
+  },
   "scripts": {
     "watch": "nodemon --config nodemon.json",
     "build": "tsc --noEmit && sh -c '[ -d dist ] && rm -R dist' && pnpm tsc --build tsconfig.prod.json",
