@@ -1,4 +1,4 @@
-import { JSONObject } from '../utils/types';
+import { JSONObject } from '../types';
 
 export type LineBaseOptions = {
   columns: string[];

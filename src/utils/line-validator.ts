@@ -1,4 +1,4 @@
-import { JSONObject } from './types';
+import { JSONObject } from '../types';
 
 type Props = {
   line: string[];

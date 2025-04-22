@@ -1,6 +1,6 @@
 import { LineBase, LineBaseOptions, DEFAULT_OPTIONS } from './line-base';
 import { mapFields, lineDataToJSON, validateLine } from '../utils';
-import { JSONObject } from '../utils/types';
+import { JSONObject } from '../types';
 
 export class LineData extends LineBase {
   line: string[];

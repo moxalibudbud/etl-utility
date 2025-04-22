@@ -1,18 +1,6 @@
-import { AzureBlobContainers } from '@etl/core/enums';
 import { ErrorReport } from '../file-generator/error-report';
 import { ReadLineInterface, readLineInterface, ReadLineInterfaceType } from '../file-reader/readline-interface-factory';
-// import { RmsCountFile, SiocsCountFile } from '../file-generator/count-file';
-import { ETLType } from '../util/etl-factory';
-import { countFileReaderFactory } from '../util/line-model-factory';
-import {
-  ETLResult,
-  JSONObject,
-  CountFileETLOutputFileWriter,
-  CountFileDestinationContainers,
-  CountFileETLOptions,
-  CountFileETLLineModel,
-  CountFileIdentifier,
-} from '@utils/types';
+import { ETLResult, JSONObject, ETLType } from '../types';
 import { LineData } from '../line-data';
 import { LineBaseOptions } from '../line-data/line-base';
 import { FlatFileBaseLazy, FlatFileBaseLazyMethods } from '../file-generator/flat-file-base-lazy';
@@ -33,7 +21,7 @@ export class SampleETL {
   valid: boolean = true;
   lineIndex = 0;
   sampleLineData?: JSONObject;
-  identifiers?: CountFileIdentifier;
+  identifiers?: JSONObject;
   options: ETLOptions;
 
   constructor(args: ETLOptions, outputFileWriter: FlatFileBaseLazy & FlatFileBaseLazyMethods) {
@@ -83,7 +71,7 @@ export class SampleETL {
     }
   }
 
-  populate(line: CountFileETLLineModel) {
+  populate(line: LineData) {
     line.validate();
 
     // Populate error report.
@@ -107,7 +95,7 @@ export class SampleETL {
     this.sampleLineData = args;
   }
 
-  setIdentifier(identifiers: CountFileIdentifier) {
+  setIdentifier(identifiers: JSONObject) {
     this.identifiers = identifiers;
   }
 
@@ -158,9 +146,8 @@ export class SampleETL {
       localOutputFilename: this.outputFileWriter.filename as string,
       localErrorReportFile: this.errorReportWriter.filepath,
       localErrorReportFilename: this.errorReportWriter.filename,
-      // destinationContainer: this.destinationContainer,
       destinationContainer: 'na',
-      fileType: ETLType.COUNT_FILE,
+      etlType: 'na' as ETLType,
       metadata: { ...this.sampleLineData, ...this.identifiers },
     };
   }
