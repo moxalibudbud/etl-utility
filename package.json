@@ -6,6 +6,7 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "exports": {
+    "./etl": "./dist/etl/index.js",
     "./functions": "./dist/functions/index.js",
     "./mongodb": "./dist/mongodb/index.js"
   },

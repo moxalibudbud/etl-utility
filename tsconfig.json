@@ -17,12 +17,8 @@
     "types": ["node"],
     "typeRoots": ["node_modules/@types"],
     "paths": {
-      "@functions": ["./src/functions"],
-      "@functions/*": ["./src/functions/*"],
-      "@file-generator": ["./src/file-generator"],
-      "@file-generator/*": ["./src/file-generator/*"],
-      "@file-reader": ["./src/file-reader"],
-      "@file-reader/*": ["./src/file-reader/*"]
+      "@src": ["./src/functions"],
+      "@functions/*": ["./src/functions/*"]
     }
   },
   "isolatedModules": true,

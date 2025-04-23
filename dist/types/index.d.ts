@@ -1,0 +1,18 @@
+export type JSONObject = Record<string, any>;
+export declare enum ETLType {
+    COUNT_FILE = "count-files",
+    ITEM_MASTER = "item-master",
+    SOH = "soh"
+}
+export type ETLResult = {
+    valid: boolean;
+    withErrors: boolean;
+    totalErrors: number;
+    localOutputFile: string;
+    localOutputFilename: string;
+    localErrorReportFile: string;
+    localErrorReportFilename: string;
+    destinationContainer: string;
+    etlType: ETLType;
+    metadata?: JSONObject | string;
+};

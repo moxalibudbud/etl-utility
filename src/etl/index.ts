@@ -9,14 +9,12 @@ type ETLOptions = {
   etl: { blobURL: string; file?: never } | { file: string; blobURL?: never };
 };
 
-export class SampleETL {
+export class ETL {
   outputFileWriter: FlatFileBaseLazy & FlatFileBaseLazyMethods;
   errorReportWriter: ErrorReport;
   lineReader: ReadLineInterface;
 
   fileSource: string;
-  // destinationContainer: CountFileDestinationContainers;
-  // fileType: AzureBlobContainers.DATASCAN_COUNT_FILE;
   valid: boolean = true;
   lineIndex = 0;
   sampleLineData?: JSONObject;
@@ -26,8 +24,6 @@ export class SampleETL {
   constructor(args: ETLOptions, outputFileWriter: FlatFileBaseLazy & FlatFileBaseLazyMethods) {
     this.options = args;
     this.fileSource = args.etl.blobURL ?? (args.etl.file as string);
-    // this.destinationContainer = args.destinationContainer;
-    // this.fileType = args.fileType;
 
     this.lineReader = this.initiateReadlineInterface(args.etl.blobURL);
     this.errorReportWriter = this.initiateErrorReportWriter();
@@ -48,11 +44,9 @@ export class SampleETL {
     try {
       this.lineIndex++;
 
-      // const lineModel = countFileReaderFactory[this.fileType];
-      // this.populate(new lineModel(chunk, { currentLineNumber: this.lineIndex }));
       const options = {
-        currentLineNumber: this.lineIndex,
         ...this.options.line,
+        currentLineNumber: this.lineIndex,
       };
 
       const lineModel = new SourceLine(chunk, options);

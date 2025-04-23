@@ -1,6 +1,7 @@
 import { ReadStream } from 'fs';
 import { ReadLineBase, ShouldInitiateInterface } from './read-line-base';
-import { createBlobClient } from '@etl/azure-blob';
+import { Readable } from 'stream';
+// import { createBlobClient } from '@etl/azure-blob';
 
 export class BlobReader extends ReadLineBase implements ShouldInitiateInterface {
   constructor(url: string) {
@@ -8,9 +9,11 @@ export class BlobReader extends ReadLineBase implements ShouldInitiateInterface 
   }
 
   async getReadStream(): Promise<ReadStream> {
-    const blobClient = await createBlobClient(this.url);
-    const { readableStreamBody } = await blobClient.download(0);
-    return readableStreamBody as ReadStream;
+    // const blobClient = await createBlobClient(this.url);
+    // const { readableStreamBody } = await blobClient.download(0);
+    // return readableStreamBody as ReadStream;
+    const dummyStream: unknown = '';
+    return dummyStream as ReadStream;
   }
 
   // async readlineInterfacePromise(onLineHandler: any, onCloseHandler: any, onErrorHandler: any): Promise<any> {

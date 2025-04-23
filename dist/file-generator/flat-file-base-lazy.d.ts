@@ -1,10 +1,12 @@
 import { WriteStream } from 'fs';
+import { SourceLine } from '../line-data';
 export type FlatFileBaseLazyOptions = {
     path?: string;
 };
 export interface FlatFileBaseLazyMethods {
-    push(...args: any[]): any;
-    setFilename(args: any): any;
+    push(SourceLine: SourceLine): any;
+    setFilename(SourceLine: SourceLine): any;
+    pushFooter(): void;
 }
 export declare class FlatFileBaseLazy {
     private _filename;
