@@ -3,7 +3,7 @@ import * as ExcelJS from 'exceljs';
 
 export type ExcelBaseLazyOptions = {
   path?: string;
-}
+};
 
 export interface ExcelBaseLazyMethods {
   push(...args: any[]): any;
@@ -11,7 +11,6 @@ export interface ExcelBaseLazyMethods {
 }
 
 export class ExcelBaseLazy {
-
   private _filename: string = '';
   path: string;
   writeStream?: ExcelJS.stream.xlsx.WorkbookWriter;
@@ -20,7 +19,7 @@ export class ExcelBaseLazy {
   constructor(options: ExcelBaseLazyOptions) {
     this.path = options?.path ? options.path : '/var/tmp';
   }
-  
+
   createStream() {
     this.writeStream = new ExcelJS.stream.xlsx.WorkbookWriter({
       stream: createWriteStream(this.filepath),
@@ -32,13 +31,13 @@ export class ExcelBaseLazy {
   }
 
   createWorksheet() {
-    if(this.writeStream) {
+    if (this.writeStream) {
       this.worksheet = this.writeStream.addWorksheet('Sheet 1');
     }
   }
 
   createHeader(header: string[]) {
-    if(this.worksheet) {
+    if (this.worksheet) {
       this.worksheet.addRow(header).commit();
     }
   }
@@ -53,10 +52,10 @@ export class ExcelBaseLazy {
         resolve(e);
       });
     };
-    
+
     return new Promise((resolve, reject) => {
       try {
-        // TODO: Check if ExcelJS.stream.xlsx.WorkbookWriter has a way to check if stream is done 
+        // TODO: Check if ExcelJS.stream.xlsx.WorkbookWriter has a way to check if stream is done
         // if (!this.writeStream.writableFinished) {
         //   this.end(() => removeFile(resolve));
         // } else {
@@ -80,5 +79,4 @@ export class ExcelBaseLazy {
   set filename(filename: string) {
     this._filename = filename;
   }
-
 }

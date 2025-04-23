@@ -3,3 +3,4 @@ export * from './line-data-to-json';
 export * from './map';
 export * from './line-validator';
 export * from './line-builder-from-template';
+export * from './line-builder-from-columns';

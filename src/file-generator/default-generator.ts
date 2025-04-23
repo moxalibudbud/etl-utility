@@ -2,34 +2,56 @@
 
 import { FlatFileBaseLazy, FlatFileBaseLazyMethods, FlatFileBaseLazyOptions } from './flat-file-base-lazy';
 import { LineData } from '../line-data';
+import { LineOutputOptions } from '../line-data/line-output';
+import { buildLineFromColumns, buildLineFromTemplate } from '../utils';
 
 export class DefaultGenerator extends FlatFileBaseLazy implements FlatFileBaseLazyMethods {
-  constructor(options: FlatFileBaseLazyOptions) {
+  options: FlatFileBaseLazyOptions & LineOutputOptions;
+
+  constructor(options: FlatFileBaseLazyOptions & LineOutputOptions) {
     super(options);
+
+    this.options = options;
   }
 
-  /**
-   * File definition: STK_{date in YYYYMMDDHHMMSS format}_{STORE ID}.dat
-   * Sample filename: STK_20230123000002_30104.dat
-   * @param args
-   */
   setFilename(line: LineData) {
-    this.filename = utils.setFilename(line);
+    const filename = this.options.filename;
+    this.filename = typeof filename === 'function' ? filename(line) : filename;
   }
 
-  /**
-   * TODO: Need to identify if file comes with a footer
-   *
-   * This method is purposely invoked on "close" event of readline module of alshaya-count-file-etl.
-   * That's a good touchpoint to generate the footer of SIOCS count file
-   *
-   */
-  pushFooter(line: LineData) {
-    this.writeStream?.write(utils.buildFooter());
+  pushFooter() {
+    const footer = this.options?.footer;
+
+    if (!footer) return;
+
+    const footerRow = typeof footer === 'function' ? footer({}) : footer;
+    this.writeStream?.write(footerRow);
   }
 
   pushHeader(line: LineData) {
-    this.createHeader(utils.buildHeader(line));
+    const header = this.options.header;
+
+    if (!header) return;
+
+    const headerRow = typeof header === 'function' ? header(line) : header;
+    this.createHeader(headerRow);
+  }
+
+  buildRow(line: LineData) {
+    if (!this.options.template && !this.options.rowMap) {
+      throw new Error('Either template or rowMap must be provided');
+    }
+
+    let row = '';
+
+    if (this.options.template) {
+      row = buildLineFromTemplate(line.jsonLine, { template: this.options.template });
+    } else {
+      const { separator, columns } = this.options;
+      row = buildLineFromColumns(line.output, { separator, columns });
+    }
+
+    return row;
   }
 
   push(lineData: LineData) {
@@ -39,14 +61,10 @@ export class DefaultGenerator extends FlatFileBaseLazy implements FlatFileBaseLa
 
     if (!this.writeStream) {
       this.createStream();
-
-      // Push the header because stream is also created
-      // TODO: Need to identify if file comes with a header or not
       this.pushHeader(lineData);
     }
 
-    // TODO: How are we going to biuild line with custom fields
-    const row = utils.buildLine(lineData.jsonLine, { countDate: this.countDate });
+    const row = this.buildRow(lineData);
     this.writeStream?.write(row);
   }
 }

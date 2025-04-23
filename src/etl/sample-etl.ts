@@ -65,10 +65,7 @@ export class SampleETL {
 
   onCloseHandler(resolve: Function) {
     resolve({});
-
-    if (typeof this.outputFileWriter.pushFooter === 'function') {
-      this.outputFileWriter?.pushFooter();
-    }
+    this.outputFileWriter.pushFooter();
   }
 
   populate(line: LineData) {
