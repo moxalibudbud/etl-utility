@@ -1,7 +1,7 @@
 // TODO: Work on this
 
 import { FlatFileBaseLazy, FlatFileBaseLazyMethods, FlatFileBaseLazyOptions } from './flat-file-base-lazy';
-import { LineData } from '../line-data';
+import { SourceLine } from '../line-data';
 import { LineOutputOptions } from '../line-data/line-output';
 import { buildLineFromColumns, buildLineFromTemplate } from '../utils';
 
@@ -14,7 +14,7 @@ export class DefaultGenerator extends FlatFileBaseLazy implements FlatFileBaseLa
     this.options = options;
   }
 
-  setFilename(line: LineData) {
+  setFilename(line: SourceLine) {
     const filename = this.options.filename;
     this.filename = typeof filename === 'function' ? filename(line) : filename;
   }
@@ -28,7 +28,7 @@ export class DefaultGenerator extends FlatFileBaseLazy implements FlatFileBaseLa
     this.writeStream?.write(footerRow);
   }
 
-  pushHeader(line: LineData) {
+  pushHeader(line: SourceLine) {
     const header = this.options.header;
 
     if (!header) return;
@@ -37,7 +37,7 @@ export class DefaultGenerator extends FlatFileBaseLazy implements FlatFileBaseLa
     this.createHeader(headerRow);
   }
 
-  buildRow(line: LineData) {
+  buildRow(line: SourceLine) {
     if (!this.options.template && !this.options.rowMap) {
       throw new Error('Either template or rowMap must be provided');
     }
@@ -54,17 +54,17 @@ export class DefaultGenerator extends FlatFileBaseLazy implements FlatFileBaseLa
     return row;
   }
 
-  push(lineData: LineData) {
+  push(SourceLine: SourceLine) {
     if (!this.filename) {
-      this.setFilename(lineData);
+      this.setFilename(SourceLine);
     }
 
     if (!this.writeStream) {
       this.createStream();
-      this.pushHeader(lineData);
+      this.pushHeader(SourceLine);
     }
 
-    const row = this.buildRow(lineData);
+    const row = this.buildRow(SourceLine);
     this.writeStream?.write(row);
   }
 }

@@ -1,12 +1,11 @@
 import { ErrorReport } from '../file-generator/error-report';
 import { ReadLineInterface, readLineInterface, ReadLineInterfaceType } from '../file-reader/readline-interface-factory';
 import { ETLResult, JSONObject, ETLType } from '../types';
-import { LineData } from '../line-data';
-import { LineBaseOptions } from '../line-data/line-base';
+import { SourceLine, LineSourceBaseOptions } from '../line-data';
 import { FlatFileBaseLazy, FlatFileBaseLazyMethods } from '../file-generator/flat-file-base-lazy';
 
 type ETLOptions = {
-  line: LineBaseOptions;
+  line: LineSourceBaseOptions;
   etl: { blobURL: string; file?: never } | { file: string; blobURL?: never };
 };
 
@@ -56,7 +55,7 @@ export class SampleETL {
         ...this.options.line,
       };
 
-      const lineModel = new LineData(chunk, options);
+      const lineModel = new SourceLine(chunk, options);
       this.populate(lineModel);
     } catch (error) {
       this.lineReader.readlineInterface?.emit('error', error);
@@ -68,7 +67,7 @@ export class SampleETL {
     this.outputFileWriter.pushFooter();
   }
 
-  populate(line: LineData) {
+  populate(line: SourceLine) {
     line.validate();
 
     // Populate error report.

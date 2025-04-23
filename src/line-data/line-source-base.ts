@@ -1,6 +1,6 @@
 import { JSONObject } from '../types';
 
-export type LineBaseOptions = {
+export type LineSourceBaseOptions = {
   columns: string[];
   mandatoryFields: string[];
   identifierMappings: JSONObject;
@@ -16,7 +16,7 @@ export const DEFAULT_OPTIONS = {
   separator: ';',
 };
 
-export abstract class LineBase {
+export abstract class LineSourceBase {
   abstract line: string[];
   abstract jsonLine?: JSONObject;
   abstract validate(): void;

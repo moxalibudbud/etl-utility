@@ -1,13 +1,13 @@
 import { createWriteStream, WriteStream, unlink, existsSync } from 'fs';
-import { LineData } from '../line-data';
+import { SourceLine } from '../line-data';
 
 export type FlatFileBaseLazyOptions = {
   path?: string;
 };
 
 export interface FlatFileBaseLazyMethods {
-  push(lineData: LineData): any;
-  setFilename(lineData: LineData): any;
+  push(SourceLine: SourceLine): any;
+  setFilename(SourceLine: SourceLine): any;
   pushFooter(): void;
 }
 
