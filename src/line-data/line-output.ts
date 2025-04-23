@@ -1,7 +1,7 @@
 type LineOutputBase = {
-  filename: string | ((line: Record<string, any>) => string);
-  header?: string | ((line: Record<string, any>) => string);
-  footer?: string | ((args: Record<string, any>) => string);
+  filename: string | ((args: any) => string);
+  header?: string | ((args: any) => string);
+  footer?: string | ((args: any) => string);
   separator: string;
   columns: string[];
 };

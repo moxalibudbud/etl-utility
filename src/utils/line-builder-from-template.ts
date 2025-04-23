@@ -7,5 +7,5 @@ export function buildLineFromTemplate(line: Record<string, string>, config: Buil
     return line[key] != null ? line[key] : '';
   });
 
-  return output;
+  return output + '\n';
 }
