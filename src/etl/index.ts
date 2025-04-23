@@ -7,6 +7,8 @@ import { FlatFileBaseLazy, FlatFileBaseLazyMethods } from '../file-generator/fla
 type ETLOptions = {
   line: LineSourceBaseOptions;
   etl: { blobURL: string; file?: never } | { file: string; blobURL?: never };
+  destinationContainer: string;
+  etlType: string; // Deprecated. But kept for backward compatibility especially for the old ETL process
 };
 
 export class ETL {
@@ -136,8 +138,8 @@ export class ETL {
       localOutputFilename: this.outputFileWriter.filename as string,
       localErrorReportFile: this.errorReportWriter.filepath,
       localErrorReportFilename: this.errorReportWriter.filename,
-      destinationContainer: 'na',
-      etlType: 'na' as ETLType,
+      destinationContainer: this.options.destinationContainer,
+      etlType: this.options.etlType as ETLType,
       metadata: { ...this.sampleLineData, ...this.identifiers },
     };
   }

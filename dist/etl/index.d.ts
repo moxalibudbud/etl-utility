@@ -12,6 +12,8 @@ type ETLOptions = {
         file: string;
         blobURL?: never;
     };
+    destinationContainer: string;
+    etlType: string;
 };
 export declare class ETL {
     outputFileWriter: FlatFileBaseLazy & FlatFileBaseLazyMethods;

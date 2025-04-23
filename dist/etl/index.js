@@ -104,8 +104,8 @@ class ETL {
             localOutputFilename: this.outputFileWriter.filename,
             localErrorReportFile: this.errorReportWriter.filepath,
             localErrorReportFilename: this.errorReportWriter.filename,
-            destinationContainer: 'na',
-            etlType: 'na',
+            destinationContainer: this.options.destinationContainer,
+            etlType: this.options.etlType,
             metadata: Object.assign(Object.assign({}, this.sampleLineData), this.identifiers),
         };
     }
