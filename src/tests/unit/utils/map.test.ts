@@ -1,5 +1,5 @@
 import { test, expect, describe, it } from '@jest/globals';
-import { mapFields } from '../../utils/map';
+import { mapFields } from '../../../utils/map';
 
 describe('mapFields', () => {
   const input = {

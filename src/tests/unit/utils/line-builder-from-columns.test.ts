@@ -1,5 +1,5 @@
 import { describe, expect, it } from '@jest/globals';
-import { buildLineFromColumns } from '../../utils/line-builder-from-columns';
+import { buildLineFromColumns } from '../../../utils/line-builder-from-columns';
 
 describe('buildLineFromColumns', () => {
   it('should build a line using the specified columns and default separator', () => {

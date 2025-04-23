@@ -6,7 +6,7 @@ export type LineSourceBaseOptions = {
   identifierMappings: JSONObject;
   outputMappings: JSONObject;
   separator: string;
-  withHeader: string;
+  withHeader: boolean;
   toJSON?: (line: string[]) => any;
 };
 

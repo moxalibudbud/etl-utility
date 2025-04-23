@@ -22,9 +22,10 @@
       "@file-generator": ["./src/file-generator"],
       "@file-generator/*": ["./src/file-generator/*"],
       "@file-reader": ["./src/file-reader"],
-      "@file-reader/*": ["./src/file-reader/*"],
+      "@file-reader/*": ["./src/file-reader/*"]
     }
   },
+  "isolatedModules": true,
   "include": ["src/**/*.ts"],
   "exclude": [],
   "ts-node": {

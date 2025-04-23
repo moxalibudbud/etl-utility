@@ -1,5 +1,5 @@
 import { describe, expect, it } from '@jest/globals';
-import { lineDataToJSON } from '../../utils';
+import { lineDataToJSON } from '../../../utils';
 
 describe('lineDataToJSON', () => {
   it('should map fields to corresponding values', () => {

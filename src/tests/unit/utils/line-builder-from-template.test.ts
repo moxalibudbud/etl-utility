@@ -1,5 +1,5 @@
 import { describe, expect, it } from '@jest/globals';
-import { buildLineFromTemplate } from '../../utils/line-builder-from-template';
+import { buildLineFromTemplate } from '../../../utils/line-builder-from-template';
 
 describe('buildLineFromTemplate', () => {
   it('should replace placeholders in the template with corresponding values from the line object', () => {
