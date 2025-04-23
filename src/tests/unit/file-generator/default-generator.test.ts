@@ -1,6 +1,6 @@
 import { describe, expect, test } from '@jest/globals';
 import { DefaultGenerator } from '../../../file-generator/default-generator';
-import { SourceLine } from '../../../line-data';
+import { LineOutputOptions, SourceLine } from '../../../line-data';
 
 const LINE = 'RE1-J426-BAT	128770527	143	3	2222';
 const sourceLineOps = {
@@ -15,7 +15,7 @@ const sourceLineOps = {
 const sourceLine = new SourceLine(LINE, { ...sourceLineOps, currentLineNumber: 2 });
 
 describe('default-generator tests', () => {
-  const options = {
+  const options: LineOutputOptions = {
     // filename: 'fixed_filename.txt',
     filename: (args: SourceLine) => `${sourceLine.jsonLine.store}_fixed_filename.txt`,
     // header: 'sample header\n',
@@ -23,7 +23,6 @@ describe('default-generator tests', () => {
     header: (args: SourceLine) => `sample header|${sourceLine.jsonLine.store}\n`,
     footer: 'sample footer',
     separator: ';',
-    columns: ['store', 'sku', 'quantity', 'countId'],
     template: '{store};{sku};{quantity};{countId}',
   };
   const generator = new DefaultGenerator(options);

@@ -19,7 +19,6 @@ const sourceLine = new line_data_1.SourceLine(LINE, Object.assign(Object.assign(
         header: (args) => `sample header|${sourceLine.jsonLine.store}\n`,
         footer: 'sample footer',
         separator: ';',
-        columns: ['store', 'sku', 'quantity', 'countId'],
         template: '{store};{sku};{quantity};{countId}',
     };
     const generator = new default_generator_1.DefaultGenerator(options);

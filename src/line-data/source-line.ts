@@ -1,5 +1,5 @@
 import { LineSourceBase, LineSourceBaseOptions, DEFAULT_OPTIONS } from './line-source-base';
-import { mapFields, lineDataToJSON, validateLine } from '../utils';
+import { mapFields, lineDataToJSON, validateLine, mapWithDefault } from '../utils';
 import { JSONObject } from '../types';
 
 export class SourceLine extends LineSourceBase {
@@ -50,7 +50,7 @@ export class SourceLine extends LineSourceBase {
   }
 
   get output() {
-    return mapFields(this.jsonLine || {}, this.options.outputMappings);
+    return mapWithDefault(this.jsonLine || {}, this.options.outputMappings);
   }
 
   get isHeader(): boolean {

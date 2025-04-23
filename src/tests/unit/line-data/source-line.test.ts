@@ -7,7 +7,7 @@ describe('SourceLine test 1', () => {
     columns: ['store', 'sku', 'quantity', 'sohQuantity', 'countId'],
     mandatoryFields: ['store', 'sku', 'quantity', 'countId'],
     identifierMappings: { store: 'store', sku: 'sku', quantity: 'quantity' },
-    outputMappings: { store: 'store', sku: 'sku', quantity: 'quantity', ccid: 'store' },
+    outputMappings: { store: 'store', sku: 'sku', quantity: 'quantity', ccid: 'store', default: 'xxx' },
     separator: '\t',
     withHeader: true,
   };
@@ -58,6 +58,7 @@ describe('SourceLine test 1', () => {
       ccid: 'RE1-J426-BAT',
       sku: '128770527',
       quantity: '143',
+      default: 'xxx',
     });
   });
 });

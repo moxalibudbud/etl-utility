@@ -28,16 +28,13 @@ class DefaultGenerator extends flat_file_base_lazy_1.FlatFileBaseLazy {
         this.createHeader(headerRow);
     }
     buildRow(line) {
-        if (!this.options.template && !this.options.rowMap) {
-            throw new Error('Either template or rowMap must be provided');
-        }
         let row = '';
         if (this.options.template) {
             row = (0, utils_1.buildLineFromTemplate)(line.jsonLine, { template: this.options.template });
         }
         else {
-            const { separator, columns } = this.options;
-            row = (0, utils_1.buildLineFromColumns)(line.output, { separator, columns });
+            const { separator } = this.options;
+            row = (0, utils_1.buildLineFromLineKeys)(line.output, { separator });
         }
         return row;
     }

@@ -3,7 +3,7 @@
 import { FlatFileBaseLazy, FlatFileBaseLazyMethods, FlatFileBaseLazyOptions } from './flat-file-base-lazy';
 import { SourceLine } from '../line-data';
 import { LineOutputOptions } from '../line-data/line-output';
-import { buildLineFromColumns, buildLineFromTemplate } from '../utils';
+import { buildLineFromLineKeys, buildLineFromTemplate } from '../utils';
 
 export class DefaultGenerator extends FlatFileBaseLazy implements FlatFileBaseLazyMethods {
   options: FlatFileBaseLazyOptions & LineOutputOptions;
@@ -38,17 +38,13 @@ export class DefaultGenerator extends FlatFileBaseLazy implements FlatFileBaseLa
   }
 
   buildRow(line: SourceLine) {
-    if (!this.options.template && !this.options.rowMap) {
-      throw new Error('Either template or rowMap must be provided');
-    }
-
     let row = '';
 
     if (this.options.template) {
       row = buildLineFromTemplate(line.jsonLine, { template: this.options.template });
     } else {
-      const { separator, columns } = this.options;
-      row = buildLineFromColumns(line.output, { separator, columns });
+      const { separator } = this.options;
+      row = buildLineFromLineKeys(line.output, { separator });
     }
 
     return row;

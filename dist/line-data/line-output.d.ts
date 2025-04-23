@@ -1,17 +1,9 @@
 type LineOutputBase = {
     filename: string | ((args: any) => string);
+    separator: string;
     header?: string | ((args: any) => string);
     footer?: string | ((args: any) => string);
-    separator: string;
-    columns: string[];
+    template?: string;
 };
-type TemplateOnly = {
-    template: string;
-    rowMap?: never;
-};
-type RowMapOnly = {
-    template?: never;
-    rowMap: Record<string, string>;
-};
-export type LineOutputOptions = LineOutputBase & (TemplateOnly | RowMapOnly);
+export type LineOutputOptions = LineOutputBase;
 export {};

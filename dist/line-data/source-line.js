@@ -39,7 +39,7 @@ class SourceLine extends line_source_base_1.LineSourceBase {
         return this.errors.toString();
     }
     get output() {
-        return (0, utils_1.mapFields)(this.jsonLine || {}, this.options.outputMappings);
+        return (0, utils_1.mapWithDefault)(this.jsonLine || {}, this.options.outputMappings);
     }
     get isHeader() {
         if (this.options.withHeader)
