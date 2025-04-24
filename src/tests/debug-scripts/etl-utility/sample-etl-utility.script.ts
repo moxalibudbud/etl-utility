@@ -80,7 +80,7 @@ const etlOptions = {
   destinationContainer: 'datascan-item-master',
   etlType: 'item-master',
 };
-const etl = new ETL(etlOptions, new DefaultGenerator(rmsItemMasterConfig.outpiut));
+const etl = new ETL(etlOptions, new DefaultGenerator(rmsItemMasterConfig.output));
 run(etl);
 
 // const etlOptions = {

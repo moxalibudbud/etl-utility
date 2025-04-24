@@ -17,8 +17,8 @@
     "types": ["node"],
     "typeRoots": ["node_modules/@types"],
     "paths": {
-      "@src": ["./src/functions"],
-      "@functions/*": ["./src/functions/*"]
+      "@src": ["./src"],
+      "@src/*": ["./src/src/*"]
     }
   },
   "isolatedModules": true,

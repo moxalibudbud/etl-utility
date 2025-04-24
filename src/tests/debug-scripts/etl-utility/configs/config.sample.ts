@@ -1,4 +1,4 @@
-import { SourceLine } from '@src/line-data';
+import { SourceLine } from '../../../../line-data';
 
 export const line = {
   columns: [
@@ -42,11 +42,11 @@ export const line = {
 };
 
 export const output = {
-  // filename: 'Item Master.txt',
-  filename: (args: SourceLine) =>
-    args.output?.brandName
-      ? `${args.output?.brandName} - Item Master - ${Date.now()}.txt`
-      : `Item Master - ${Date.now()}.txt`,
+  filename: 'Item Master.txt',
+  // filename: (args: SourceLine) =>
+  //   args.output?.brandName
+  //     ? `${args.output?.brandName} - Item Master - ${Date.now()}.txt`
+  //     : `Item Master - ${Date.now()}.txt`,
   // header: 'sample header\n',
   // footer: 'sample footer',
   // header: (args: SourceLine) => generatorOptions.columns.join(generatorOptions.separator) + '\n',

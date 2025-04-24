@@ -1,4 +1,4 @@
-import { SourceLine } from '@etl/utility/line-data';
+import { SourceLine } from '../../../../line-data';
 
 export const line = {
   columns: [
@@ -44,7 +44,7 @@ export const line = {
   withHeader: true,
 };
 
-export const outpiut = {
+export const output = {
   // filename: 'Item Master.txt',
   filename: (args: SourceLine) =>
     args.output?.brandName
