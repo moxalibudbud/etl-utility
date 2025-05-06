@@ -1,4 +1,4 @@
-import { SourceLine } from '@src/line-data';
+import { SourceLine } from '../../../../line-data';
 
 export const line = {
   columns: [
