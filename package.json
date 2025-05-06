@@ -22,6 +22,7 @@
     "updatemods": "pnpm up @alshaya/list-data-reader --latest"
   },
   "dependencies": {
+    "@altavant/azure-blob": "0.0.1-alpha",
     "dotenv": "^16.5.0",
     "exceljs": "^4.4.0"
   },
