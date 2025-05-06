@@ -1,8 +1,8 @@
 {
   "name": "etl-utility",
-  "version": "1.0.0",
+  "version": "0.0.1-alpha",
   "author": "John Alibudbud",
-  "description": "Reusable module and functions for an ETL service",
+  "description": "Collection of efficient ETL processing of large files from Azure Blob Storage or local sources using readline streams.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "exports": {
@@ -11,8 +11,17 @@
     "./line-data": "./dist/line-data/index.js",
     "./types": "./dist/types/index.js"
   },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/moxalibudbud/etl-utility.git"
+  },
+  "files": [
+    "dist"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
-    "watch": "nodemon --config nodemon.json",
     "build": "tsc --noEmit && sh -c '[ -d dist ] && rm -R dist' && pnpm tsc --build tsconfig.prod.json",
     "ts": "tsc --build tsconfig.prod.json",
     "push": "pnpm build && git add . && git commit -m 'build' && git push",
@@ -36,7 +45,6 @@
     "babel-plugin-module-resolver": "^5.0.2",
     "jest": "^29.7.0",
     "nodemon": "^3.1.4",
-    "ts-jest": "^29.2.4",
     "ts-node": "^10.9.2",
     "tsconfig-paths": "^4.2.0",
     "tslib": "^2.6.3",
