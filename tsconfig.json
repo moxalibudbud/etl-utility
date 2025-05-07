@@ -1,0 +1,31 @@
+{
+  "compilerOptions": {
+    "baseUrl": "./",
+    "emitDecoratorMetadata": true,
+    "resolveJsonModule": true,
+    "esModuleInterop": true,
+    "experimentalDecorators": true,
+    "importHelpers": true,
+    "module": "node16",
+    "outDir": "dist",
+    "removeComments": true,
+    "declaration": true,
+    "sourceMap": true,
+    "strict": true,
+    "target": "es6",
+    "moduleResolution": "node16",
+    "types": ["node"],
+    "typeRoots": ["node_modules/@types"],
+    "paths": {
+      "@src": ["./src"],
+      "@src/*": ["./src/src/*"]
+    }
+  },
+  "isolatedModules": true,
+  "include": ["src/**/*.ts"],
+  "exclude": [],
+  "ts-node": {
+    // Do not forget to `npm i -D tsconfig-paths`
+    "require": ["tsconfig-paths/register"]
+  }
+}
