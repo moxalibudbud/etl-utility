@@ -42,3 +42,12 @@ This library is flexible and can be integrated into:
 
 - 📘 Add complete documentation and examples
 - ⚙️ Add support for more ETL options and validation rules
+
+## Developer Note
+The following environment variables are required
+
+```
+AZURE_BLOB_STORAGE_ACCOUNT_NAME
+AZURE_BLOB_STORAGE_ACCOUNT_KEY
+```
+
