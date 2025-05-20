@@ -6,9 +6,7 @@ import { FlatFileBaseLazy, FlatFileBaseLazyMethods } from '../file-generator/fla
 
 type ETLOptions = {
   line: LineSourceBaseOptions;
-  etl: { blobURL: string; file?: never } | { file: string; blobURL?: never };
-  destinationContainer: string;
-  etlType: string; // Deprecated. But kept for backward compatibility especially for the old ETL process
+  filesource: { blobURL: string; file?: never } | { file: string; blobURL?: never };
 };
 
 export class ETL {
@@ -25,9 +23,9 @@ export class ETL {
 
   constructor(args: ETLOptions, outputFileWriter: FlatFileBaseLazy & FlatFileBaseLazyMethods) {
     this.options = args;
-    this.fileSource = args.etl.blobURL ?? (args.etl.file as string);
+    this.fileSource = args.filesource.blobURL ?? (args.filesource.file as string);
 
-    this.lineReader = this.initiateReadlineInterface(args.etl.blobURL);
+    this.lineReader = this.initiateReadlineInterface(args.filesource.blobURL);
     this.errorReportWriter = this.initiateErrorReportWriter();
     this.outputFileWriter = outputFileWriter;
   }
@@ -138,8 +136,6 @@ export class ETL {
       localOutputFilename: this.outputFileWriter.filename as string,
       localErrorReportFile: this.errorReportWriter.filepath,
       localErrorReportFilename: this.errorReportWriter.filename,
-      destinationContainer: this.options.destinationContainer,
-      etlType: this.options.etlType as ETLType,
       metadata: { ...this.sampleLineData, ...this.identifiers },
     };
   }

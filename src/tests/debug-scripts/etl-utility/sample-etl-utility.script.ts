@@ -73,12 +73,10 @@ async function run(etl: any) {
 // run(rmsItemMaster);
 
 const etlOptions = {
-  etl: {
+  filesource: {
     file: path.resolve('/var/tmp', 'als_product_master_delta_AME_20250211.out'),
   },
   line: rmsItemMasterConfig.line,
-  destinationContainer: 'datascan-item-master',
-  etlType: 'item-master',
 };
 const etl = new ETL(etlOptions, new DefaultGenerator(rmsItemMasterConfig.output));
 run(etl);

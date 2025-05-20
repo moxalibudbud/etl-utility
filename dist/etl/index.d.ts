@@ -5,15 +5,13 @@ import { SourceLine, LineSourceBaseOptions } from '../line-data';
 import { FlatFileBaseLazy, FlatFileBaseLazyMethods } from '../file-generator/flat-file-base-lazy';
 type ETLOptions = {
     line: LineSourceBaseOptions;
-    etl: {
+    filesource: {
         blobURL: string;
         file?: never;
     } | {
         file: string;
         blobURL?: never;
     };
-    destinationContainer: string;
-    etlType: string;
 };
 export declare class ETL {
     outputFileWriter: FlatFileBaseLazy & FlatFileBaseLazyMethods;

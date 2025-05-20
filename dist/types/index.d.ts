@@ -12,7 +12,5 @@ export type ETLResult = {
     localOutputFilename: string;
     localErrorReportFile: string;
     localErrorReportFilename: string;
-    destinationContainer: string;
-    etlType?: ETLType;
     metadata?: JSONObject | string;
 };

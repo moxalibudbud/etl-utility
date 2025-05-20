@@ -1,25 +1,18 @@
 {
   "compilerOptions": {
     "baseUrl": "./",
-    "emitDecoratorMetadata": true,
-    "resolveJsonModule": true,
     "esModuleInterop": true,
-    "experimentalDecorators": true,
     "importHelpers": true,
-    "module": "node16",
+    "module": "nodenext",
     "outDir": "dist",
     "removeComments": true,
     "declaration": true,
     "sourceMap": true,
     "strict": true,
     "target": "es6",
-    "moduleResolution": "node16",
+    "moduleResolution": "nodenext",
     "types": ["node"],
-    "typeRoots": ["node_modules/@types"],
-    "paths": {
-      "@src": ["./src"],
-      "@src/*": ["./src/src/*"]
-    }
+    "typeRoots": ["node_modules/@types"]
   },
   "isolatedModules": true,
   "include": ["src/**/*.ts"],

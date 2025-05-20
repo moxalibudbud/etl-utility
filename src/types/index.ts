@@ -14,7 +14,5 @@ export type ETLResult = {
   localOutputFilename: string;
   localErrorReportFile: string;
   localErrorReportFilename: string;
-  destinationContainer: string;
-  etlType?: ETLType; // Deprecated. But kept for backward compatibility especially for the old ETL process
   metadata?: JSONObject | string;
 };

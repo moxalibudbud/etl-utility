@@ -11,8 +11,8 @@ class ETL {
         this.valid = true;
         this.lineIndex = 0;
         this.options = args;
-        this.fileSource = (_a = args.etl.blobURL) !== null && _a !== void 0 ? _a : args.etl.file;
-        this.lineReader = this.initiateReadlineInterface(args.etl.blobURL);
+        this.fileSource = (_a = args.filesource.blobURL) !== null && _a !== void 0 ? _a : args.filesource.file;
+        this.lineReader = this.initiateReadlineInterface(args.filesource.blobURL);
         this.errorReportWriter = this.initiateErrorReportWriter();
         this.outputFileWriter = outputFileWriter;
     }
@@ -104,8 +104,6 @@ class ETL {
             localOutputFilename: this.outputFileWriter.filename,
             localErrorReportFile: this.errorReportWriter.filepath,
             localErrorReportFilename: this.errorReportWriter.filename,
-            destinationContainer: this.options.destinationContainer,
-            etlType: this.options.etlType,
             metadata: Object.assign(Object.assign({}, this.sampleLineData), this.identifiers),
         };
     }

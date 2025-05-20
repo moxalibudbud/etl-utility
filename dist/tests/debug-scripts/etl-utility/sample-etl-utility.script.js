@@ -18,12 +18,10 @@ function run(etl) {
     });
 }
 const etlOptions = {
-    etl: {
+    filesource: {
         file: path_1.default.resolve('/var/tmp', 'als_product_master_delta_AME_20250211.out'),
     },
     line: rmsItemMasterConfig.line,
-    destinationContainer: 'datascan-item-master',
-    etlType: 'item-master',
 };
 const etl = new etl_1.ETL(etlOptions, new file_generator_1.DefaultGenerator(rmsItemMasterConfig.output));
 run(etl);
