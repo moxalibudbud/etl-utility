@@ -1,6 +1,6 @@
 {
   "name": "etl-utility",
-  "version": "0.0.3-alpha",
+  "version": "0.0.4-alpha",
   "author": "John Alibudbud",
   "description": "Collection of efficient ETL processing of large files from Azure Blob Storage or local sources using readline streams.",
   "main": "dist/index.js",
