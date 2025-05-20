@@ -1,6 +1,6 @@
 # 📦 Description
 
-A lightweight ETL library built with Node.js, optimized for processing large flat files such as CSV, TXT, and DOT. It supports reading files either locally or directly from cloud blob storage, using the efficient `readline` stream interface to handle large datasets without consuming too much memory.
+A lightweight ETL library built in Typescript, optimized for processing large flat files such as CSV, TXT, and DOT. It supports reading files either locally or directly from cloud blob storage, using the efficient `readline` stream interface to handle large datasets without consuming too much memory.
 
 ## 🔧 Features
 
@@ -44,6 +44,7 @@ This library is flexible and can be integrated into:
 - ⚙️ Add support for more ETL options and validation rules
 
 ## Developer Note
+
 The following environment variables are required
 
 ```
