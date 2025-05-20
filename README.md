@@ -51,3 +51,12 @@ The following environment variables are required
 AZURE_BLOB_STORAGE_ACCOUNT_NAME
 AZURE_BLOB_STORAGE_ACCOUNT_KEY
 ```
+
+## Todo
+
+Need to document the module usage from the following files
+
+- /etl
+- /file-generator
+- /line-data
+- /types
