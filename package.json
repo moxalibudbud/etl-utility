@@ -6,6 +6,7 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "exports": {
+    ".": "./dist/index.js",
     "./etl": "./dist/etl/index.js",
     "./file-generator": "./dist/file-generator/index.js",
     "./line-data": "./dist/line-data/index.js",
