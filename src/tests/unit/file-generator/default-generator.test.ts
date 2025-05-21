@@ -1,6 +1,5 @@
 import { describe, expect, test } from '@jest/globals';
-import { DefaultGenerator } from '../../../file-generator/default-generator';
-import { LineOutputOptions, SourceLine } from '../../../line-data';
+import { DefaultGenerator, LineOutputOptions, SourceLine } from '../../../index';
 
 const LINE = 'RE1-J426-BAT	128770527	143	3	2222';
 const sourceLineOps = {

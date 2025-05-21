@@ -73,12 +73,12 @@ export const output = {
   filename: function (args: SourceLine) {
     return args.output?.brandName
       ? `${args.output?.brandName} - Item Master - ${Date.now()}.txt`
-      : `Item Master - ${Date.now()}.txt`;
+      : `Item Master - ${Date.now()}.csv`;
   },
   // header: 'sample header\n',
   // footer: 'sample footer',
   // header: (args: SourceLine) => generatorOptions.columns.join(generatorOptions.separator) + '\n',
   // footer: 'sample footer',
-  separator: '\t',
+  separator: ';',
   // template: 'false;{BARCODE};{PART_NUMBER};{DESCRIPTION};g',
 };

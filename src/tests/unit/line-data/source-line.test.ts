@@ -1,5 +1,5 @@
 import { describe, expect, it } from '@jest/globals';
-import { SourceLine } from '../../../line-data/source-line';
+import { SourceLine } from '../../../index';
 
 describe('SourceLine test 1', () => {
   const line = 'RE1-J426-BAT	128770527	143	3	2222';

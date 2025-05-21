@@ -1,6 +1,6 @@
-import { SourceLine } from '../../../../line-data';
+import { LineOutputOptions, LineSourceBaseOptions, SourceLine } from '../../../../index';
 
-export const line = {
+export const line: LineSourceBaseOptions = {
   columns: [
     'barcode',
     'itemId',
@@ -41,7 +41,7 @@ export const line = {
   withHeader: false,
 };
 
-export const output = {
+export const output: LineOutputOptions = {
   // filename: 'Item Master.txt',
   filename: (args: SourceLine) =>
     args.output?.brandName

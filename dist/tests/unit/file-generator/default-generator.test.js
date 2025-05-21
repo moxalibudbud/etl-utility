@@ -1,8 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const globals_1 = require("@jest/globals");
-const default_generator_1 = require("../../../file-generator/default-generator");
-const line_data_1 = require("../../../line-data");
+const index_1 = require("../../../index");
 const LINE = 'RE1-J426-BAT	128770527	143	3	2222';
 const sourceLineOps = {
     columns: ['store', 'sku', 'quantity', 'sohQuantity', 'countId'],
@@ -12,7 +11,7 @@ const sourceLineOps = {
     separator: '\t',
     withHeader: true,
 };
-const sourceLine = new line_data_1.SourceLine(LINE, Object.assign(Object.assign({}, sourceLineOps), { currentLineNumber: 2 }));
+const sourceLine = new index_1.SourceLine(LINE, Object.assign(Object.assign({}, sourceLineOps), { currentLineNumber: 2 }));
 (0, globals_1.describe)('default-generator tests', () => {
     const options = {
         filename: (args) => `${sourceLine.jsonLine.store}_fixed_filename.txt`,
@@ -21,7 +20,7 @@ const sourceLine = new line_data_1.SourceLine(LINE, Object.assign(Object.assign(
         separator: ';',
         template: '{store};{sku};{quantity};{countId}',
     };
-    const generator = new default_generator_1.DefaultGenerator(options);
+    const generator = new index_1.DefaultGenerator(options);
     (0, globals_1.test)('DefaultGenerator.filename must be correct', () => {
         generator.setFilename(sourceLine);
         (0, globals_1.expect)(generator.filename).toBe(`RE1-J426-BAT_fixed_filename.txt`);

@@ -1,7 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const globals_1 = require("@jest/globals");
-const source_line_1 = require("../../../line-data/source-line");
+const index_1 = require("../../../index");
 (0, globals_1.describe)('SourceLine test 1', () => {
     const line = 'RE1-J426-BAT	128770527	143	3	2222';
     const options = {
@@ -12,7 +12,7 @@ const source_line_1 = require("../../../line-data/source-line");
         separator: '\t',
         withHeader: true,
     };
-    const sourceLine = new source_line_1.SourceLine(line, Object.assign(Object.assign({}, options), { currentLineNumber: 2 }));
+    const sourceLine = new index_1.SourceLine(line, Object.assign(Object.assign({}, options), { currentLineNumber: 2 }));
     (0, globals_1.it)('should correctly parse the line into properties', () => {
         (0, globals_1.expect)(sourceLine.line).toEqual(['RE1-J426-BAT', '128770527', '143', '3', '2222']);
         (0, globals_1.expect)(sourceLine.columns).toEqual(['store', 'sku', 'quantity', 'sohQuantity', 'countId']);

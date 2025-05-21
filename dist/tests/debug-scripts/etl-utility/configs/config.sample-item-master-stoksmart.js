@@ -73,7 +73,7 @@ exports.output = {
         var _a, _b;
         return ((_a = args.output) === null || _a === void 0 ? void 0 : _a.brandName)
             ? `${(_b = args.output) === null || _b === void 0 ? void 0 : _b.brandName} - Item Master - ${Date.now()}.txt`
-            : `Item Master - ${Date.now()}.txt`;
+            : `Item Master - ${Date.now()}.csv`;
     },
-    separator: '\t',
+    separator: ';',
 };
