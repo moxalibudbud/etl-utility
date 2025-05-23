@@ -1,7 +1,7 @@
 import path from 'path';
 import { ETL } from '../../../etl';
 import { DefaultGenerator } from '../../../file-generator';
-import * as goldItemMasterConfig from './configs/config.gold-item-master';
+import * as goldItemMasterConfig from './configs/config.gold-item-master.stoksmart';
 import * as rmsItemMasterConfig from './configs/config.rms-item-master';
 
 const MOCKDATA_DIR = 'mockdata';
@@ -72,22 +72,22 @@ async function run(etl: any) {
 // });
 // run(rmsItemMaster);
 
+// const etlOptions = {
+//   filesource: {
+//     file: path.resolve('/var/tmp', 'als_product_master_delta_AME_20250211.out'),
+//   },
+//   line: rmsItemMasterConfig.line,
+// };
+// const etl = new ETL(etlOptions, new DefaultGenerator(rmsItemMasterConfig.output));
+// run(etl);
+
 const etlOptions = {
   filesource: {
-    file: path.resolve('/var/tmp', 'als_product_master_delta_AME_20250211.out'),
+    file: path.resolve('/var/tmp', 'VIF_ITEMMASTER_LEG_102048243_22052025093031MERGED'),
   },
-  line: rmsItemMasterConfig.line,
+  line: goldItemMasterConfig.line,
+  destinationContainer: 'datascan-item-master',
+  etlType: 'item-master',
 };
-const etl = new ETL(etlOptions, new DefaultGenerator(rmsItemMasterConfig.output));
+const etl = new ETL(etlOptions, new DefaultGenerator(goldItemMasterConfig.output));
 run(etl);
-
-// const etlOptions = {
-//   etl: {
-//     file: path.resolve('/var/tmp', 'ALY_ITEMMASTER_LEG_100013410_01032025093014MERGED'),
-//   },
-//   line: goldItemMasterConfig.line,
-//   destinationContainer: 'datascan-item-master',
-//   etlType: 'item-master',
-// };
-// const etl = new ETL(etlOptions, new DefaultGenerator(goldItemMasterConfig.outpiut));
-// run(etl);
