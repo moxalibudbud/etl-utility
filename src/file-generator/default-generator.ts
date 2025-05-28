@@ -40,8 +40,10 @@ export class DefaultGenerator extends FlatFileBaseLazy implements FlatFileBaseLa
   buildRow(line: SourceLine) {
     let row = '';
 
-    if (this.options.template) {
+    if (typeof this.options.template === 'string') {
       row = buildLineFromTemplate(line.jsonLine, { template: this.options.template });
+    } else if (typeof this.options.template === 'function') {
+      row = this.options.template(line);
     } else {
       const { separator } = this.options;
       row = buildLineFromLineKeys(line.output, { separator });

@@ -29,8 +29,11 @@ class DefaultGenerator extends flat_file_base_lazy_1.FlatFileBaseLazy {
     }
     buildRow(line) {
         let row = '';
-        if (this.options.template) {
+        if (typeof this.options.template === 'string') {
             row = (0, utils_1.buildLineFromTemplate)(line.jsonLine, { template: this.options.template });
+        }
+        else if (typeof this.options.template === 'function') {
+            row = this.options.template(line);
         }
         else {
             const { separator } = this.options;
