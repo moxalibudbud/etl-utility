@@ -1,3 +1,8 @@
+type FilenameConfig = {
+  template: string;
+  arguments: any[];
+};
+
 type LineOutputBase = {
   filename: string | ((args: any) => string);
   separator: string;
