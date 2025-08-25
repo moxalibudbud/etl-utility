@@ -3,14 +3,26 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.DefaultGenerator = void 0;
 const flat_file_base_lazy_1 = require("./flat-file-base-lazy");
 const utils_1 = require("../utils");
+const replace_with_function_1 = require("src/utils/replace-with-function");
+const replace_with_map_1 = require("src/utils/replace-with-map");
 class DefaultGenerator extends flat_file_base_lazy_1.FlatFileBaseLazy {
     constructor(options) {
         super(options);
         this.options = options;
     }
     setFilename(line) {
-        const filename = this.options.filename;
-        this.filename = typeof filename === 'function' ? filename(line) : filename;
+        const { filename } = this.options;
+        if (typeof filename === 'function') {
+            this.filename = filename(line);
+        }
+        else if (typeof filename === 'object' && filename !== null) {
+            let name = (0, replace_with_map_1.replaceWithMap)(filename.template, line.jsonLine);
+            name = (0, replace_with_function_1.replaceWithFunction)(name);
+            this.filename = name;
+        }
+        else {
+            return filename;
+        }
     }
     pushFooter() {
         var _a, _b;
@@ -30,7 +42,7 @@ class DefaultGenerator extends flat_file_base_lazy_1.FlatFileBaseLazy {
     buildRow(line) {
         let row = '';
         if (typeof this.options.template === 'string') {
-            row = (0, utils_1.buildLineFromTemplate)(line.jsonLine, { template: this.options.template });
+            row = (0, replace_with_map_1.replaceWithMap)(this.options.template, line.jsonLine);
         }
         else if (typeof this.options.template === 'function') {
             row = this.options.template(line);

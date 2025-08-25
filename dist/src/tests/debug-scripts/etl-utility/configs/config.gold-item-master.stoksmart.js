@@ -1,0 +1,68 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.output = exports.line = void 0;
+exports.line = {
+    columns: [
+        'MESSAGEID',
+        'MAIN_BRAND',
+        'BRAND',
+        'PART_NUMBER',
+        'BARCODE',
+        'DESCRIPTION',
+        'DESCRIPTION_2',
+        'STYLE',
+        'STYLE_DESCRIPTION',
+        'COLOR',
+        'COLOR_DESCRIPTION',
+        'SIZE_1',
+        'SIZE_DESCRIPTION',
+        'SIZE_2',
+        'SIZE_DESCRIPTION_2',
+        'S_PGROUP',
+    ],
+    mandatoryFields: ['BARCODE', 'PART_NUMBER', 'STYLE'],
+    identifierMappings: { barcode: 'BARCODE', sku: 'PART_NUMBER' },
+    outputMappings: {
+        active: 'true',
+        sku: 'PART_NUMBER',
+        barcode: 'BARCODE',
+        model_code: '',
+        part_number: 'PART_NUMBER',
+        internal_ref: '',
+        supplier_ref: '',
+        supplier_name: '',
+        name: 'DESCRIPTION',
+        description: 'DESCRIPTION2',
+        rsp: '0.00',
+        cost: '0.00',
+        brand: 'BRAND',
+        depart_ref: '',
+        depart_name: '',
+        class_ref: '',
+        class_name: '',
+        color: 'COLOR',
+        style: 'STYLE',
+        size: '',
+        gender: '',
+        season: '',
+        is_serialized: false,
+        is_batched: false,
+        uom: 'g',
+        category_ref: '',
+        extra1: '',
+        extra2: '',
+        extra3: '',
+        extra4: '',
+        extra5: '',
+    },
+    separator: ',',
+    withHeader: true,
+};
+function generateHeader() {
+    return Object.keys(exports.line.outputMappings).join(';') + '\n';
+}
+exports.output = {
+    filename: 'stocksmart_item_master.csv',
+    header: generateHeader(),
+    separator: ';',
+};

@@ -4,7 +4,7 @@ import { LineOutputOptions } from '../line-data/line-output';
 export declare class DefaultGenerator extends FlatFileBaseLazy implements FlatFileBaseLazyMethods {
     options: FlatFileBaseLazyOptions & LineOutputOptions;
     constructor(options: FlatFileBaseLazyOptions & LineOutputOptions);
-    setFilename(line: SourceLine): void;
+    setFilename(line: SourceLine): string | undefined;
     pushFooter(): void;
     pushHeader(line: SourceLine): void;
     buildRow(line: SourceLine): string;

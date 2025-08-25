@@ -3,7 +3,9 @@
 import { FlatFileBaseLazy, FlatFileBaseLazyMethods, FlatFileBaseLazyOptions } from './flat-file-base-lazy';
 import { SourceLine } from '../line-data';
 import { LineOutputOptions } from '../line-data/line-output';
-import { buildLineFromLineKeys, buildLineFromTemplate } from '../utils';
+import { buildLineFromLineKeys } from '../utils';
+import { replaceWithFunction } from 'src/utils/replace-with-function';
+import { replaceWithMap } from 'src/utils/replace-with-map';
 
 export class DefaultGenerator extends FlatFileBaseLazy implements FlatFileBaseLazyMethods {
   options: FlatFileBaseLazyOptions & LineOutputOptions;
@@ -16,13 +18,13 @@ export class DefaultGenerator extends FlatFileBaseLazy implements FlatFileBaseLa
 
   setFilename(line: SourceLine) {
     const { filename } = this.options;
-    // this.filename = typeof filename === 'function' ? filename(line) : filename;
 
     if (typeof filename === 'function') {
       this.filename = filename(line);
     } else if (typeof filename === 'object' && filename !== null) {
-      // this.filename = this.processFilenameTemplate(filename, line);
-      this.filename = filename;
+      let name = replaceWithMap(filename.template, line.jsonLine);
+      name = replaceWithFunction(name);
+      this.filename = name;
     } else {
       return filename;
     }
@@ -50,7 +52,7 @@ export class DefaultGenerator extends FlatFileBaseLazy implements FlatFileBaseLa
     let row = '';
 
     if (typeof this.options.template === 'string') {
-      row = buildLineFromTemplate(line.jsonLine, { template: this.options.template });
+      row = replaceWithMap(this.options.template, line.jsonLine);
     } else if (typeof this.options.template === 'function') {
       row = this.options.template(line);
     } else {
@@ -58,7 +60,7 @@ export class DefaultGenerator extends FlatFileBaseLazy implements FlatFileBaseLa
       row = buildLineFromLineKeys(line.output, { separator });
     }
 
-    return row + '\n';
+    return row;
   }
 
   push(SourceLine: SourceLine) {

@@ -1,8 +1,4 @@
-import {
-  LineOutputOptions,
-  LineSourceBaseOptions,
-  SourceLine,
-} from 'etl-utility';
+import { LineOutputOptions, LineSourceBaseOptions, SourceLine } from '../../../../index';
 
 export const line: LineSourceBaseOptions = {
   columns: [

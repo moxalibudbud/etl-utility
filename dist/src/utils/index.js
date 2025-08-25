@@ -5,6 +5,5 @@ tslib_1.__exportStar(require("./is-valid-url"), exports);
 tslib_1.__exportStar(require("./line-data-to-json"), exports);
 tslib_1.__exportStar(require("./map"), exports);
 tslib_1.__exportStar(require("./line-validator"), exports);
-tslib_1.__exportStar(require("./line-builder-from-template"), exports);
 tslib_1.__exportStar(require("./line-builder-from-columns"), exports);
 tslib_1.__exportStar(require("./line-builder-from-line-keys"), exports);
