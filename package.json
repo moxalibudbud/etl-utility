@@ -29,7 +29,8 @@
     "test": "jest",
     "test:prod": "jest --testPathPattern=dist/tests --detectOpenHandles",
     "test:dev": "jest --testPathPattern=src/tests --detectOpenHandles",
-    "updatemods": "pnpm up @alshaya/list-data-reader --latest"
+    "updatemods": "pnpm up @alshaya/list-data-reader --latest",
+    "publish": "npm publish --access public"
   },
   "dependencies": {
     "@altavant/azure-blob": "0.0.1-alpha",
