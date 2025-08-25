@@ -15,8 +15,17 @@ export class DefaultGenerator extends FlatFileBaseLazy implements FlatFileBaseLa
   }
 
   setFilename(line: SourceLine) {
-    const filename = this.options.filename;
-    this.filename = typeof filename === 'function' ? filename(line) : filename;
+    const { filename } = this.options;
+    // this.filename = typeof filename === 'function' ? filename(line) : filename;
+
+    if (typeof filename === 'function') {
+      this.filename = filename(line);
+    } else if (typeof filename === 'object' && filename !== null) {
+      // this.filename = this.processFilenameTemplate(filename, line);
+      this.filename = filename;
+    } else {
+      return filename;
+    }
   }
 
   pushFooter() {
@@ -49,7 +58,7 @@ export class DefaultGenerator extends FlatFileBaseLazy implements FlatFileBaseLa
       row = buildLineFromLineKeys(line.output, { separator });
     }
 
-    return row;
+    return row + '\n';
   }
 
   push(SourceLine: SourceLine) {
