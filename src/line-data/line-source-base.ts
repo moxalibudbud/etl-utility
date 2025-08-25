@@ -1,5 +1,10 @@
 import { JSONObject } from '../types';
 
+type Rule = {
+  field: string; // the new field to add (e.g. 'store')
+  expression: string; // string expression using existing fields
+};
+
 export type LineSourceBaseOptions = {
   columns: string[];
   mandatoryFields: string[];
@@ -8,6 +13,7 @@ export type LineSourceBaseOptions = {
   separator: string;
   withHeader: boolean;
   toJSON?: (line: string[]) => any;
+  customValues?: Rule[];
 };
 
 export const DEFAULT_OPTIONS = {

@@ -20,11 +20,36 @@ export class SourceLine extends LineSourceBase {
     this.jsonLine = this.toJSON();
   }
 
+  customValues(line: string[]): Record<string, string> {
+    const { columns } = this.options;
+    const rules = this.options.customValues || [];
+
+    const columnMap = columns.reduce((map, column, index) => {
+      map[column] = line[index];
+      return map;
+    }, {} as Record<string, string>);
+
+    for (const rule of rules) {
+      try {
+        const fn = new Function(...Object.keys(columnMap), `return ${rule.expression};`);
+        columnMap[rule.field] = fn(...Object.values(columnMap));
+        console.log(columnMap);
+      } catch (err) {
+        columnMap[rule.field] = ''; // fallback or log error
+      }
+    }
+
+    return columnMap;
+  }
+
   toJSON(): JSONObject {
     if (this.options?.toJSON) {
       return this.options.toJSON(this.line);
+    } else if (this.options?.customValues) {
+      return this.customValues(this.line);
+    } else {
+      return lineDataToJSON(this.options.columns, this.line);
     }
-    return lineDataToJSON(this.options.columns, this.line);
   }
 
   validate() {
