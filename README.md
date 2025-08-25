@@ -60,3 +60,7 @@ Need to document the module usage from the following files
 - /file-generator
 - /line-data
 - /types
+
+## Commit guidelines
+
+Reference: https://github.com/angular/angular.js/blob/master/DEVELOPERS.md#-git-commit-guidelines
