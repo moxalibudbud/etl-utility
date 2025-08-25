@@ -21,9 +21,6 @@ export class ETL {
   identifiers?: JSONObject;
   options: ETLOptions;
 
-  // Property that hold a reference if already process
-  uniqueIdentifierList: string[] = [];
-
   constructor(args: ETLOptions, outputFileWriter: FlatFileBaseLazy & FlatFileBaseLazyMethods) {
     this.options = args;
     this.fileSource = args.filesource.blobURL ?? (args.filesource.file as string);

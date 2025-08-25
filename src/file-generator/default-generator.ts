@@ -9,6 +9,7 @@ import { replaceWithMap } from '../utils/replace-with-map';
 
 export class DefaultGenerator extends FlatFileBaseLazy implements FlatFileBaseLazyMethods {
   options: FlatFileBaseLazyOptions & LineOutputOptions;
+  rowReferences = new Set<number | string>();
 
   constructor(options: FlatFileBaseLazyOptions & LineOutputOptions) {
     super(options);
@@ -63,17 +64,33 @@ export class DefaultGenerator extends FlatFileBaseLazy implements FlatFileBaseLa
     return row;
   }
 
-  push(SourceLine: SourceLine) {
+  isRowExist({ jsonLine }: SourceLine) {
+    if (this.options.uniqueKey) {
+      return !!this.rowReferences.has(jsonLine[this.options.uniqueKey]);
+    }
+  }
+
+  trackReference({ jsonLine }: SourceLine) {
+    if (this.options.uniqueKey) {
+      const key = jsonLine[this.options.uniqueKey];
+      this.rowReferences.add(key);
+    }
+  }
+
+  push(sourceLine: SourceLine) {
     if (!this.filename) {
-      this.setFilename(SourceLine);
+      this.setFilename(sourceLine);
     }
 
     if (!this.writeStream) {
       this.createStream();
-      this.pushHeader(SourceLine);
+      this.pushHeader(sourceLine);
     }
 
-    const row = this.buildRow(SourceLine);
+    if (this.isRowExist(sourceLine)) return;
+
+    const row = this.buildRow(sourceLine);
     this.writeStream?.write(row);
+    this.trackReference(sourceLine);
   }
 }
