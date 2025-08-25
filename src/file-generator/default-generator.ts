@@ -4,8 +4,8 @@ import { FlatFileBaseLazy, FlatFileBaseLazyMethods, FlatFileBaseLazyOptions } fr
 import { SourceLine } from '../line-data';
 import { LineOutputOptions } from '../line-data/line-output';
 import { buildLineFromLineKeys } from '../utils';
-import { replaceWithFunction } from 'src/utils/replace-with-function';
-import { replaceWithMap } from 'src/utils/replace-with-map';
+import { replaceWithFunction } from '../utils/replace-with-function';
+import { replaceWithMap } from '../utils/replace-with-map';
 
 export class DefaultGenerator extends FlatFileBaseLazy implements FlatFileBaseLazyMethods {
   options: FlatFileBaseLazyOptions & LineOutputOptions;
@@ -26,7 +26,7 @@ export class DefaultGenerator extends FlatFileBaseLazy implements FlatFileBaseLa
       name = replaceWithFunction(name);
       this.filename = name;
     } else {
-      return filename;
+      this.filename = filename;
     }
   }
 

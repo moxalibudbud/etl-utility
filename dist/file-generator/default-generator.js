@@ -3,8 +3,8 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.DefaultGenerator = void 0;
 const flat_file_base_lazy_1 = require("./flat-file-base-lazy");
 const utils_1 = require("../utils");
-const replace_with_function_1 = require("src/utils/replace-with-function");
-const replace_with_map_1 = require("src/utils/replace-with-map");
+const replace_with_function_1 = require("../utils/replace-with-function");
+const replace_with_map_1 = require("../utils/replace-with-map");
 class DefaultGenerator extends flat_file_base_lazy_1.FlatFileBaseLazy {
     constructor(options) {
         super(options);
@@ -21,7 +21,7 @@ class DefaultGenerator extends flat_file_base_lazy_1.FlatFileBaseLazy {
             this.filename = name;
         }
         else {
-            return filename;
+            this.filename = filename;
         }
     }
     pushFooter() {
