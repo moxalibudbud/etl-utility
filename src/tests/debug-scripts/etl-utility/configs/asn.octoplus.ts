@@ -1,4 +1,4 @@
-import { LineOutputOptions, LineSourceBaseOptions, SourceLine } from '../../../../index';
+import { LineOutputOptions, LineSourceBaseOptions } from '../../../../index';
 
 export const line: LineSourceBaseOptions = {
   columns: ['Reference1', 'LocationId', 'SKU', 'Expected', 'Date', 'From_Loc_Type'],

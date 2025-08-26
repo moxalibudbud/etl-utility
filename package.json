@@ -24,6 +24,7 @@
   },
   "scripts": {
     "build": "tsc --noEmit && sh -c '[ -d dist ] && rm -R dist' && pnpm tsc --build tsconfig.prod.json",
+    "lint": "tsc --noEmit",
     "ts": "tsc --build tsconfig.prod.json",
     "push": "pnpm build && git add . && git commit -m 'build' && git push",
     "test": "jest",

@@ -36,7 +36,7 @@ export class DefaultGenerator extends FlatFileBaseLazy implements FlatFileBaseLa
 
     if (!footer) return;
 
-    const footerRow = typeof footer === 'function' ? footer({}) : footer;
+    const footerRow = typeof footer === 'function' ? footer() : footer;
     this.writeStream?.write(footerRow);
   }
 
