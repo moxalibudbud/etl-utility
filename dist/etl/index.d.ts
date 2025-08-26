@@ -12,6 +12,7 @@ type ETLOptions = {
         file: string;
         blobURL?: never;
     };
+    rejectOnInvalidRow?: boolean;
 };
 export declare class ETL {
     outputFileWriter: FlatFileBaseLazy & FlatFileBaseLazyMethods;
@@ -32,6 +33,7 @@ export declare class ETL {
     setSampleLineData(args: JSONObject): void;
     setIdentifier(identifiers: JSONObject): void;
     processLines(): Promise<unknown>;
+    forceCleanUp(): Promise<void>;
     cleanUp(): Promise<void>;
     validateFinalResult(): void;
     getResult(): ETLResult;

@@ -75,6 +75,15 @@ class ETL {
             });
         });
     }
+    forceCleanUp() {
+        return tslib_1.__awaiter(this, void 0, void 0, function* () {
+            yield this.outputFileWriter.end();
+            yield this.errorReportWriter.end();
+            this.lineReader.cleanUpPreviousListeners();
+            yield this.errorReportWriter.delete();
+            yield this.outputFileWriter.delete();
+        });
+    }
     cleanUp() {
         return tslib_1.__awaiter(this, void 0, void 0, function* () {
             yield this.outputFileWriter.end();
@@ -89,10 +98,12 @@ class ETL {
         });
     }
     validateFinalResult() {
-        const withErrors = !!this.errorReportWriter.invalidRows;
-        if (!this.sampleLineData || !this.identifiers || withErrors) {
+        if (!this.sampleLineData || !this.identifiers) {
             this.valid = false;
-            this.errorReportWriter.push('Unable to get data. File content is empty or some rows are invalid');
+            this.errorReportWriter.push('Unable to get data. File content is empty');
+        }
+        else if (this.options.rejectOnInvalidRow && !!this.errorReportWriter.invalidRows) {
+            this.valid = false;
         }
     }
     getResult() {
@@ -117,6 +128,7 @@ class ETL {
                 return this.getResult();
             }
             catch (error) {
+                this.forceCleanUp();
                 throw error;
             }
         });
