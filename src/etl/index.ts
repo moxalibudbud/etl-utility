@@ -1,12 +1,16 @@
 import { ErrorReport } from '../file-generator/error-report';
 import { ReadLineInterface, readLineInterface, ReadLineInterfaceType } from '../file-reader/readline-interface-factory';
-import { ETLResult, JSONObject, ETLType } from '../types';
+import { ETLResult, JSONObject } from '../types';
 import { SourceLine, LineSourceBaseOptions } from '../line-data';
 import { FlatFileBaseLazy, FlatFileBaseLazyMethods } from '../file-generator/flat-file-base-lazy';
 
 type ETLOptions = {
   line: LineSourceBaseOptions;
   filesource: { blobURL: string; file?: never } | { file: string; blobURL?: never };
+
+  // True = Reject the entire validation if atleast one row is invalid. Else, just skip
+  // False/undefined = Just skip the invalid row in the output (default)
+  rejectOnInvalidRow?: boolean;
 };
 
 export class ETL {
@@ -101,6 +105,19 @@ export class ETL {
     });
   }
 
+  async forceCleanUp() {
+    // Gracefully end all streams
+    await this.outputFileWriter.end();
+    await this.errorReportWriter.end();
+    this.lineReader.cleanUpPreviousListeners();
+
+    // Delete error file from local folder if there is no error
+    await this.errorReportWriter.delete();
+
+    // Delete output file from local folder if invalid
+    await this.outputFileWriter.delete();
+  }
+
   async cleanUp() {
     // Gracefully end all streams
     await this.outputFileWriter.end();
@@ -119,11 +136,11 @@ export class ETL {
   }
 
   validateFinalResult() {
-    const withErrors = !!this.errorReportWriter.invalidRows;
-
-    if (!this.sampleLineData || !this.identifiers || withErrors) {
+    if (!this.sampleLineData || !this.identifiers) {
       this.valid = false;
-      this.errorReportWriter.push('Unable to get data. File content is empty or some rows are invalid');
+      this.errorReportWriter.push('Unable to get data. File content is empty');
+    } else if (this.options.rejectOnInvalidRow && !!this.errorReportWriter.invalidRows) {
+      this.valid = false;
     }
   }
 
@@ -148,6 +165,7 @@ export class ETL {
       await this.cleanUp();
       return this.getResult();
     } catch (error) {
+      this.forceCleanUp();
       throw error;
     }
   }

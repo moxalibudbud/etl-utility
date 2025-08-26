@@ -17,8 +17,6 @@ const etlOptions = {
     file: path.resolve('/var/tmp', 'HEN_Prod_06082025003256.csv'),
   },
   line: config.line,
-  destinationContainer: 'xxx',
-  etlType: 'xxx',
 };
 const etl = new ETL(etlOptions, new DefaultGenerator(config.output));
 run(etl);
