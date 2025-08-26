@@ -10,7 +10,6 @@ class ETL {
         var _a;
         this.valid = true;
         this.lineIndex = 0;
-        this.uniqueIdentifierList = [];
         this.options = args;
         this.fileSource = (_a = args.filesource.blobURL) !== null && _a !== void 0 ? _a : args.filesource.file;
         this.lineReader = this.initiateReadlineInterface(args.filesource.blobURL);

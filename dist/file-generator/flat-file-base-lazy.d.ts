@@ -4,8 +4,8 @@ export type FlatFileBaseLazyOptions = {
     path?: string;
 };
 export interface FlatFileBaseLazyMethods {
-    push(SourceLine: SourceLine): any;
-    setFilename(SourceLine: SourceLine): any;
+    push(line: SourceLine): any;
+    setFilename(line: SourceLine): any;
     pushFooter(): void;
 }
 export declare class FlatFileBaseLazy {

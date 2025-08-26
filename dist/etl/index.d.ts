@@ -23,7 +23,6 @@ export declare class ETL {
     sampleLineData?: JSONObject;
     identifiers?: JSONObject;
     options: ETLOptions;
-    uniqueIdentifierList: string[];
     constructor(args: ETLOptions, outputFileWriter: FlatFileBaseLazy & FlatFileBaseLazyMethods);
     initiateReadlineInterface(blobUrl?: string | undefined): import("../file-reader/blob-reader").BlobReader | import("../file-reader/file-reader").FileReader;
     initiateErrorReportWriter(): ErrorReport;

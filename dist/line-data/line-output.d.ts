@@ -1,11 +1,13 @@
+import { SourceLine } from './source-line';
 type LineOutputBase = {
-    filename: string | ((args: any) => string) | {
+    filename: string | ((line: SourceLine) => string) | {
         template: string;
     };
     separator: string;
-    header?: string | ((args: any) => string);
-    footer?: string | ((args: any) => string);
-    template?: string | ((args: any) => string);
+    header?: string | ((line: SourceLine) => string);
+    footer?: string | (() => string);
+    template?: string | ((line: SourceLine) => string);
+    uniqueKey?: string;
 };
 export type LineOutputOptions = LineOutputBase;
 export {};

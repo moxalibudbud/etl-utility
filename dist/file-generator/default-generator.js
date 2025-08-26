@@ -8,6 +8,7 @@ const replace_with_map_1 = require("../utils/replace-with-map");
 class DefaultGenerator extends flat_file_base_lazy_1.FlatFileBaseLazy {
     constructor(options) {
         super(options);
+        this.rowReferences = new Set();
         this.options = options;
     }
     setFilename(line) {
@@ -29,7 +30,7 @@ class DefaultGenerator extends flat_file_base_lazy_1.FlatFileBaseLazy {
         const footer = (_a = this.options) === null || _a === void 0 ? void 0 : _a.footer;
         if (!footer)
             return;
-        const footerRow = typeof footer === 'function' ? footer({}) : footer;
+        const footerRow = typeof footer === 'function' ? footer() : footer;
         (_b = this.writeStream) === null || _b === void 0 ? void 0 : _b.write(footerRow);
     }
     pushHeader(line) {
@@ -53,17 +54,31 @@ class DefaultGenerator extends flat_file_base_lazy_1.FlatFileBaseLazy {
         }
         return row;
     }
-    push(SourceLine) {
+    isRowExist({ jsonLine }) {
+        if (this.options.uniqueKey) {
+            return !!this.rowReferences.has(jsonLine[this.options.uniqueKey]);
+        }
+    }
+    trackReference({ jsonLine }) {
+        if (this.options.uniqueKey) {
+            const key = jsonLine[this.options.uniqueKey];
+            this.rowReferences.add(key);
+        }
+    }
+    push(sourceLine) {
         var _a;
         if (!this.filename) {
-            this.setFilename(SourceLine);
+            this.setFilename(sourceLine);
         }
         if (!this.writeStream) {
             this.createStream();
-            this.pushHeader(SourceLine);
+            this.pushHeader(sourceLine);
         }
-        const row = this.buildRow(SourceLine);
+        if (this.isRowExist(sourceLine))
+            return;
+        const row = this.buildRow(sourceLine);
         (_a = this.writeStream) === null || _a === void 0 ? void 0 : _a.write(row);
+        this.trackReference(sourceLine);
     }
 }
 exports.DefaultGenerator = DefaultGenerator;
