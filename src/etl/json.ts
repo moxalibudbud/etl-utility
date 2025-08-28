@@ -1,9 +1,8 @@
 import { ErrorReport } from '../file-generator/error-report';
 import { ReadLineInterface } from '../file-reader/readline-interface-factory';
 import { ETLResult, JSONObject } from '../types';
-import { SourceLine, LineSourceBaseOptions } from '../line-data';
+import { JSONSourceLine, LineSourceBaseOptions } from '../line-data';
 import { FlatFileBaseLazy, FlatFileBaseLazyMethods } from '../file-generator/flat-file-base-lazy';
-import { JSONSourceLine } from 'src/line-data/json-source-line';
 
 type ETLOptions = {
   line: LineSourceBaseOptions;
@@ -50,7 +49,7 @@ export class JsonETL {
     this.populate(lineModel);
   }
 
-  populate(line: SourceLine) {
+  populate(line: JSONSourceLine) {
     line.validate();
 
     // Populate error report.
