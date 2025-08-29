@@ -1,3 +1,6 @@
+export type NestedRecord = {
+    [key: string]: string | number | boolean | NestedRecord | NestedRecord[];
+};
 export type JSONObject = Record<string, any>;
 export declare enum ETLType {
     COUNT_FILE = "count-files",

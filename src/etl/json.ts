@@ -1,12 +1,12 @@
 import { ErrorReport } from '../file-generator/error-report';
 import { ReadLineInterface } from '../file-reader/readline-interface-factory';
-import { ETLResult, JSONObject } from '../types';
+import { ETLResult, JSONObject, NestedRecord } from '../types';
 import { JSONSourceLine, LineSourceBaseOptions } from '../line-data';
 import { FlatFileBaseLazy, FlatFileBaseLazyMethods } from '../file-generator/flat-file-base-lazy';
 
 type ETLOptions = {
   line: LineSourceBaseOptions;
-  json: JSONObject[];
+  json: NestedRecord[];
   errorFilename: string;
 
   // True = Reject the entire validation if atleast one row is invalid. Else, just skip
