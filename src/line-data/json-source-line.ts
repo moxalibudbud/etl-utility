@@ -15,8 +15,8 @@ export class JSONSourceLine extends LineSourceBase {
     this.options = { ...DEFAULT_OPTIONS, ...options };
     this.currentLineNumber = options.currentLineNumber;
     this.separator = options.separator;
-    this.columns = options.columns;
-    this.line = Object.keys(jsonLine);
+    this.columns = Object.keys(jsonLine);
+    this.line = Object.values(jsonLine);
     this.jsonLine = jsonLine;
   }
 

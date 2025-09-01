@@ -9,8 +9,8 @@ class JSONSourceLine extends line_source_base_1.LineSourceBase {
         this.options = Object.assign(Object.assign({}, line_source_base_1.DEFAULT_OPTIONS), options);
         this.currentLineNumber = options.currentLineNumber;
         this.separator = options.separator;
-        this.columns = options.columns;
-        this.line = Object.keys(jsonLine);
+        this.columns = Object.keys(jsonLine);
+        this.line = Object.values(jsonLine);
         this.jsonLine = jsonLine;
     }
     toJSON() {

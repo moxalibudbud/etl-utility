@@ -1,0 +1,120 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const tslib_1 = require("tslib");
+const etl_1 = require("../../../../etl");
+const default_generator_1 = require("../../../../file-generator/default-generator");
+const config = tslib_1.__importStar(require("./cin7-product-sku-octoplus"));
+function run(etl) {
+    return tslib_1.__awaiter(this, void 0, void 0, function* () {
+        try {
+            const result = yield etl.process();
+            console.log(result);
+        }
+        catch (error) {
+            console.log(error);
+        }
+    });
+}
+const etlOptions = {
+    json: [
+        {
+            ID: 'ca74dced-49ff-4a21-b3b9-3bd7862fe690',
+            SKU: '1000000000001',
+            Name: 'Altavant Product 2',
+            Category: 'Other',
+            Brand: '',
+            Type: 'Stock',
+            CostingMethod: 'FIFO',
+            DropShipMode: 'No Drop Ship',
+            DefaultLocation: 'Main Warehouse',
+            Length: 0.0,
+            Width: 0.0,
+            Height: 0.0,
+            Weight: 0.0,
+            UOM: 'Item',
+            WeightUnits: 'g',
+            DimensionsUnits: 'cm',
+            Barcode: '11010101101',
+            MinimumBeforeReorder: 0.0,
+            ReorderQuantity: 0.0,
+            PriceTier1: 0.0,
+            PriceTier2: 0.0,
+            PriceTier3: 0.0,
+            PriceTier4: 0.0,
+            PriceTier5: 0.0,
+            PriceTier6: 0.0,
+            PriceTier7: 0.0,
+            PriceTier8: 0.0,
+            PriceTier9: 0.0,
+            PriceTier10: 0.0,
+            PriceTiers: {
+                'Tier 1': 0.0,
+                'Tier 2': 0.0,
+                'Tier 3': 0.0,
+                'Tier 4': 0.0,
+                'Tier 5': 0.0,
+                'Tier 6': 0.0,
+                'Tier 7': 0.0,
+                'Tier 8': 0.0,
+                'Tier 9': 0.0,
+                'Tier 10': 0.0,
+            },
+            AverageCost: 0.0,
+            ShortDescription: '',
+            InternalNote: '',
+            Description: '',
+            AdditionalAttribute1: '',
+            AdditionalAttribute2: '',
+            AdditionalAttribute3: '',
+            AdditionalAttribute4: '',
+            AdditionalAttribute5: '',
+            AdditionalAttribute6: '',
+            AdditionalAttribute7: '',
+            AdditionalAttribute8: '',
+            AdditionalAttribute9: '',
+            AdditionalAttribute10: '',
+            AttributeSet: '',
+            DiscountRule: '',
+            Tags: '',
+            Status: 'Active',
+            StockLocator: '',
+            COGSAccount: '',
+            RevenueAccount: '',
+            ExpenseAccount: '',
+            InventoryAccount: '',
+            PurchaseTaxRule: '',
+            SaleTaxRule: '',
+            LastModifiedOn: '2025-08-27T09:46:33.317Z',
+            Sellable: true,
+            PickZones: '',
+            BillOfMaterial: false,
+            AutoAssembly: false,
+            AutoDisassembly: false,
+            QuantityToProduce: 1.0,
+            AlwaysShowQuantity: 0.0,
+            AssemblyInstructionURL: '',
+            AssemblyCostEstimationMethod: 'Average Cost',
+            Suppliers: [],
+            ReorderLevels: [],
+            BillOfMaterialsProducts: [],
+            BillOfMaterialsServices: [],
+            Movements: [],
+            Attachments: [],
+            BOMType: 'None',
+            WarrantyName: '',
+            CustomPrices: [],
+            CartonHeight: 0.0,
+            CartonWidth: 0.0,
+            CartonLength: 0.0,
+            CartonQuantity: 0.0,
+            CartonInnerQuantity: 0.0,
+            HSCode: '',
+            CountryOfOrigin: '',
+            CountryOfOriginCode: '',
+        },
+    ],
+    errorFilename: 'ETLFromJson.error',
+    line: config.line,
+};
+const etl = new etl_1.JsonETL(etlOptions, new default_generator_1.DefaultGenerator(config.output));
+run(etl);
