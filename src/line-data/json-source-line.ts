@@ -1,5 +1,5 @@
 import { LineSourceBase, LineSourceBaseOptions, DEFAULT_OPTIONS } from './line-source-base';
-import { mapFields, lineDataToJSON, validateLine, mapWithDefault } from '../utils';
+import { mapFields, validateLine, mapWithDefault } from '../utils';
 import { JSONObject } from '../types';
 
 export class JSONSourceLine extends LineSourceBase {
