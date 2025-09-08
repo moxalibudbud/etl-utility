@@ -38,7 +38,7 @@ class DefaultGenerator extends flat_file_base_lazy_1.FlatFileBaseLazy {
         if (!header)
             return;
         const headerRow = typeof header === 'function' ? header(line) : header;
-        this.createHeader(headerRow);
+        this.createHeader(headerRow) + '\n';
     }
     buildRow(line) {
         let row = '';
@@ -52,7 +52,7 @@ class DefaultGenerator extends flat_file_base_lazy_1.FlatFileBaseLazy {
             const { separator } = this.options;
             row = (0, utils_1.buildLineFromLineKeys)(line.output, { separator });
         }
-        return row;
+        return line.isHeader ? row : '\n' + row;
     }
     isRowExist({ jsonLine }) {
         if (this.options.uniqueKey) {

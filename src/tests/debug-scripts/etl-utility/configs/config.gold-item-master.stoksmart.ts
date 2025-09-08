@@ -59,7 +59,7 @@ export const line: LineSourceBaseOptions = {
 };
 
 function generateHeader() {
-  return Object.keys(line.outputMappings).join(';') + '\n';
+  return Object.keys(line.outputMappings).join(';');
 }
 
 export const output: LineOutputOptions = {

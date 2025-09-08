@@ -1,6 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const tslib_1 = require("tslib");
+const path_1 = tslib_1.__importDefault(require("path"));
 const etl_1 = require("../../../etl");
 const file_generator_1 = require("../../../file-generator");
 const goldItemMasterConfig = tslib_1.__importStar(require("./configs/config.gold-item-master.stoksmart"));
@@ -17,30 +18,12 @@ function run(etl) {
     });
 }
 const etlOptions = {
-    json: [
-        {
-            MESSAGEID: '',
-            MAIN_BRAND: '',
-            BRAND: '',
-            PART_NUMBER: '1',
-            BARCODE: '1',
-            DESCRIPTION: '',
-            DESCRIPTION_2: '',
-            STYLE: '1',
-            STYLE_DESCRIPTION: '',
-            COLOR: '',
-            COLOR_DESCRIPTION: '',
-            SIZE_1: '',
-            SIZE_DESCRIPTION: '',
-            SIZE_2: '',
-            SIZE_DESCRIPTION_2: '',
-            S_PGROUP: '',
-        },
-    ],
-    errorFilename: 'ETLFromJson',
+    filesource: {
+        file: path_1.default.resolve('/var/tmp', 'VIF_ITEMMASTER_LEG_102048243_22052025093031MERGED'),
+    },
     line: goldItemMasterConfig.line,
     destinationContainer: 'datascan-item-master',
     etlType: 'item-master',
 };
-const etl = new etl_1.JsonETL(etlOptions, new file_generator_1.DefaultGenerator(goldItemMasterConfig.output));
+const etl = new etl_1.ETL(etlOptions, new file_generator_1.DefaultGenerator(goldItemMasterConfig.output));
 run(etl);

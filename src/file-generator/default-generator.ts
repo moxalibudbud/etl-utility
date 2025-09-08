@@ -44,7 +44,9 @@ export class DefaultGenerator extends FlatFileBaseLazy implements FlatFileBaseLa
     if (!header) return;
 
     const headerRow = typeof header === 'function' ? header(line) : header;
-    this.createHeader(headerRow);
+
+    // For headers to add new row
+    this.createHeader(headerRow) + '\n';
   }
 
   buildRow(line: SourceLine) {
@@ -59,7 +61,9 @@ export class DefaultGenerator extends FlatFileBaseLazy implements FlatFileBaseLa
       row = buildLineFromLineKeys(line.output, { separator });
     }
 
-    return row;
+    // Only append new line for incoming row.
+    // This will prevent an empty row in the file
+    return line.isHeader ? row : '\n' + row;
   }
 
   isRowExist({ jsonLine }: SourceLine) {

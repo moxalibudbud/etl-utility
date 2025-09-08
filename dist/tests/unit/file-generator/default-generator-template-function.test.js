@@ -15,16 +15,16 @@ const sourceLine = new index_1.SourceLine(LINE, Object.assign(Object.assign({}, 
 (0, globals_1.describe)('default-generator tests', () => {
     const options = {
         filename: (args) => `${sourceLine.jsonLine.store}_fixed_filename.txt`,
-        header: (args) => `sample header|${sourceLine.jsonLine.store}\n`,
+        header: (args) => `sample header|${sourceLine.jsonLine.store}`,
         footer: 'sample footer',
         separator: ';',
         template: function ({ jsonLine }) {
-            return Array.from({ length: parseInt(jsonLine.quantity) }, (_, i) => jsonLine.sku).join('\n') + '\n';
+            return Array.from({ length: parseInt(jsonLine.quantity) }, (_, i) => jsonLine.sku).join('\n');
         },
     };
     const generator = new index_1.DefaultGenerator(options);
     (0, globals_1.test)('DefaultGenerator.buildRow() must return correct template value', () => {
         const row = generator.buildRow(sourceLine);
-        (0, globals_1.expect)(row).toBe(`sku000001\nsku000001\nsku000001\nsku000001\nsku000001\n`);
+        (0, globals_1.expect)(row).toBe(`\nsku000001\nsku000001\nsku000001\nsku000001\nsku000001`);
     });
 });

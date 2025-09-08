@@ -59,7 +59,7 @@ exports.line = {
     withHeader: true,
 };
 function generateHeader() {
-    return Object.keys(exports.line.outputMappings).join(';') + '\n';
+    return Object.keys(exports.line.outputMappings).join(';');
 }
 exports.output = {
     filename: 'stocksmart_item_master.csv',

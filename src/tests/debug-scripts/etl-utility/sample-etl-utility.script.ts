@@ -81,42 +81,42 @@ async function run(etl: any) {
 // const etl = new ETL(etlOptions, new DefaultGenerator(rmsItemMasterConfig.output));
 // run(etl);
 
-// const etlOptions = {
-//   filesource: {
-//     file: path.resolve('/var/tmp', 'VIF_ITEMMASTER_LEG_102048243_22052025093031MERGED'),
-//   },
-//   line: goldItemMasterConfig.line,
-//   destinationContainer: 'datascan-item-master',
-//   etlType: 'item-master',
-// };
-// const etl = new ETL(etlOptions, new DefaultGenerator(goldItemMasterConfig.output));
-// run(etl);
-
 const etlOptions = {
-  json: [
-    {
-      MESSAGEID: '',
-      MAIN_BRAND: '',
-      BRAND: '',
-      PART_NUMBER: '1',
-      BARCODE: '1',
-      DESCRIPTION: '',
-      DESCRIPTION_2: '',
-      STYLE: '1',
-      STYLE_DESCRIPTION: '',
-      COLOR: '',
-      COLOR_DESCRIPTION: '',
-      SIZE_1: '',
-      SIZE_DESCRIPTION: '',
-      SIZE_2: '',
-      SIZE_DESCRIPTION_2: '',
-      S_PGROUP: '',
-    },
-  ],
-  errorFilename: 'ETLFromJson',
+  filesource: {
+    file: path.resolve('/var/tmp', 'VIF_ITEMMASTER_LEG_102048243_22052025093031MERGED'),
+  },
   line: goldItemMasterConfig.line,
   destinationContainer: 'datascan-item-master',
   etlType: 'item-master',
 };
-const etl = new JsonETL(etlOptions, new DefaultGenerator(goldItemMasterConfig.output));
+const etl = new ETL(etlOptions, new DefaultGenerator(goldItemMasterConfig.output));
 run(etl);
+
+// const etlOptions = {
+//   json: [
+//     {
+//       MESSAGEID: '',
+//       MAIN_BRAND: '',
+//       BRAND: '',
+//       PART_NUMBER: '1',
+//       BARCODE: '1',
+//       DESCRIPTION: '',
+//       DESCRIPTION_2: '',
+//       STYLE: '1',
+//       STYLE_DESCRIPTION: '',
+//       COLOR: '',
+//       COLOR_DESCRIPTION: '',
+//       SIZE_1: '',
+//       SIZE_DESCRIPTION: '',
+//       SIZE_2: '',
+//       SIZE_DESCRIPTION_2: '',
+//       S_PGROUP: '',
+//     },
+//   ],
+//   errorFilename: 'ETLFromJson',
+//   line: goldItemMasterConfig.line,
+//   destinationContainer: 'datascan-item-master',
+//   etlType: 'item-master',
+// };
+// const etl = new JsonETL(etlOptions, new DefaultGenerator(goldItemMasterConfig.output));
+// run(etl);

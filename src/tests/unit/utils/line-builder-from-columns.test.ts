@@ -8,7 +8,7 @@ describe('buildLineFromColumns', () => {
 
     const result = buildLineFromColumns(line, options);
 
-    expect(result).toBe('John|30|New York\n');
+    expect(result).toBe('John|30|New York');
   });
 
   it('should build a line using the specified columns and custom separator', () => {
@@ -17,7 +17,7 @@ describe('buildLineFromColumns', () => {
 
     const result = buildLineFromColumns(line, options);
 
-    expect(result).toBe('John,30,New York\n');
+    expect(result).toBe('John,30,New York');
   });
 
   it('should handle missing keys in the line object by blank for those columns', () => {
@@ -26,7 +26,7 @@ describe('buildLineFromColumns', () => {
 
     const result = buildLineFromColumns(line, options);
 
-    expect(result).toBe('John|30|||NCR\n');
+    expect(result).toBe('John|30|||NCR');
   });
 
   it('should return an empty line if no columns are specified', () => {
@@ -35,6 +35,6 @@ describe('buildLineFromColumns', () => {
 
     const result = buildLineFromColumns(line, options);
 
-    expect(result).toBe('\n');
+    expect(result).toBe('');
   });
 });

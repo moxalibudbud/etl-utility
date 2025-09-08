@@ -15,7 +15,7 @@ const sourceLine = new index_1.SourceLine(LINE, Object.assign(Object.assign({}, 
 (0, globals_1.describe)('default-generator tests', () => {
     const options = {
         filename: (args) => `${sourceLine.jsonLine.store}_fixed_filename.txt`,
-        header: (args) => `sample header|${sourceLine.jsonLine.store}\n`,
+        header: (args) => `sample header|${sourceLine.jsonLine.store}`,
         footer: 'sample footer',
         separator: ';',
         template: '{store};{sku};{quantity};{countId}',
@@ -27,7 +27,7 @@ const sourceLine = new index_1.SourceLine(LINE, Object.assign(Object.assign({}, 
     });
     (0, globals_1.test)('DefaultGenerator.buildRow() must return correct template value', () => {
         const row = generator.buildRow(sourceLine);
-        (0, globals_1.expect)(row).toBe(`RE1-J426-BAT;128770527;143;2222\n`);
+        (0, globals_1.expect)(row).toBe('\nRE1-J426-BAT;128770527;143;2222');
     });
     (0, globals_1.test)('DefaultGenerator.push() must generate file', () => {
         generator.push(sourceLine);
