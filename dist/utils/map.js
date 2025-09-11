@@ -12,8 +12,16 @@ function mapFields(input, config) {
 function mapWithDefault(input, config) {
     const result = {};
     for (const [outputKey, rule] of Object.entries(config)) {
-        if (typeof rule === 'function') {
-            result[outputKey] = rule(input);
+        if (typeof rule === 'string' && rule.startsWith('[') && rule.endsWith(']')) {
+            const fnBody = rule.slice(1, -1).trim();
+            try {
+                const fn = new Function('input', fnBody);
+                result[outputKey] = fn(input);
+            }
+            catch (err) {
+                console.error(`Error executing function for key "${fnBody}":`, err);
+                result[outputKey] = outputKey;
+            }
         }
         else {
             result[outputKey] = input.hasOwnProperty(rule) ? input[rule] : rule;
