@@ -51,21 +51,29 @@ const supportedFunctions = {
     dateTime,
 };
 function replaceWithFunction(template) {
-    let output = template.replace(/\[(\w+)\]/g, (match, functionName) => {
-        if (supportedFunctions.hasOwnProperty(functionName)) {
-            try {
-                return supportedFunctions[functionName]();
+    let output = template.replace(/\[([^\]]+)\]/g, (match, content) => {
+        try {
+            const parts = content.split(',').map((part) => part.trim());
+            const functionName = parts[0];
+            const args = parts.slice(1);
+            if (supportedFunctions.hasOwnProperty(functionName)) {
+                try {
+                    return supportedFunctions[functionName](...args);
+                }
+                catch (error) {
+                    console.error(`Error executing function '${functionName}' with args [${args.join(', ')}]:`, error);
+                    return match;
+                }
             }
-            catch (error) {
-                console.error(`Error executing function '${functionName}':`, error);
+            else {
+                console.warn(`Named function '${functionName}' not found`);
                 return match;
             }
         }
-        else {
-            console.warn(`Named function '${functionName}' not found`);
+        catch (parseError) {
+            console.error(`Error parsing expression '${content}':`, parseError);
             return match;
         }
     });
     return output;
 }
-console.log('With timezone (Asia/Tokyo):', supportedFunctions.dateTime('YYYYMMDDHHmmSS', 'Asia/Dubai'));
