@@ -78,28 +78,31 @@ const supportedFunctions: Record<string, SupportedFunctions> = {
  * sample_string_001929292192191
  */
 export function replaceWithFunction(template: string): string {
-  let output = template.replace(/\[(\w+)\]/g, (match, functionName) => {
-    if (supportedFunctions.hasOwnProperty(functionName)) {
-      try {
-        return supportedFunctions[functionName]();
-      } catch (error) {
-        console.error(`Error executing function '${functionName}':`, error);
-        return match; // Keep original placeholder on error
+  let output = template.replace(/\[([^\]]+)\]/g, (match, content) => {
+    try {
+      // Split by comma and trim whitespace
+      const parts = content.split(',').map((part: string) => part.trim());
+      const functionName = parts[0];
+      const args = parts.slice(1);
+
+      // Check if function exists
+      if (supportedFunctions.hasOwnProperty(functionName)) {
+        try {
+          // Call function with dynamic arguments
+          return supportedFunctions[functionName](...args);
+        } catch (error) {
+          console.error(`Error executing function '${functionName}' with args [${args.join(', ')}]:`, error);
+          return match; // Keep original placeholder on error
+        }
+      } else {
+        console.warn(`Named function '${functionName}' not found`);
+        return match; // Keep original placeholder if function not found
       }
-    } else {
-      console.warn(`Named function '${functionName}' not found`);
-      return match; // Keep original placeholder if function not found
+    } catch (parseError) {
+      console.error(`Error parsing expression '${content}':`, parseError);
+      return match; // Keep original placeholder on parse error
     }
   });
 
   return output;
 }
-
-// Usage examples:
-// console.log('Default format:', supportedFunctions.formatDateTime());
-// console.log('Custom format:', supportedFunctions.formatDateTime('YYYY-MMM-DD HH:mm:SS'));
-// console.log('With timezone (UTC):', supportedFunctions.formatDateTime('YYYY-MM-DD HH:mm:SS', 'UTC'));
-console.log('With timezone (Asia/Tokyo):', supportedFunctions.dateTime('YYYYMMDDHHmmSS', 'Asia/Dubai'));
-// console.log('European format:', supportedFunctions.formatDateTime('DD/MM/YYYY HH:mm'));
-// console.log('US format:', supportedFunctions.formatDateTime('MM/DD/YYYY hh:mm:SS A'));
-// console.log('ISO-like format:', supportedFunctions.formatDateTime('YYYY-MM-DDTHH:mm:SS'));
