@@ -1,20 +1,71 @@
-type SupportedFunctions = () => string;
+type SupportedFunctions = (...args: any[]) => string;
+
+function dateTime(format: string = 'YYYY-MM-DD-HHmmSS', timezone: string = 'UTC') {
+  const now = new Date();
+  let dateObj: Date;
+
+  if (timezone) {
+    // Use Intl.DateTimeFormat to get date components in the specified timezone
+    const formatter = new Intl.DateTimeFormat('en-CA', {
+      timeZone: timezone,
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false,
+    });
+
+    const parts = formatter.formatToParts(now);
+    const partValues: { [key: string]: string } = {};
+    parts.forEach((part) => {
+      partValues[part.type] = part.value;
+    });
+
+    // Create date object from parts
+    dateObj = new Date(
+      parseInt(partValues.year),
+      parseInt(partValues.month) - 1, // Month is 0-indexed
+      parseInt(partValues.day),
+      parseInt(partValues.hour),
+      parseInt(partValues.minute),
+      parseInt(partValues.second)
+    );
+  } else {
+    dateObj = now;
+  }
+
+  const formatTokens: Record<string, string> = {
+    YYYY: dateObj.getFullYear().toString(),
+    YY: dateObj.getFullYear().toString().slice(-2),
+    MM: (dateObj.getMonth() + 1).toString().padStart(2, '0'),
+    MMM: dateObj.toLocaleString('en', { month: 'short' }),
+    MMMM: dateObj.toLocaleString('en', { month: 'long' }),
+    DD: dateObj.getDate().toString().padStart(2, '0'),
+    HH: dateObj.getHours().toString().padStart(2, '0'),
+    hh: (dateObj.getHours() % 12 || 12).toString().padStart(2, '0'),
+    mm: dateObj.getMinutes().toString().padStart(2, '0'),
+    SS: dateObj.getSeconds().toString().padStart(2, '0'),
+    A: dateObj.getHours() >= 12 ? 'PM' : 'AM',
+    a: dateObj.getHours() >= 12 ? 'pm' : 'am',
+  };
+
+  let formattedDate = format;
+
+  // Sort by length (descending) to avoid partial replacements
+  const sortedTokens = Object.keys(formatTokens).sort((a, b) => b.length - a.length);
+
+  sortedTokens.forEach((token) => {
+    formattedDate = formattedDate.replace(new RegExp(token, 'g'), formatTokens[token]);
+  });
+
+  return formattedDate;
+}
 
 const supportedFunctions: Record<string, SupportedFunctions> = {
   timestamp: () => Date.now().toString(),
-  // withTimestamp: () => Date.now().toString(),
-  // timestamp: () => Date.now().toString(),
-  // date: () => new Date().toISOString().split('T')[0], // YYYY-MM-DD
-  // time: () => new Date().toTimeString().split(' ')[0].replace(/:/g, '-'), // HH-MM-SS
-  // uuid: () => generateUUID(),
-  // random: () => Math.random().toString(36).substring(2, 8),
-  // year: () => new Date().getFullYear().toString(),
-  // month: () => (new Date().getMonth() + 1).toString().padStart(2, '0'),
-  // day: () => new Date().getDate().toString().padStart(2, '0'),
-  // hour: () => new Date().getHours().toString().padStart(2, '0'),
-  // minute: () => new Date().getMinutes().toString().padStart(2, '0'),
-  // second: () => new Date().getSeconds().toString().padStart(2, '0'),
-  // dateTime: () => new Date().toISOString().replace(/[:.]/g, '-').replace('T', '_').slice(0, -5), // YYYY-MM-DD_HH-MM-SS
+  dateTime,
 };
 
 /**
@@ -43,3 +94,12 @@ export function replaceWithFunction(template: string): string {
 
   return output;
 }
+
+// Usage examples:
+// console.log('Default format:', supportedFunctions.formatDateTime());
+// console.log('Custom format:', supportedFunctions.formatDateTime('YYYY-MMM-DD HH:mm:SS'));
+// console.log('With timezone (UTC):', supportedFunctions.formatDateTime('YYYY-MM-DD HH:mm:SS', 'UTC'));
+console.log('With timezone (Asia/Tokyo):', supportedFunctions.dateTime('YYYYMMDDHHmmSS', 'Asia/Dubai'));
+// console.log('European format:', supportedFunctions.formatDateTime('DD/MM/YYYY HH:mm'));
+// console.log('US format:', supportedFunctions.formatDateTime('MM/DD/YYYY hh:mm:SS A'));
+// console.log('ISO-like format:', supportedFunctions.formatDateTime('YYYY-MM-DDTHH:mm:SS'));
