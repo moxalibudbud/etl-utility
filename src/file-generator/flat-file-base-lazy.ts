@@ -24,7 +24,7 @@ export class FlatFileBaseLazy {
     this.writeStream = createWriteStream(this.filepath);
 
     const onOpen = () => {
-      chmod(this.filepath, 0o775, (err) => {
+      chmod(this.filepath, 0o777, (err) => {
         if (err) {
           console.error(`Failed to set permissions on ${this.filepath}:`, err);
         }
