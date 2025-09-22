@@ -1,4 +1,4 @@
-import { createWriteStream, WriteStream, unlink, existsSync } from 'fs';
+import { createWriteStream, WriteStream, unlink, existsSync, chmod } from 'fs';
 import { SourceLine } from '../line-data';
 
 export type FlatFileBaseLazyOptions = {
@@ -22,6 +22,17 @@ export class FlatFileBaseLazy {
 
   createStream() {
     this.writeStream = createWriteStream(this.filepath);
+
+    const onOpen = () => {
+      chmod(this.filepath, 0o775, (err) => {
+        if (err) {
+          console.error(`Failed to set permissions on ${this.filepath}:`, err);
+        }
+      });
+      this.writeStream?.off('open', onOpen); // detach after first run
+    };
+
+    this.writeStream.on('open', onOpen);
   }
 
   createHeader(header: string) {

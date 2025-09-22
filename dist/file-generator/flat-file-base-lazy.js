@@ -10,6 +10,16 @@ class FlatFileBaseLazy {
     }
     createStream() {
         this.writeStream = (0, fs_1.createWriteStream)(this.filepath);
+        const onOpen = () => {
+            var _a;
+            (0, fs_1.chmod)(this.filepath, 0o775, (err) => {
+                if (err) {
+                    console.error(`Failed to set permissions on ${this.filepath}:`, err);
+                }
+            });
+            (_a = this.writeStream) === null || _a === void 0 ? void 0 : _a.off('open', onOpen);
+        };
+        this.writeStream.on('open', onOpen);
     }
     createHeader(header) {
         if (this.writeStream) {
