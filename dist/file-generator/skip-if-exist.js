@@ -12,12 +12,13 @@ class SkipIfExistGenerator extends flat_file_base_lazy_1.FlatFileBaseLazy {
         super(options);
         this.rowReferences = new Set();
         this.options = options;
+        this.fileHierarchicalManager = (0, utils_1.fileHierarchicalManager)();
         this.loadIndex();
     }
     loadIndex() {
         try {
             console.log('Loading index...');
-            const indexArray = JSON.parse(fs_1.default.readFileSync(this.options.indexFile, 'utf8'));
+            const indexArray = JSON.parse(fs_1.default.readFileSync(this.options.indexFile || utils_1.FILE_HIERARCHICAL_INDEX_DIRECTORY, 'utf8'));
             this.rowReferences = new Set(indexArray);
             console.log(`Loaded ${indexArray.length} SKUs into memory.`);
             return this.rowReferences;
@@ -71,9 +72,7 @@ class SkipIfExistGenerator extends flat_file_base_lazy_1.FlatFileBaseLazy {
         return line.isHeader ? row : '\n' + row;
     }
     isRowExist({ jsonLine }) {
-        if (this.options.uniqueKey) {
-            return !!this.rowReferences.has(jsonLine[this.options.uniqueKey]);
-        }
+        return !!this.rowReferences.has(jsonLine[this.options.uniqueKey]);
     }
     push(sourceLine) {
         var _a;

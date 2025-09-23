@@ -1,6 +1,6 @@
 import path from 'path';
 import { ETL } from '../../../../etl';
-import { DefaultGenerator } from '../../../../file-generator/default-generator';
+import { SkipIfExistGenerator } from '../../../../file-generator';
 import * as config from './asn.octoplus';
 
 async function run(etl: any) {
@@ -20,5 +20,10 @@ const etlOptions = {
   destinationContainer: 'xxx',
   etlType: 'xxx',
 };
-const etl = new ETL(etlOptions, new DefaultGenerator(config.output));
+const options = {
+  ...config.output,
+  uniqueKey: 'SKU',
+  indexFile: '/Users/john/Projects/etl-utility/.devdata/sku_index.json',
+};
+const etl = new ETL(etlOptions, new SkipIfExistGenerator(options));
 run(etl);

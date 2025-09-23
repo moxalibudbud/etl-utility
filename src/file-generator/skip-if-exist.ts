@@ -2,30 +2,35 @@ import fs from 'fs';
 import { FlatFileBaseLazy, FlatFileBaseLazyMethods, FlatFileBaseLazyOptions } from './flat-file-base-lazy';
 import { SourceLine } from '../line-data';
 import { LineOutputOptions } from '../line-data/line-output';
-import { buildLineFromLineKeys } from '../utils';
+import { buildLineFromLineKeys, FILE_HIERARCHICAL_INDEX_DIRECTORY, fileHierarchicalManager } from '../utils';
 import { replaceWithFunction } from '../utils/replace-with-function';
 import { replaceWithMap } from '../utils/replace-with-map';
 
 type SkipIfExistGeneratorOptions = FlatFileBaseLazyOptions &
   Omit<LineOutputOptions, 'uniqueKey'> &
   Required<Pick<LineOutputOptions, 'uniqueKey'>> & {
-    indexFile: string;
+    indexFile?: string;
   };
 
 export class SkipIfExistGenerator extends FlatFileBaseLazy implements FlatFileBaseLazyMethods {
   options: SkipIfExistGeneratorOptions;
   rowReferences = new Set<number | string>();
+  fileHierarchicalManager?: any;
 
   constructor(options: SkipIfExistGeneratorOptions) {
     super(options);
     this.options = options;
+
+    this.fileHierarchicalManager = fileHierarchicalManager();
     this.loadIndex();
   }
 
   loadIndex() {
     try {
       console.log('Loading index...');
-      const indexArray = JSON.parse(fs.readFileSync(this.options.indexFile, 'utf8'));
+      const indexArray = JSON.parse(
+        fs.readFileSync(this.options.indexFile || FILE_HIERARCHICAL_INDEX_DIRECTORY, 'utf8')
+      );
       this.rowReferences = new Set(indexArray);
       console.log(`Loaded ${indexArray.length} SKUs into memory.`);
       return this.rowReferences;
@@ -87,9 +92,7 @@ export class SkipIfExistGenerator extends FlatFileBaseLazy implements FlatFileBa
   }
 
   isRowExist({ jsonLine }: SourceLine) {
-    if (this.options.uniqueKey) {
-      return !!this.rowReferences.has(jsonLine[this.options.uniqueKey]);
-    }
+    return !!this.rowReferences.has(jsonLine[this.options.uniqueKey]);
   }
 
   push(sourceLine: SourceLine) {

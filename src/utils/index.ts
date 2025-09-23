@@ -4,4 +4,4 @@ export * from './map';
 export * from './line-validator';
 export * from './line-builder-from-columns';
 export * from './line-builder-from-line-keys';
-export * from './hierarchical-sku-manager';
+export * from './file-hierarchical-manager';
