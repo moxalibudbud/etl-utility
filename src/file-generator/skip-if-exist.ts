@@ -1,3 +1,4 @@
+import fs from 'fs';
 import { FlatFileBaseLazy, FlatFileBaseLazyMethods, FlatFileBaseLazyOptions } from './flat-file-base-lazy';
 import { SourceLine } from '../line-data';
 import { LineOutputOptions } from '../line-data/line-output';
@@ -5,16 +6,33 @@ import { buildLineFromLineKeys } from '../utils';
 import { replaceWithFunction } from '../utils/replace-with-function';
 import { replaceWithMap } from '../utils/replace-with-map';
 
+type SkipIfExistGeneratorOptions = FlatFileBaseLazyOptions &
+  Omit<LineOutputOptions, 'uniqueKey'> &
+  Required<Pick<LineOutputOptions, 'uniqueKey'>> & {
+    indexFile: string;
+  };
+
 export class SkipIfExistGenerator extends FlatFileBaseLazy implements FlatFileBaseLazyMethods {
-  options: FlatFileBaseLazyOptions & LineOutputOptions;
+  options: SkipIfExistGeneratorOptions;
   rowReferences = new Set<number | string>();
 
-  constructor(options: FlatFileBaseLazyOptions & LineOutputOptions) {
+  constructor(options: SkipIfExistGeneratorOptions) {
     super(options);
-
-    // TODO: Populate references here
-
     this.options = options;
+    this.loadIndex();
+  }
+
+  loadIndex() {
+    try {
+      console.log('Loading index...');
+      const indexArray = JSON.parse(fs.readFileSync(this.options.indexFile, 'utf8'));
+      this.rowReferences = new Set(indexArray);
+      console.log(`Loaded ${indexArray.length} SKUs into memory.`);
+      return this.rowReferences;
+    } catch (error) {
+      console.error('Error loading SKU index:', error);
+      throw new Error('SKU index not found. Please build index first.');
+    }
   }
 
   setFilename(line: SourceLine) {
