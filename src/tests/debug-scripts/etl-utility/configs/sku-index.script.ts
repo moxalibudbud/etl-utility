@@ -1,6 +1,6 @@
 import path from 'path';
 import { ETL } from '../../../../etl';
-import { SkipIfExistGenerator } from '../../../../file-generator';
+import { FileHierarchicalIndexGenerator } from '../../../../file-generator';
 import * as config from './asn.octoplus';
 
 async function run(etl: any) {
@@ -23,7 +23,8 @@ const etlOptions = {
 const options = {
   ...config.output,
   uniqueKey: 'SKU',
-  indexFile: '/var/tmp/sku_index.json',
+  indexDir: '/var/tmp/sku-hierarchical-index',
 };
-const etl = new ETL(etlOptions, new SkipIfExistGenerator(options));
+const fileGenerator = new FileHierarchicalIndexGenerator(options);
+const etl = new ETL(etlOptions, fileGenerator);
 run(etl);
