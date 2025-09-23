@@ -20,8 +20,8 @@ export class FlatFileBaseLazy {
     this.path = options?.path ? options.path : '/var/tmp';
   }
 
-  createStream() {
-    this.writeStream = createWriteStream(this.filepath);
+  createStream(options: { flags?: 'a' | 'w' } = { flags: 'a' }) {
+    this.writeStream = createWriteStream(this.filepath, options);
 
     const onOpen = () => {
       chmod(this.filepath, 0o777, (err) => {
