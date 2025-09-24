@@ -1,32 +1,15 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.SkipIfExistGenerator = void 0;
-const tslib_1 = require("tslib");
-const fs_1 = tslib_1.__importDefault(require("fs"));
+exports.PushIfExistGenerator = void 0;
 const flat_file_base_lazy_1 = require("./flat-file-base-lazy");
 const utils_1 = require("../utils");
 const replace_with_function_1 = require("../utils/replace-with-function");
 const replace_with_map_1 = require("../utils/replace-with-map");
-class SkipIfExistGenerator extends flat_file_base_lazy_1.FlatFileBaseLazy {
+class PushIfExistGenerator extends flat_file_base_lazy_1.FlatFileBaseLazy {
     constructor(options) {
         super(options);
-        this.rowReferences = new Set();
+        this.rowReferences = options.rowReferences;
         this.options = options;
-        this.fileHierarchicalManager = (0, utils_1.fileHierarchicalManager)();
-        this.loadIndex();
-    }
-    loadIndex() {
-        try {
-            console.log('Loading index...');
-            const indexArray = JSON.parse(fs_1.default.readFileSync(this.options.indexFile || utils_1.FILE_HIERARCHICAL_INDEX_DIRECTORY, 'utf8'));
-            this.rowReferences = new Set(indexArray);
-            console.log(`Loaded ${indexArray.length} SKUs into memory.`);
-            return this.rowReferences;
-        }
-        catch (error) {
-            console.error('Error loading SKU index:', error);
-            throw new Error('SKU index not found. Please build index first.');
-        }
     }
     setFilename(line) {
         const { filename } = this.options;
@@ -83,10 +66,10 @@ class SkipIfExistGenerator extends flat_file_base_lazy_1.FlatFileBaseLazy {
             this.createStream();
             this.pushHeader(sourceLine);
         }
-        if (this.isRowExist(sourceLine))
-            return;
-        const row = this.buildRow(sourceLine);
-        (_a = this.writeStream) === null || _a === void 0 ? void 0 : _a.write(row);
+        if (this.isRowExist(sourceLine)) {
+            const row = this.buildRow(sourceLine);
+            (_a = this.writeStream) === null || _a === void 0 ? void 0 : _a.write(row);
+        }
     }
 }
-exports.SkipIfExistGenerator = SkipIfExistGenerator;
+exports.PushIfExistGenerator = PushIfExistGenerator;

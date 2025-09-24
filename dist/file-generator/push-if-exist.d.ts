@@ -1,15 +1,14 @@
 import { FlatFileBaseLazy, FlatFileBaseLazyMethods, FlatFileBaseLazyOptions } from './flat-file-base-lazy';
 import { SourceLine } from '../line-data';
 import { LineOutputOptions } from '../line-data/line-output';
-type SkipIfExistGeneratorOptions = FlatFileBaseLazyOptions & Omit<LineOutputOptions, 'uniqueKey'> & Required<Pick<LineOutputOptions, 'uniqueKey'>> & {
+type PushIfExistGeneratorOptions = FlatFileBaseLazyOptions & Omit<LineOutputOptions, 'uniqueKey'> & Required<Pick<LineOutputOptions, 'uniqueKey'>> & {
     indexFile?: string;
-};
-export declare class SkipIfExistGenerator extends FlatFileBaseLazy implements FlatFileBaseLazyMethods {
-    options: SkipIfExistGeneratorOptions;
     rowReferences: Set<string | number>;
-    fileHierarchicalManager?: any;
-    constructor(options: SkipIfExistGeneratorOptions);
-    loadIndex(): Set<string | number>;
+};
+export declare class PushIfExistGenerator extends FlatFileBaseLazy implements FlatFileBaseLazyMethods {
+    options: PushIfExistGeneratorOptions;
+    rowReferences: Set<string | number>;
+    constructor(options: PushIfExistGeneratorOptions);
     setFilename(line: SourceLine): void;
     pushFooter(): void;
     pushHeader(line: SourceLine): void;

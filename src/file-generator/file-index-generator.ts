@@ -1,49 +1,24 @@
-import fs from 'fs';
+import path from 'path';
 import { FlatFileBaseLazy, FlatFileBaseLazyMethods, FlatFileBaseLazyOptions } from './flat-file-base-lazy';
 import { SourceLine } from '../line-data';
 import { LineOutputOptions } from '../line-data/line-output';
-import { fileHierarchicalManager, buildLineFromLineKeys } from '../utils';
+import { buildLineFromLineKeys } from '../utils';
 import { replaceWithFunction } from '../utils/replace-with-function';
 import { replaceWithMap } from '../utils/replace-with-map';
-import path from 'path';
 
-type FileHierarchicalIndexGeneratorOptions = FlatFileBaseLazyOptions &
-  Omit<LineOutputOptions, 'uniqueKey'> &
-  Required<Pick<LineOutputOptions, 'uniqueKey'>> & {
-    indexFile: string;
-    indexDir: string;
-  };
+type FileIndexGeneratorOptions = FlatFileBaseLazyOptions &
+  Omit<LineOutputOptions, 'uniqueKey' | 'indexFile' | 'rowReferences'> &
+  Required<Pick<LineOutputOptions, 'uniqueKey' | 'indexFile' | 'rowReferences'>>;
 
-export class FileHierarchicalIndexGenerator extends FlatFileBaseLazy implements FlatFileBaseLazyMethods {
-  options: FileHierarchicalIndexGeneratorOptions;
-  rowReferences = new Set<number | string>();
-  fileHierarchicalManager?: any;
+export class FileIndexGenerator extends FlatFileBaseLazy implements FlatFileBaseLazyMethods {
+  options: FileIndexGeneratorOptions;
+  rowReferences: Set<string | number>;
 
-  constructor(options: FileHierarchicalIndexGeneratorOptions) {
+  constructor(options: FileIndexGeneratorOptions) {
     options.path = path.dirname(options.indexFile);
     super(options);
     this.options = options;
-    this.fileHierarchicalManager = fileHierarchicalManager(options.indexDir);
-    this.loadIndex();
-  }
-
-  loadIndex() {
-    try {
-      if (!fs.existsSync(this.options.indexFile)) return;
-
-      console.log('Loading index...');
-      const content = fs.readFileSync(this.options.indexFile, 'utf8');
-      const indexArray = content
-        .split(/\r?\n/)
-        .map((line) => line.trim())
-        .filter(Boolean);
-
-      this.rowReferences = new Set(indexArray);
-      console.log(`Loaded ${indexArray.length} SKUs into memory.`);
-    } catch (error) {
-      console.error('Error loading SKU index:', error);
-      throw new Error('SKU index not found. Please build index first.');
-    }
+    this.rowReferences = options.rowReferences;
   }
 
   setFilename(line: SourceLine) {
@@ -83,17 +58,11 @@ export class FileHierarchicalIndexGenerator extends FlatFileBaseLazy implements 
 
     // Only append new line for incoming row.
     // This will prevent an empty row in the file
-    return line.currentLineNumber == 2 ? row : '\n' + row;
+    return '\n' + row;
   }
 
   isRowExist({ jsonLine }: SourceLine) {
     return !!this.rowReferences.has(jsonLine[this.options.uniqueKey]);
-  }
-
-  createIndexReference({ jsonLine }: SourceLine) {
-    const key = jsonLine[this.options.uniqueKey];
-    const indexPath = this.fileHierarchicalManager.createDirectoryStructure(key);
-    fs.writeFileSync(indexPath, '.', 'utf-8');
   }
 
   push(sourceLine: SourceLine) {
@@ -102,13 +71,10 @@ export class FileHierarchicalIndexGenerator extends FlatFileBaseLazy implements 
     }
 
     if (!this.writeStream) {
-      this.createStream({ flags: 'a' });
+      this.createStream({ flags: 'w' });
     }
 
     if (this.isRowExist(sourceLine)) return;
-
-    // Push hierarchy index file reference
-    this.createIndexReference(sourceLine);
 
     // Update set references
     this.trackReference(sourceLine);

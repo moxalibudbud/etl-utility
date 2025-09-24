@@ -1,3 +1,3 @@
 export { DefaultGenerator } from './default-generator';
-export { SkipIfExistGenerator } from './skip-if-exist';
-export { FileHierarchicalIndexGenerator } from './file-hierarchical-index-generator';
+export { PushIfExistGenerator } from './push-if-exist';
+export { FileIndexGenerator } from './file-index-generator';

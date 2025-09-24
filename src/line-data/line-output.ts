@@ -14,6 +14,18 @@ type LineOutputBase = {
   // If provided. The ETL will skip a row if the given key already exist in the output.
   // This will only work if source data is object
   uniqueKey?: string;
+
+  // Cache file for unique references
+  indexFile?: string;
+
+  // Unique references holder.
+  // Scenario 1: This is used with combination of uniqueKey. If the outout file must produce unique row based on column value.
+  //             Example. if uniqueKey exists in rowReferences then don't repush line
+
+  // Scenario 2: This is used with combination of indexFile. If the outout file must produce new row based on column value.
+  //             We load the references from indexFile and load to this variable.
+  //             Example. if uniqueKey exists in rowReferences then repush line
+  rowReferences?: Set<string | number>;
 };
 
 export type LineOutputOptions = LineOutputBase;

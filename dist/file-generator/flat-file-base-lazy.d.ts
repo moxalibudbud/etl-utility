@@ -13,7 +13,9 @@ export declare class FlatFileBaseLazy {
     path: string;
     writeStream?: WriteStream;
     constructor(options: FlatFileBaseLazyOptions);
-    createStream(): void;
+    createStream(options?: {
+        flags?: 'a' | 'w';
+    }): void;
     createHeader(header: string): void;
     end(): Promise<unknown>;
     delete(): Promise<unknown>;

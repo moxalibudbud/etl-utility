@@ -1,10 +1,31 @@
 import path from 'path';
 import { ETL } from '../../../../etl';
-import { FileHierarchicalIndexGenerator } from '../../../../file-generator';
+import { FileIndexGenerator } from '../../../../file-generator';
 import * as config from './sku-index';
+import { loadIndexAsSetAsync } from '../../../../utils';
 
-async function run(etl: any) {
+async function run() {
   try {
+    const etlOptions = {
+      filesource: {
+        file: path.resolve('/var/tmp', 'xI_SKU_1757590395045.csv'),
+      },
+      line: config.line,
+      destinationContainer: 'xxx',
+      etlType: 'xxx',
+    };
+
+    const indexFile = path.resolve('/var/tmp/', config.output.filename as string);
+    const rowReferences = await getReferences(indexFile);
+    const options = {
+      ...config.output,
+      uniqueKey: 'CODE_ARTICLE',
+      indexFile,
+      rowReferences,
+    };
+    const fileGenerator = new FileIndexGenerator(options);
+    const etl = new ETL(etlOptions, fileGenerator);
+
     const result = await etl.process();
     console.log(result);
   } catch (error) {
@@ -12,20 +33,9 @@ async function run(etl: any) {
   }
 }
 
-const etlOptions = {
-  filesource: {
-    file: path.resolve('/var/tmp', 'I_SKU_1757595791894.csv'),
-  },
-  line: config.line,
-  destinationContainer: 'xxx',
-  etlType: 'xxx',
-};
-const options = {
-  ...config.output,
-  uniqueKey: 'CODE_ARTICLE',
-  indexDir: '/var/tmp/sku-hierarchical-index',
-  indexFile: '/var/tmp/sku-hierarchical-index/' + config.output.filename,
-};
-const fileGenerator = new FileHierarchicalIndexGenerator(options);
-const etl = new ETL(etlOptions, fileGenerator);
-run(etl);
+async function getReferences(indexPath: string) {
+  const skuIndexSet = await loadIndexAsSetAsync(indexPath);
+  return skuIndexSet;
+}
+
+run();

@@ -8,6 +8,8 @@ import path from 'path';
 // console.log(path); // /srv/AB/CD/EF/12/30/ABCDEF123
 
 export const FILE_HIERARCHICAL_INDEX_DIRECTORY = '/var/tmp/file-hierarchical-index';
+export const FILE_HIERARCHICAL_INDEX_FILE = '/var/tmp/file-hierarchical-index/file-index.dat';
+
 /**
  *
  * @param basePath - Directory where the indexes will be saved. Default /var/tmp/file-hierarchical-index

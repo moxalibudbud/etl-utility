@@ -8,6 +8,8 @@ type LineOutputBase = {
     footer?: string | (() => string);
     template?: string | ((line: SourceLine) => string);
     uniqueKey?: string;
+    indexFile?: string;
+    rowReferences?: Set<string | number>;
 };
 export type LineOutputOptions = LineOutputBase;
 export {};
