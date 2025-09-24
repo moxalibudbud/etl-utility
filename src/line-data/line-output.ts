@@ -1,5 +1,7 @@
 import { SourceLine } from './source-line';
 
+export type FileGeneratorValues = 'default-generator' | 'push-if-exist' | 'file-index-generator';
+
 type LineOutputBase = {
   filename: string | ((line: SourceLine) => string) | { template: string };
   separator: string;
@@ -27,7 +29,7 @@ type LineOutputBase = {
   //             Example. if uniqueKey exists in rowReferences then repush line
   rowReferences?: Set<string | number>;
 
-  fileGenerator?: 'default-generator' | 'push-if-exist' | 'file-index-generator';
+  fileGenerator?: FileGeneratorValues;
 };
 
 export type LineOutputOptions = LineOutputBase;

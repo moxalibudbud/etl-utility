@@ -21,7 +21,8 @@ function run() {
             const rowReferences = yield getReferences(indexFile);
             const options = Object.assign(Object.assign({}, config.output), { uniqueKey: 'SKU', indexFile,
                 rowReferences });
-            const etl = new etl_1.ETL(etlOptions, new file_generator_1.PushIfExistGenerator(options));
+            const PushIfExistGenerator = (0, file_generator_1.FileGeneratorFactory)('push-if-exist');
+            const etl = new etl_1.ETL(etlOptions, new PushIfExistGenerator(options));
             const result = yield etl.process();
             console.log(result);
         }

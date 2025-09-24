@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import { ETL } from '../../../../etl';
-import { PushIfExistGenerator } from '../../../../file-generator';
+import { FileGeneratorFactory } from '../../../../file-generator';
 import * as config from './asn.octoplus';
 import { loadIndexAsSetAsync } from '../../../../utils';
 
@@ -24,6 +24,8 @@ async function run() {
       indexFile,
       rowReferences,
     };
+
+    const PushIfExistGenerator = FileGeneratorFactory('push-if-exist');
     const etl = new ETL(etlOptions, new PushIfExistGenerator(options));
 
     const result = await etl.process();
