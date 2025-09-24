@@ -1,3 +1,7 @@
 import { FileGeneratorValues } from '../line-data';
-import { DefaultGenerator, FileIndexGenerator, PushIfExistGenerator } from '.';
-export declare const FileGeneratorFactory: (fileGenerator: FileGeneratorValues) => typeof DefaultGenerator | typeof PushIfExistGenerator | typeof FileIndexGenerator;
+import { DefaultGenerator } from './default-generator';
+import { PushIfExistGenerator } from './push-if-exist';
+import { FileIndexGenerator } from './file-index-generator';
+export declare function FileGeneratorFactory(fileGenerator: 'push-if-exist'): typeof PushIfExistGenerator;
+export declare function FileGeneratorFactory(fileGenerator: 'file-index-generator'): typeof FileIndexGenerator;
+export declare function FileGeneratorFactory(fileGenerator?: FileGeneratorValues): typeof DefaultGenerator;
