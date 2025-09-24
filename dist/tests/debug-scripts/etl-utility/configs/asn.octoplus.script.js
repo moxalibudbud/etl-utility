@@ -17,7 +17,7 @@ function run() {
                 destinationContainer: 'xxx',
                 etlType: 'xxx',
             };
-            const indexFile = '/var/tmp/sku_index.dat';
+            const indexFile = '/var/tmp/sku-index.dat';
             const rowReferences = yield getReferences(indexFile);
             const options = Object.assign(Object.assign({}, config.output), { uniqueKey: 'SKU', indexFile,
                 rowReferences });

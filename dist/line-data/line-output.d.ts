@@ -10,6 +10,7 @@ type LineOutputBase = {
     uniqueKey?: string;
     indexFile?: string;
     rowReferences?: Set<string | number>;
+    fileGenerator?: 'default-generator' | 'push-if-exist' | 'file-index-generator';
 };
 export type LineOutputOptions = LineOutputBase;
 export {};

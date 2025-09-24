@@ -16,7 +16,7 @@ async function run() {
       etlType: 'xxx',
     };
 
-    const indexFile = '/var/tmp/sku_index.dat';
+    const indexFile = '/var/tmp/sku-index.dat';
     const rowReferences = await getReferences(indexFile);
     const options = {
       ...config.output,

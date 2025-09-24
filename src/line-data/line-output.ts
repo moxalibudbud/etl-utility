@@ -26,6 +26,8 @@ type LineOutputBase = {
   //             We load the references from indexFile and load to this variable.
   //             Example. if uniqueKey exists in rowReferences then repush line
   rowReferences?: Set<string | number>;
+
+  fileGenerator?: 'default-generator' | 'push-if-exist' | 'file-index-generator';
 };
 
 export type LineOutputOptions = LineOutputBase;
