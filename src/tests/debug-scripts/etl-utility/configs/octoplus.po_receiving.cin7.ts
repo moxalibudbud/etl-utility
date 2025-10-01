@@ -52,7 +52,9 @@ export const line: LineSourceBaseOptions = {
 };
 
 export const output: LineOutputOptions = {
-  filename: 'cin7-po-receving.json',
+  filename: {
+    template: '{parentExternalReference}-cin7-po-receving.json',
+  },
   template:
     '{"Date": "{receiptDate}", "Quantity": "{controlQuantityProcessed}", "SKU": "{skuCode}", "Location": "{toSiteCode}", "Received": false}',
   header: '{"TaskID": "{globalExternalReference}", "Status": "AUTHORISED"}',
