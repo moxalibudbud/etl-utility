@@ -1,54 +1,45 @@
 type SupportedFunctions = (...args: any[]) => string;
 
-function dateTime(format: string = 'YYYY-MM-DD-HHmmSS', timezone: string = 'UTC') {
+function dateTime(format: string = 'YYYY-MM-DDTHH:mm:ssZ', timezone: string = 'UTC') {
   const now = new Date();
-  let dateObj: Date;
 
-  if (timezone) {
-    // Use Intl.DateTimeFormat to get date components in the specified timezone
-    const formatter = new Intl.DateTimeFormat('en-CA', {
-      timeZone: timezone,
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit',
-      hour12: false,
-    });
+  // Use Intl.DateTimeFormat to get date components in the specified timezone
+  const formatter = new Intl.DateTimeFormat('en-CA', {
+    timeZone: timezone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false,
+  });
 
-    const parts = formatter.formatToParts(now);
-    const partValues: { [key: string]: string } = {};
-    parts.forEach((part) => {
-      partValues[part.type] = part.value;
-    });
+  const parts = formatter.formatToParts(now);
+  const partValues: { [key: string]: string } = {};
+  parts.forEach((part) => {
+    partValues[part.type] = part.value;
+  });
 
-    // Create date object from parts
-    dateObj = new Date(
-      parseInt(partValues.year),
-      parseInt(partValues.month) - 1, // Month is 0-indexed
-      parseInt(partValues.day),
-      parseInt(partValues.hour),
-      parseInt(partValues.minute),
-      parseInt(partValues.second)
-    );
-  } else {
-    dateObj = now;
-  }
+  // Get milliseconds from the original date
+  const ms = now.getMilliseconds();
 
   const formatTokens: Record<string, string> = {
-    YYYY: dateObj.getFullYear().toString(),
-    YY: dateObj.getFullYear().toString().slice(-2),
-    MM: (dateObj.getMonth() + 1).toString().padStart(2, '0'),
-    MMM: dateObj.toLocaleString('en', { month: 'short' }),
-    MMMM: dateObj.toLocaleString('en', { month: 'long' }),
-    DD: dateObj.getDate().toString().padStart(2, '0'),
-    HH: dateObj.getHours().toString().padStart(2, '0'),
-    hh: (dateObj.getHours() % 12 || 12).toString().padStart(2, '0'),
-    mm: dateObj.getMinutes().toString().padStart(2, '0'),
-    SS: dateObj.getSeconds().toString().padStart(2, '0'),
-    A: dateObj.getHours() >= 12 ? 'PM' : 'AM',
-    a: dateObj.getHours() >= 12 ? 'pm' : 'am',
+    YYYY: partValues.year,
+    YY: partValues.year.slice(-2),
+    MM: partValues.month,
+    MMM: new Date(now).toLocaleString('en', { month: 'short', timeZone: timezone }),
+    MMMM: new Date(now).toLocaleString('en', { month: 'long', timeZone: timezone }),
+    DD: partValues.day,
+    HH: partValues.hour,
+    hh: (parseInt(partValues.hour) % 12 || 12).toString().padStart(2, '0'),
+    mm: partValues.minute,
+    ss: partValues.second,
+    SSS: ms.toString().padStart(3, '0'),
+    SS: partValues.second, // Keep for backward compatibility
+    A: parseInt(partValues.hour) >= 12 ? 'PM' : 'AM',
+    a: parseInt(partValues.hour) >= 12 ? 'pm' : 'am',
+    Z: timezone === 'UTC' ? 'Z' : '', // Simplified - could be enhanced with offset calculation
   };
 
   let formattedDate = format;
