@@ -8,6 +8,10 @@ export interface FlatFileBaseLazyMethods {
     setFilename(line: SourceLine): any;
     pushFooter(): void;
 }
+export interface JSONOutput {
+    buildFinalJSON(): void;
+    pushFinalJSON(): void;
+}
 export declare class FlatFileBaseLazy {
     private _filename;
     path: string;

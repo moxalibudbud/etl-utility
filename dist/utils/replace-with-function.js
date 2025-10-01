@@ -1,43 +1,40 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.replaceWithFunction = replaceWithFunction;
-function dateTime(format = 'YYYY-MM-DD-HHmmSS', timezone = 'UTC') {
+function dateTime(format = 'YYYY-MM-DDTHH:mm:ssZ', timezone = 'UTC') {
     const now = new Date();
-    let dateObj;
-    if (timezone) {
-        const formatter = new Intl.DateTimeFormat('en-CA', {
-            timeZone: timezone,
-            year: 'numeric',
-            month: '2-digit',
-            day: '2-digit',
-            hour: '2-digit',
-            minute: '2-digit',
-            second: '2-digit',
-            hour12: false,
-        });
-        const parts = formatter.formatToParts(now);
-        const partValues = {};
-        parts.forEach((part) => {
-            partValues[part.type] = part.value;
-        });
-        dateObj = new Date(parseInt(partValues.year), parseInt(partValues.month) - 1, parseInt(partValues.day), parseInt(partValues.hour), parseInt(partValues.minute), parseInt(partValues.second));
-    }
-    else {
-        dateObj = now;
-    }
+    const formatter = new Intl.DateTimeFormat('en-CA', {
+        timeZone: timezone,
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false,
+    });
+    const parts = formatter.formatToParts(now);
+    const partValues = {};
+    parts.forEach((part) => {
+        partValues[part.type] = part.value;
+    });
+    const ms = now.getMilliseconds();
     const formatTokens = {
-        YYYY: dateObj.getFullYear().toString(),
-        YY: dateObj.getFullYear().toString().slice(-2),
-        MM: (dateObj.getMonth() + 1).toString().padStart(2, '0'),
-        MMM: dateObj.toLocaleString('en', { month: 'short' }),
-        MMMM: dateObj.toLocaleString('en', { month: 'long' }),
-        DD: dateObj.getDate().toString().padStart(2, '0'),
-        HH: dateObj.getHours().toString().padStart(2, '0'),
-        hh: (dateObj.getHours() % 12 || 12).toString().padStart(2, '0'),
-        mm: dateObj.getMinutes().toString().padStart(2, '0'),
-        SS: dateObj.getSeconds().toString().padStart(2, '0'),
-        A: dateObj.getHours() >= 12 ? 'PM' : 'AM',
-        a: dateObj.getHours() >= 12 ? 'pm' : 'am',
+        YYYY: partValues.year,
+        YY: partValues.year.slice(-2),
+        MM: partValues.month,
+        MMM: new Date(now).toLocaleString('en', { month: 'short', timeZone: timezone }),
+        MMMM: new Date(now).toLocaleString('en', { month: 'long', timeZone: timezone }),
+        DD: partValues.day,
+        HH: partValues.hour,
+        hh: (parseInt(partValues.hour) % 12 || 12).toString().padStart(2, '0'),
+        mm: partValues.minute,
+        ss: partValues.second,
+        SSS: ms.toString().padStart(3, '0'),
+        SS: partValues.second,
+        A: parseInt(partValues.hour) >= 12 ? 'PM' : 'AM',
+        a: parseInt(partValues.hour) >= 12 ? 'pm' : 'am',
+        Z: timezone === 'UTC' ? 'Z' : '',
     };
     let formattedDate = format;
     const sortedTokens = Object.keys(formatTokens).sort((a, b) => b.length - a.length);

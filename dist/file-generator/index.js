@@ -1,11 +1,13 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.FileGeneratorFactory = exports.FileIndexGenerator = exports.PushIfExistGenerator = exports.DefaultGenerator = void 0;
+exports.JSONGenerator = exports.FileIndexGenerator = exports.PushIfExistGenerator = exports.DefaultGenerator = exports.FileGeneratorFactory = void 0;
+var file_generator_factory_1 = require("./file-generator-factory");
+Object.defineProperty(exports, "FileGeneratorFactory", { enumerable: true, get: function () { return file_generator_factory_1.FileGeneratorFactory; } });
 var default_generator_1 = require("./default-generator");
 Object.defineProperty(exports, "DefaultGenerator", { enumerable: true, get: function () { return default_generator_1.DefaultGenerator; } });
 var push_if_exist_1 = require("./push-if-exist");
 Object.defineProperty(exports, "PushIfExistGenerator", { enumerable: true, get: function () { return push_if_exist_1.PushIfExistGenerator; } });
 var file_index_generator_1 = require("./file-index-generator");
 Object.defineProperty(exports, "FileIndexGenerator", { enumerable: true, get: function () { return file_index_generator_1.FileIndexGenerator; } });
-var file_generator_factory_1 = require("./file-generator-factory");
-Object.defineProperty(exports, "FileGeneratorFactory", { enumerable: true, get: function () { return file_generator_factory_1.FileGeneratorFactory; } });
+var json_generator_1 = require("./json-generator");
+Object.defineProperty(exports, "JSONGenerator", { enumerable: true, get: function () { return json_generator_1.JSONGenerator; } });

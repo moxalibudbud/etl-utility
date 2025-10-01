@@ -1,4 +1,5 @@
+export { FileGeneratorFactory } from './file-generator-factory';
 export { DefaultGenerator } from './default-generator';
 export { PushIfExistGenerator } from './push-if-exist';
 export { FileIndexGenerator } from './file-index-generator';
-export { FileGeneratorFactory } from './file-generator-factory';
+export { JSONGenerator } from './json-generator';
