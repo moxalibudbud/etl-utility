@@ -163,7 +163,7 @@ export class JSONGenerator extends FlatFileBaseLazy implements FlatFileBaseLazyM
   async pushFinalJSON() {
     const finalJSON = this.buildFinalJSON();
 
-    // Write to output file
+    // TODO: For now let's write a file in /var/tmp
     await fspromises.writeFile(this.filepath as string, JSON.stringify(finalJSON, null, 2), 'utf-8');
   }
 }
