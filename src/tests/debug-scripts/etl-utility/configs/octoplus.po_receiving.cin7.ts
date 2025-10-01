@@ -57,7 +57,7 @@ export const output: LineOutputOptions = {
   },
   template:
     '{"Date": "{receiptDate}", "Quantity": "{controlQuantityProcessed}", "SKU": "{skuCode}", "Location": "{toSiteCode}", "Received": false}',
-  header: '{"TaskID": "{globalExternalReference}", "Status": "AUTHORISED"}',
+  header: '{"TaskID": "{globalExternalReference}", "Status": "AUTHORISED", "Lines": []}',
   arrayField: 'Lines',
   separator: ';',
 };

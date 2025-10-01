@@ -6,7 +6,7 @@ import { ErrorReport } from '../file-generator/error-report';
 import { ReadLineInterface, readLineInterface, ReadLineInterfaceType } from '../file-reader/readline-interface-factory';
 import { ETLResult, JSONObject } from '../types';
 import { SourceLine, LineSourceBaseOptions } from '../line-data';
-import { FlatFileBaseLazy, FlatFileBaseLazyMethods, JSONFileBuilder } from '../file-generator/flat-file-base-lazy';
+import { FlatFileBaseLazy, FlatFileBaseLazyMethods, JSONOutput } from '../file-generator/flat-file-base-lazy';
 
 type ETLOptions = {
   line: LineSourceBaseOptions;
@@ -18,7 +18,7 @@ type ETLOptions = {
 };
 
 export class JsonOutETL {
-  outputFileWriter: FlatFileBaseLazy & FlatFileBaseLazyMethods & JSONFileBuilder;
+  outputFileWriter: FlatFileBaseLazy & FlatFileBaseLazyMethods & JSONOutput;
   errorReportWriter: ErrorReport;
   lineReader: ReadLineInterface;
 
@@ -29,7 +29,7 @@ export class JsonOutETL {
   identifiers?: JSONObject;
   options: ETLOptions;
 
-  constructor(args: ETLOptions, outputFileWriter: FlatFileBaseLazy & FlatFileBaseLazyMethods & JSONFileBuilder) {
+  constructor(args: ETLOptions, outputFileWriter: FlatFileBaseLazy & FlatFileBaseLazyMethods & JSONOutput) {
     this.options = args;
     this.fileSource = args.filesource.blobURL ?? (args.filesource.file as string);
 
@@ -167,7 +167,7 @@ export class JsonOutETL {
       await this.processLines();
       this.validateFinalResult();
       await this.cleanUp();
-      await this.outputFileWriter.buildFinalJSON();
+      await this.outputFileWriter.pushFinalJSON();
       return this.getResult();
     } catch (error) {
       this.forceCleanUp();

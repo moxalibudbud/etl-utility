@@ -11,8 +11,9 @@ export interface FlatFileBaseLazyMethods {
   pushFooter(): void;
 }
 
-export interface JSONFileBuilder {
+export interface JSONOutput {
   buildFinalJSON(): void;
+  pushFinalJSON(): void;
 }
 
 export class FlatFileBaseLazy {

@@ -1,10 +1,5 @@
 import fspromises from 'fs/promises';
-import {
-  FlatFileBaseLazy,
-  FlatFileBaseLazyMethods,
-  FlatFileBaseLazyOptions,
-  JSONFileBuilder,
-} from './flat-file-base-lazy';
+import { FlatFileBaseLazy, FlatFileBaseLazyMethods, FlatFileBaseLazyOptions, JSONOutput } from './flat-file-base-lazy';
 import { SourceLine } from '../line-data';
 import { LineOutputOptions } from '../line-data/line-output';
 import { buildLineFromLineKeys } from '../utils';
@@ -25,7 +20,7 @@ interface ParsedArrayPath {
   arrayField: string;
 }
 
-export class JSONGenerator extends FlatFileBaseLazy implements FlatFileBaseLazyMethods, JSONFileBuilder {
+export class JSONGenerator extends FlatFileBaseLazy implements FlatFileBaseLazyMethods, JSONOutput {
   options: FlatFileBaseLazyOptions & LineOutputOptions;
   rowReferences = new Set<number | string>();
   private rootData: Record<string, any> = {};
@@ -119,19 +114,15 @@ export class JSONGenerator extends FlatFileBaseLazy implements FlatFileBaseLazyM
   buildJson(line: SourceLine) {
     const arrayKey = this.options?.arrayField || 'lines';
 
-    // Array data - accumulate items
     if (!this.arrayBuckets.has(arrayKey)) {
       this.arrayBuckets.set(arrayKey, []);
     }
 
     const bucket = this.arrayBuckets.get(arrayKey)!;
 
-    // Find or create the current array item for this line
-    if (!bucket[line.currentLineNumber]) {
-      let item = replaceWithMap(this.options.template as string, line.jsonLine);
-      item = replaceWithFunction(item);
-      bucket[line.currentLineNumber] = JSON.parse(item);
-    }
+    let item = replaceWithMap(this.options.template as string, line.jsonLine);
+    item = replaceWithFunction(item);
+    bucket.push(JSON.parse(item));
   }
 
   isRowExist({ jsonLine }: SourceLine) {
@@ -161,14 +152,16 @@ export class JSONGenerator extends FlatFileBaseLazy implements FlatFileBaseLazyM
     this.buildJson(sourceLine);
   }
 
-  async buildFinalJSON() {
+  buildFinalJSON() {
     const finalJSON = { ...this.rootData };
+    const arrayKey = this.options.arrayField || 'lines';
+    finalJSON[arrayKey] = this.arrayBuckets.get(arrayKey) || [];
 
-    // Add all array buckets to the result
-    this.arrayBuckets.forEach((items, key) => {
-      // Filter out undefined items (from gaps in line numbers)
-      finalJSON[key] = items.filter((item) => item !== undefined);
-    });
+    return finalJSON;
+  }
+
+  async pushFinalJSON() {
+    const finalJSON = this.buildFinalJSON();
 
     // Write to output file
     await fspromises.writeFile(this.filepath as string, JSON.stringify(finalJSON, null, 2), 'utf-8');
