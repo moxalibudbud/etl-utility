@@ -1,0 +1,174 @@
+import fspromises from 'fs/promises';
+import {
+  FlatFileBaseLazy,
+  FlatFileBaseLazyMethods,
+  FlatFileBaseLazyOptions,
+  JSONFileBuilder,
+} from './flat-file-base-lazy';
+import { SourceLine } from '../line-data';
+import { LineOutputOptions } from '../line-data/line-output';
+import { buildLineFromLineKeys } from '../utils';
+import { replaceWithFunction } from '../utils/replace-with-function';
+import { replaceWithMap } from '../utils/replace-with-map';
+
+// Parsed path information
+interface ParsedPath {
+  type: 'root' | 'array';
+  rootKey?: string;
+  arrayKey?: string;
+  arrayField?: string;
+}
+
+export class JSONGenerator extends FlatFileBaseLazy implements FlatFileBaseLazyMethods, JSONFileBuilder {
+  options: FlatFileBaseLazyOptions & LineOutputOptions;
+  rowReferences = new Set<number | string>();
+  private rootData: Record<string, any> = {};
+  private arrayBuckets: Map<string, any[]> = new Map();
+
+  constructor(options: FlatFileBaseLazyOptions & LineOutputOptions) {
+    super(options);
+
+    this.options = options;
+  }
+
+  setFilename(line: SourceLine) {
+    const { filename } = this.options;
+
+    if (typeof filename === 'function') {
+      this.filename = filename(line);
+    } else if (typeof filename === 'object' && filename !== null) {
+      let name = replaceWithMap(filename.template, line.jsonLine);
+      name = replaceWithFunction(name);
+      this.filename = name;
+    } else {
+      this.filename = filename;
+    }
+  }
+
+  pushFooter() {
+    const footer = this.options?.footer;
+
+    if (!footer) return;
+
+    const footerRow = typeof footer === 'function' ? footer() : footer;
+    this.writeStream?.write(footerRow);
+  }
+
+  pushHeader(line: SourceLine) {
+    const header = replaceWithMap(this.options.header as string, line.jsonLine);
+    this.rootData = { ...JSON.parse(header) };
+  }
+
+  private parsePath(path: string): ParsedPath {
+    // Check if it's an array path: "arrayName[].fieldName"
+    const arrayMatch = path.match(/^(\w+)\[\]\.(\w+)$/);
+    if (arrayMatch) {
+      return {
+        type: 'array',
+        arrayKey: arrayMatch[1],
+        arrayField: arrayMatch[2],
+      };
+    }
+
+    // Check if it's a root path: "root.fieldName"
+    const rootMatch = path.match(/^root\.(\w+)$/);
+    if (rootMatch) {
+      return {
+        type: 'root',
+        rootKey: rootMatch[1],
+      };
+    }
+
+    throw new Error(`Invalid path format: ${path}`);
+  }
+
+  buildRow(line: SourceLine) {
+    let row = '';
+
+    if (typeof this.options.template === 'string') {
+      row = replaceWithMap(this.options.template, line.jsonLine);
+    } else if (typeof this.options.template === 'function') {
+      row = this.options.template(line);
+    } else {
+      const { separator } = this.options;
+      row = buildLineFromLineKeys(line.output, { separator });
+    }
+
+    // Only append new line for incoming row.
+    // This will prevent an empty row in the file
+    return line.isHeader ? row : '\n' + row;
+  }
+
+  buildJson(line: SourceLine) {
+    // const parsedPath = this.parsePath('x');
+    const parsedPath = { arrayKey: 'lines' };
+
+    // const value = this.extractValue(line, mapping.sourceColumn);
+    // const transformedValue = mapping.transform ? mapping.transform(value) : value;
+
+    // const parsedPath = this.parsePath(mapping.targetPath);
+
+    // Array data - accumulate items
+    if (!this.arrayBuckets.has(parsedPath.arrayKey)) {
+      this.arrayBuckets.set(parsedPath.arrayKey, []);
+    }
+
+    const bucket = this.arrayBuckets.get(parsedPath.arrayKey)!;
+
+    // Find or create the current array item for this line
+    let currentItem = bucket[line.currentLineNumber];
+    if (!currentItem) {
+      currentItem = replaceWithMap(this.options.template as string, line.jsonLine);
+      bucket[line.currentLineNumber] = JSON.parse(currentItem);
+    }
+    // currentItem[parsedPath.arrayField] = transformedValue;
+  }
+
+  isRowExist({ jsonLine }: SourceLine) {
+    if (this.options.uniqueKey) {
+      return !!this.rowReferences.has(jsonLine[this.options.uniqueKey]);
+    }
+  }
+
+  trackReference({ jsonLine }: SourceLine) {
+    if (this.options.uniqueKey) {
+      const key = jsonLine[this.options.uniqueKey];
+      this.rowReferences.add(key);
+    }
+  }
+
+  push(sourceLine: SourceLine) {
+    if (!this.filename) {
+      this.setFilename(sourceLine);
+    }
+
+    // if (!this.writeStream) {
+    //   this.createStream();
+    //   this.pushHeader(sourceLine);
+    // }
+
+    if (!Object.keys(this.rootData).length) {
+      this.pushHeader(sourceLine);
+    }
+
+    if (this.isRowExist(sourceLine)) return;
+
+    this.buildJson(sourceLine);
+    // const row = this.buildRow(sourceLine);
+    // this.writeStream?.write(row);
+    // this.trackReference(sourceLine);
+  }
+
+  async buildFinalJSON() {
+    const finalJSON = { ...this.rootData };
+
+    // Add all array buckets to the result
+    this.arrayBuckets.forEach((items, key) => {
+      // Filter out undefined items (from gaps in line numbers)
+      finalJSON[key] = items.filter((item) => item !== undefined);
+    });
+
+    // Write to output file
+    await fspromises.writeFile(this.filepath as string, JSON.stringify(finalJSON, null, 2), 'utf-8');
+  }
+}

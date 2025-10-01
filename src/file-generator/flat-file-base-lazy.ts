@@ -11,6 +11,10 @@ export interface FlatFileBaseLazyMethods {
   pushFooter(): void;
 }
 
+export interface JSONFileBuilder {
+  buildFinalJSON(): void;
+}
+
 export class FlatFileBaseLazy {
   private _filename: string = '';
   path: string;

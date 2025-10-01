@@ -1,58 +1,75 @@
 /**
- * THIS ETL IS USED IF INPUT DATA SOURCE IS JSON (API) INTO A FLAT FILE
+ * THIS ETL IS USED IF OUTPUT DATA IS JSON FROM A FLAT FILE
  */
+
 import { ErrorReport } from '../file-generator/error-report';
-import { ReadLineInterface } from '../file-reader/readline-interface-factory';
-import { ETLResult, JSONObject, NestedRecord } from '../types';
-import { JSONSourceLine, LineSourceBaseOptions } from '../line-data';
-import { FlatFileBaseLazy, FlatFileBaseLazyMethods } from '../file-generator/flat-file-base-lazy';
+import { ReadLineInterface, readLineInterface, ReadLineInterfaceType } from '../file-reader/readline-interface-factory';
+import { ETLResult, JSONObject } from '../types';
+import { SourceLine, LineSourceBaseOptions } from '../line-data';
+import { FlatFileBaseLazy, FlatFileBaseLazyMethods, JSONFileBuilder } from '../file-generator/flat-file-base-lazy';
 
 type ETLOptions = {
   line: LineSourceBaseOptions;
-  json: NestedRecord[];
-  errorFilename: string;
+  filesource: { blobURL: string; file?: never } | { file: string; blobURL?: never };
 
   // True = Reject the entire validation if atleast one row is invalid. Else, just skip
   // False/undefined = Just skip the invalid row in the output (default)
   rejectOnInvalidRow?: boolean;
 };
 
-export class JsonETL {
-  outputFileWriter: FlatFileBaseLazy & FlatFileBaseLazyMethods;
+export class JsonOutETL {
+  outputFileWriter: FlatFileBaseLazy & FlatFileBaseLazyMethods & JSONFileBuilder;
   errorReportWriter: ErrorReport;
-  lineReader?: ReadLineInterface;
+  lineReader: ReadLineInterface;
 
-  fileSource?: string;
-  json = [];
+  fileSource: string;
   valid: boolean = true;
   lineIndex = 0;
   sampleLineData?: JSONObject;
   identifiers?: JSONObject;
   options: ETLOptions;
 
-  constructor(args: ETLOptions, outputFileWriter: FlatFileBaseLazy & FlatFileBaseLazyMethods) {
+  constructor(args: ETLOptions, outputFileWriter: FlatFileBaseLazy & FlatFileBaseLazyMethods & JSONFileBuilder) {
     this.options = args;
+    this.fileSource = args.filesource.blobURL ?? (args.filesource.file as string);
+
+    this.lineReader = this.initiateReadlineInterface(args.filesource.blobURL);
     this.errorReportWriter = this.initiateErrorReportWriter();
     this.outputFileWriter = outputFileWriter;
   }
 
+  initiateReadlineInterface(blobUrl?: string | undefined) {
+    const lineReaderType: ReadLineInterfaceType = blobUrl ? ReadLineInterfaceType.Blob : ReadLineInterfaceType.File;
+    return readLineInterface(this.fileSource, lineReaderType);
+  }
+
   initiateErrorReportWriter() {
-    return new ErrorReport({ filename: this.options.errorFilename });
+    if (!this.lineReader) throw new Error('lineReader needs to instantiate first to generate error report writer');
+    return new ErrorReport({ filename: this.lineReader.filename });
   }
 
-  onLineHandler(json: JSONObject) {
-    this.lineIndex++;
+  onLineHandler(chunk: string) {
+    try {
+      this.lineIndex++;
 
-    const options = {
-      ...this.options.line,
-      currentLineNumber: this.lineIndex,
-    };
+      const options = {
+        ...this.options.line,
+        currentLineNumber: this.lineIndex,
+      };
 
-    const lineModel = new JSONSourceLine(json, options);
-    this.populate(lineModel);
+      const lineModel = new SourceLine(chunk, options);
+      this.populate(lineModel);
+    } catch (error) {
+      this.lineReader.readlineInterface?.emit('error', error);
+    }
   }
 
-  populate(line: JSONSourceLine) {
+  onCloseHandler(resolve: Function) {
+    resolve({});
+    this.outputFileWriter.pushFooter();
+  }
+
+  populate(line: SourceLine) {
     line.validate();
 
     // Populate error report.
@@ -81,15 +98,22 @@ export class JsonETL {
   }
 
   async processLines() {
-    for (const element of this.options.json) {
-      this.onLineHandler(element);
-    }
+    return new Promise((resolve, reject) => {
+      try {
+        this.lineReader.readlineInterface?.on('line', this.onLineHandler.bind(this));
+        this.lineReader.readlineInterface?.on('close', () => this.onCloseHandler(resolve));
+        this.lineReader.readlineInterface?.on('error', (e) => reject(e));
+      } catch (e) {
+        reject(e);
+      }
+    });
   }
 
   async forceCleanUp() {
     // Gracefully end all streams
     await this.outputFileWriter.end();
     await this.errorReportWriter.end();
+    this.lineReader.cleanUpPreviousListeners();
 
     // Delete error file from local folder if there is no error
     await this.errorReportWriter.delete();
@@ -102,6 +126,7 @@ export class JsonETL {
     // Gracefully end all streams
     await this.outputFileWriter.end();
     await this.errorReportWriter.end();
+    this.lineReader.cleanUpPreviousListeners();
 
     // Delete error file from local folder if there is no error
     if (this.errorReportWriter.invalidRows === 0) {
@@ -138,9 +163,11 @@ export class JsonETL {
 
   async process() {
     try {
+      await this.lineReader.initiateInterface();
       await this.processLines();
       this.validateFinalResult();
       await this.cleanUp();
+      await this.outputFileWriter.buildFinalJSON();
       return this.getResult();
     } catch (error) {
       this.forceCleanUp();
