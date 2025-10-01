@@ -116,12 +116,11 @@ export class JSONGenerator extends FlatFileBaseLazy implements FlatFileBaseLazyM
     const bucket = this.arrayBuckets.get(parsedPath.arrayKey)!;
 
     // Find or create the current array item for this line
-    let currentItem = bucket[line.currentLineNumber];
-    if (!currentItem) {
-      currentItem = replaceWithMap(this.options.template as string, line.jsonLine);
-      bucket[line.currentLineNumber] = JSON.parse(currentItem);
+    if (!bucket[line.currentLineNumber]) {
+      let item = replaceWithMap(this.options.template as string, line.jsonLine);
+      item = replaceWithFunction(item);
+      bucket[line.currentLineNumber] = JSON.parse(item);
     }
-    // currentItem[parsedPath.arrayField] = transformedValue;
   }
 
   isRowExist({ jsonLine }: SourceLine) {
