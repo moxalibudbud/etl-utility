@@ -19,6 +19,12 @@ interface ParsedPath {
   arrayField?: string;
 }
 
+interface ParsedArrayPath {
+  type: 'array';
+  arrayKey: string;
+  arrayField: string;
+}
+
 export class JSONGenerator extends FlatFileBaseLazy implements FlatFileBaseLazyMethods, JSONFileBuilder {
   options: FlatFileBaseLazyOptions & LineOutputOptions;
   rowReferences = new Set<number | string>();
@@ -59,7 +65,23 @@ export class JSONGenerator extends FlatFileBaseLazy implements FlatFileBaseLazyM
     this.rootData = { ...JSON.parse(header) };
   }
 
-  private parsePath(path: string): ParsedPath {
+  private parseRootPath(path: string): ParsedPath {
+    // Check if it's a root path: "root.fieldName"
+    const rootMatch = path.match(/^root\.(\w+)$/);
+    if (rootMatch) {
+      return {
+        type: 'root',
+        rootKey: rootMatch[1],
+      };
+    }
+
+    return {
+      type: 'root',
+      rootKey: 'id',
+    };
+  }
+
+  private parseArrayPath(path: string): ParsedArrayPath {
     // Check if it's an array path: "arrayName[].fieldName"
     const arrayMatch = path.match(/^(\w+)\[\]\.(\w+)$/);
     if (arrayMatch) {
@@ -70,16 +92,11 @@ export class JSONGenerator extends FlatFileBaseLazy implements FlatFileBaseLazyM
       };
     }
 
-    // Check if it's a root path: "root.fieldName"
-    const rootMatch = path.match(/^root\.(\w+)$/);
-    if (rootMatch) {
-      return {
-        type: 'root',
-        rootKey: rootMatch[1],
-      };
-    }
-
-    throw new Error(`Invalid path format: ${path}`);
+    return {
+      type: 'array',
+      arrayKey: 'lines',
+      arrayField: 'id',
+    };
   }
 
   buildRow(line: SourceLine) {
@@ -100,20 +117,14 @@ export class JSONGenerator extends FlatFileBaseLazy implements FlatFileBaseLazyM
   }
 
   buildJson(line: SourceLine) {
-    // const parsedPath = this.parsePath('x');
-    const parsedPath = { arrayKey: 'lines' };
-
-    // const value = this.extractValue(line, mapping.sourceColumn);
-    // const transformedValue = mapping.transform ? mapping.transform(value) : value;
-
-    // const parsedPath = this.parsePath(mapping.targetPath);
+    const arrayKey = this.options?.arrayField || 'lines';
 
     // Array data - accumulate items
-    if (!this.arrayBuckets.has(parsedPath.arrayKey)) {
-      this.arrayBuckets.set(parsedPath.arrayKey, []);
+    if (!this.arrayBuckets.has(arrayKey)) {
+      this.arrayBuckets.set(arrayKey, []);
     }
 
-    const bucket = this.arrayBuckets.get(parsedPath.arrayKey)!;
+    const bucket = this.arrayBuckets.get(arrayKey)!;
 
     // Find or create the current array item for this line
     if (!bucket[line.currentLineNumber]) {
@@ -141,11 +152,6 @@ export class JSONGenerator extends FlatFileBaseLazy implements FlatFileBaseLazyM
       this.setFilename(sourceLine);
     }
 
-    // if (!this.writeStream) {
-    //   this.createStream();
-    //   this.pushHeader(sourceLine);
-    // }
-
     if (!Object.keys(this.rootData).length) {
       this.pushHeader(sourceLine);
     }
@@ -153,9 +159,6 @@ export class JSONGenerator extends FlatFileBaseLazy implements FlatFileBaseLazyM
     if (this.isRowExist(sourceLine)) return;
 
     this.buildJson(sourceLine);
-    // const row = this.buildRow(sourceLine);
-    // this.writeStream?.write(row);
-    // this.trackReference(sourceLine);
   }
 
   async buildFinalJSON() {

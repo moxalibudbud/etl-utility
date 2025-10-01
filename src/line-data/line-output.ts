@@ -30,6 +30,9 @@ type LineOutputBase = {
   rowReferences?: Set<string | number>;
 
   fileGenerator?: FileGeneratorValues;
+
+  // If output file is JSON from a flat file. This is the field where the lines will go
+  arrayField?: string;
 };
 
 export type LineOutputOptions = LineOutputBase;
