@@ -161,13 +161,23 @@ export class JsonOutETL {
     };
   }
 
+  async generateJSONFile() {
+    if (this.valid) {
+      await this.outputFileWriter.pushFinalJSON();
+    }
+  }
+
   async process() {
     try {
       await this.lineReader.initiateInterface();
       await this.processLines();
       this.validateFinalResult();
       await this.cleanUp();
-      await this.outputFileWriter.pushFinalJSON();
+
+      // Generate JSON file if valid
+      await this.generateJSONFile();
+
+      // Finally, let's return the result
       return this.getResult();
     } catch (error) {
       this.forceCleanUp();
