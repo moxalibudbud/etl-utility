@@ -37,6 +37,7 @@ export declare class JsonOutETL {
     cleanUp(): Promise<void>;
     validateFinalResult(): void;
     getResult(): ETLResult;
+    generateJSONFile(): Promise<void>;
     process(): Promise<ETLResult>;
 }
 export {};
