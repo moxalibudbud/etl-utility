@@ -77,8 +77,8 @@ describe('mapWithDefault', () => {
   it('maps fields using a mix of keys and transform functions', () => {
     const config = {
       storeId: 'CCID',
-      countId: (data: Record<string, any>) => `${data.INV_NO}-modified`,
-      priceWithTax: (data: Record<string, any>) => data.PRICE * 1.05,
+      countId: '[return input.INV_NO + "-modified"]',
+      priceWithTax: '[return input.PRICE * 1.05]',
     };
 
     const result = mapWithDefault(input, config);
