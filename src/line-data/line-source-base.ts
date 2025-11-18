@@ -10,12 +10,6 @@ export type LineSourceBaseOptions = {
   toJSON?: (line: string[]) => any;
 };
 
-export const DEFAULT_OPTIONS = {
-  identifierMappings: {},
-  outputMappings: {},
-  separator: ';',
-};
-
 export abstract class LineSourceBase {
   abstract line: string[];
   abstract jsonLine?: JSONObject;

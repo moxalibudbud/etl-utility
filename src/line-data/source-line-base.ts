@@ -1,28 +1,47 @@
-import { LineSourceBase, LineSourceBaseOptions } from './line-source-base';
-import { DEFAULT_OPTIONS } from './source-line-base';
-import { mapFields, validateLine, mapWithDefault } from '../utils';
+// This is a re-write of line-source-base.ts and will be use in the future versions
+
+import { mapFields, lineDataToJSON, validateLine, mapWithDefault } from '../utils';
 import { JSONObject } from '../types';
 
-export class JSONSourceLine extends LineSourceBase {
+export type SourceLineBaseOptions = {
+  columns: string[];
+  mandatoryFields: string[];
+  identifierMappings: JSONObject;
+  outputMappings: JSONObject;
+  separator: string;
+  withHeader: boolean;
+  toJSON?: (line: string[]) => any;
+};
+
+export const DEFAULT_OPTIONS = {
+  identifierMappings: {},
+  outputMappings: {},
+  separator: ';',
+};
+
+export abstract class SourceLineBase {
   line: string[];
   separator: string;
   columns: string[];
   jsonLine: JSONObject;
-  options: LineSourceBaseOptions;
+  options: SourceLineBaseOptions;
+  currentLineNumber: number = 1;
+  errors: string[] = [];
 
-  constructor(jsonLine: JSONObject, options: LineSourceBaseOptions & { currentLineNumber: number }) {
-    super();
-
+  constructor(line: string, options: SourceLineBaseOptions & { currentLineNumber: number }) {
     this.options = { ...DEFAULT_OPTIONS, ...options };
     this.currentLineNumber = options.currentLineNumber;
     this.separator = options.separator;
-    this.columns = Object.keys(jsonLine);
-    this.line = Object.values(jsonLine);
-    this.jsonLine = jsonLine;
+    this.columns = options.columns;
+    this.line = line.split(this.separator).map((value) => value.replace(/^"|"$/g, ''));
+    this.jsonLine = this.toJSON();
   }
 
   toJSON(): JSONObject {
-    return this.jsonLine;
+    if (this.options?.toJSON) {
+      return this.options.toJSON(this.line);
+    }
+    return lineDataToJSON(this.options.columns, this.line);
   }
 
   validate() {
