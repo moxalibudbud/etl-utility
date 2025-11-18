@@ -118,6 +118,13 @@ class JsonOutETL {
             metadata: Object.assign(Object.assign({}, this.sampleLineData), this.identifiers),
         };
     }
+    generateJSONFile() {
+        return tslib_1.__awaiter(this, void 0, void 0, function* () {
+            if (this.valid) {
+                yield this.outputFileWriter.pushFinalJSON();
+            }
+        });
+    }
     process() {
         return tslib_1.__awaiter(this, void 0, void 0, function* () {
             try {
@@ -125,7 +132,7 @@ class JsonOutETL {
                 yield this.processLines();
                 this.validateFinalResult();
                 yield this.cleanUp();
-                yield this.outputFileWriter.pushFinalJSON();
+                yield this.generateJSONFile();
                 return this.getResult();
             }
             catch (error) {

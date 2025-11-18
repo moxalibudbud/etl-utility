@@ -1,7 +1,8 @@
 import path from 'path';
 import { JsonOutETL } from '../../../../etl';
 import { JSONGenerator } from '../../../../file-generator/json-generator';
-import * as config from './octoplus.po_receiving.cin7';
+import { LineOutputOptions } from '../../../../index';
+import config from './octoplus.po_receiving.cin7';
 
 async function run(etl: any) {
   try {
@@ -18,5 +19,5 @@ const etlOptions = {
   },
   line: config.line,
 };
-const etl = new JsonOutETL(etlOptions, new JSONGenerator(config.output));
+const etl = new JsonOutETL(etlOptions, new JSONGenerator(config.output as LineOutputOptions));
 run(etl);
