@@ -1,3 +1,12 @@
+## 0.2.4-alpha (2025-11-18)
+
+### Features
+
+- Re-write source-line-base.ts to make it extensible for child classes. Ability for clients to define their own Source line logic.
+- This re-write gives the ability to create ETL specifically for Octo+ out files
+- This re-write gives the ability to clients to extend as well the default ETL class and pass
+- All sample implementation is in ./tests/debug-scripts/octoplus-etl
+
 ## 0.2.0-beta (2025-09-24)
 
 ### Features
