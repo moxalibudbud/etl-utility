@@ -5,3 +5,4 @@ export * from './line-validator';
 export * from './line-builder-from-columns';
 export * from './line-builder-from-line-keys';
 export * from './cache-index-manager';
+export * from './sku-serial';

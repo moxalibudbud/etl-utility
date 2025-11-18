@@ -1,6 +1,6 @@
 {
   "name": "etl-utility",
-  "version": "0.2.5-alpha",
+  "version": "0.2.6-alpha",
   "author": "John Alibudbud",
   "description": "Collection of efficient ETL processing of large files from Azure Blob Storage or local sources using readline streams.",
   "main": "dist/index.js",
@@ -10,7 +10,8 @@
     "./etl": "./dist/etl/index.js",
     "./file-generator": "./dist/file-generator/index.js",
     "./line-data": "./dist/line-data/index.js",
-    "./types": "./dist/types/index.js"
+    "./types": "./dist/types/index.js",
+    "./utils": "./dist/utils/index.js"
   },
   "repository": {
     "type": "git",

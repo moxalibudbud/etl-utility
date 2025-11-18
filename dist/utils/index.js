@@ -8,3 +8,4 @@ tslib_1.__exportStar(require("./line-validator"), exports);
 tslib_1.__exportStar(require("./line-builder-from-columns"), exports);
 tslib_1.__exportStar(require("./line-builder-from-line-keys"), exports);
 tslib_1.__exportStar(require("./cache-index-manager"), exports);
+tslib_1.__exportStar(require("./sku-serial"), exports);

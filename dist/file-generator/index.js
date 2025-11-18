@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.JSONGenerator = exports.FileIndexGenerator = exports.PushIfExistGenerator = exports.DefaultGenerator = exports.FileGeneratorFactory = void 0;
+exports.FlatFileBaseLazy = exports.JSONGenerator = exports.FileIndexGenerator = exports.PushIfExistGenerator = exports.DefaultGenerator = exports.FileGeneratorFactory = void 0;
 var file_generator_factory_1 = require("./file-generator-factory");
 Object.defineProperty(exports, "FileGeneratorFactory", { enumerable: true, get: function () { return file_generator_factory_1.FileGeneratorFactory; } });
 var default_generator_1 = require("./default-generator");
@@ -11,3 +11,5 @@ var file_index_generator_1 = require("./file-index-generator");
 Object.defineProperty(exports, "FileIndexGenerator", { enumerable: true, get: function () { return file_index_generator_1.FileIndexGenerator; } });
 var json_generator_1 = require("./json-generator");
 Object.defineProperty(exports, "JSONGenerator", { enumerable: true, get: function () { return json_generator_1.JSONGenerator; } });
+var flat_file_base_lazy_1 = require("./flat-file-base-lazy");
+Object.defineProperty(exports, "FlatFileBaseLazy", { enumerable: true, get: function () { return flat_file_base_lazy_1.FlatFileBaseLazy; } });
