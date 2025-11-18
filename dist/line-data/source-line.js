@@ -2,11 +2,12 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.SourceLine = void 0;
 const line_source_base_1 = require("./line-source-base");
+const source_line_base_1 = require("./source-line-base");
 const utils_1 = require("../utils");
 class SourceLine extends line_source_base_1.LineSourceBase {
     constructor(line, options) {
         super();
-        this.options = Object.assign(Object.assign({}, line_source_base_1.DEFAULT_OPTIONS), options);
+        this.options = Object.assign(Object.assign({}, source_line_base_1.DEFAULT_OPTIONS), options);
         this.currentLineNumber = options.currentLineNumber;
         this.separator = options.separator;
         this.columns = options.columns;

@@ -64,8 +64,8 @@ const map_1 = require("../../../utils/map");
     (0, globals_1.it)('maps fields using a mix of keys and transform functions', () => {
         const config = {
             storeId: 'CCID',
-            countId: (data) => `${data.INV_NO}-modified`,
-            priceWithTax: (data) => data.PRICE * 1.05,
+            countId: '[return input.INV_NO + "-modified"]',
+            priceWithTax: '[return input.PRICE * 1.05]',
         };
         const result = (0, map_1.mapWithDefault)(input, config);
         (0, globals_1.expect)(result).toEqual({

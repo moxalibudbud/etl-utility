@@ -1,21 +1,29 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.JSONSourceLine = void 0;
-const line_source_base_1 = require("./line-source-base");
-const source_line_base_1 = require("./source-line-base");
+exports.SourceLineBase = exports.DEFAULT_OPTIONS = void 0;
 const utils_1 = require("../utils");
-class JSONSourceLine extends line_source_base_1.LineSourceBase {
-    constructor(jsonLine, options) {
-        super();
-        this.options = Object.assign(Object.assign({}, source_line_base_1.DEFAULT_OPTIONS), options);
+exports.DEFAULT_OPTIONS = {
+    identifierMappings: {},
+    outputMappings: {},
+    separator: ';',
+};
+class SourceLineBase {
+    constructor(line, options) {
+        this.currentLineNumber = 1;
+        this.errors = [];
+        this.options = Object.assign(Object.assign({}, exports.DEFAULT_OPTIONS), options);
         this.currentLineNumber = options.currentLineNumber;
         this.separator = options.separator;
-        this.columns = Object.keys(jsonLine);
-        this.line = Object.values(jsonLine);
-        this.jsonLine = jsonLine;
+        this.columns = options.columns;
+        this.line = line.split(this.separator).map((value) => value.replace(/^"|"$/g, ''));
+        this.jsonLine = this.toJSON();
     }
     toJSON() {
-        return this.jsonLine;
+        var _a;
+        if ((_a = this.options) === null || _a === void 0 ? void 0 : _a.toJSON) {
+            return this.options.toJSON(this.line);
+        }
+        return (0, utils_1.lineDataToJSON)(this.options.columns, this.line);
     }
     validate() {
         const validationErrors = (0, utils_1.validateLine)({
@@ -51,4 +59,4 @@ class JSONSourceLine extends line_source_base_1.LineSourceBase {
         return this.jsonLine;
     }
 }
-exports.JSONSourceLine = JSONSourceLine;
+exports.SourceLineBase = SourceLineBase;

@@ -8,11 +8,6 @@ export type LineSourceBaseOptions = {
     withHeader: boolean;
     toJSON?: (line: string[]) => any;
 };
-export declare const DEFAULT_OPTIONS: {
-    identifierMappings: {};
-    outputMappings: {};
-    separator: string;
-};
 export declare abstract class LineSourceBase {
     abstract line: string[];
     abstract jsonLine?: JSONObject;
