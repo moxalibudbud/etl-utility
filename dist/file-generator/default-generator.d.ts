@@ -10,6 +10,7 @@ export declare class DefaultGenerator extends FlatFileBaseLazy implements FlatFi
     pushHeader(line: SourceLine): void;
     buildRow(line: SourceLine): string;
     isRowExist({ jsonLine }: SourceLine): boolean | undefined;
+    accumulateNumberValue({ jsonLine }: SourceLine): boolean | undefined;
     trackReference({ jsonLine }: SourceLine): void;
     push(sourceLine: SourceLine): void;
 }

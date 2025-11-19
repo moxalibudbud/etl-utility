@@ -59,6 +59,11 @@ class DefaultGenerator extends flat_file_base_lazy_1.FlatFileBaseLazy {
             return !!this.rowReferences.has(jsonLine[this.options.uniqueKey]);
         }
     }
+    accumulateNumberValue({ jsonLine }) {
+        if (this.options.uniqueKey) {
+            return !!this.rowReferences.has(jsonLine[this.options.uniqueKey]);
+        }
+    }
     trackReference({ jsonLine }) {
         if (this.options.uniqueKey) {
             const key = jsonLine[this.options.uniqueKey];
@@ -67,6 +72,7 @@ class DefaultGenerator extends flat_file_base_lazy_1.FlatFileBaseLazy {
     }
     push(sourceLine) {
         var _a;
+        const isRowExist = this.isRowExist(sourceLine);
         if (!this.filename) {
             this.setFilename(sourceLine);
         }
@@ -74,7 +80,7 @@ class DefaultGenerator extends flat_file_base_lazy_1.FlatFileBaseLazy {
             this.createStream();
             this.pushHeader(sourceLine);
         }
-        if (this.isRowExist(sourceLine))
+        if (isRowExist)
             return;
         const row = this.buildRow(sourceLine);
         (_a = this.writeStream) === null || _a === void 0 ? void 0 : _a.write(row);
