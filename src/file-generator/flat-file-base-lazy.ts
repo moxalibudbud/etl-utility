@@ -3,6 +3,7 @@ import { SourceLine } from '../line-data';
 
 export type FlatFileBaseLazyOptions = {
   path?: string;
+  metadata?: Record<string, any>;
 };
 
 export interface FlatFileBaseLazyMethods {

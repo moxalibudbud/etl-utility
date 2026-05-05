@@ -20,24 +20,17 @@ export const line: LineSourceBaseOptions = {
   ],
   mandatoryFields: [],
   identifierMappings: {},
-  outputMappings: {
-    FDETL: 'FDETL',
-    timestamp: 'timestamp',
-    blank1: '',
-    sku: 'sku',
-    counted: 'counted',
-    blank2: '',
-    blank3: '',
-  },
+  outputMappings: {},
   separator: ';',
   withHeader: true,
 };
 
 export const output: LineOutputOptions = {
   filename: {
-    template: 'STK_{timestamp}_{store}.dat',
+    template: 'STK_[return args.metadata.timestamp]_{store}.dat',
   },
   header: 'FTAIL|[return args.store]|[return args.count_id]',
+  template: 'FDETL|[return args.metadata.timestamp]||{sku}|{counted}||',
   footer: '\nFTAIL|',
   separator: '|',
   uniqueKey: 'sku',
@@ -59,5 +52,5 @@ const etlOptions = {
   line: line,
 };
 
-const etl = new ETL(etlOptions, new DefaultGenerator(output));
+const etl = new ETL(etlOptions, new DefaultGenerator({ ...output, metadata: { timestamp: Date.now() } }));
 run(etl);

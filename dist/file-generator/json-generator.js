@@ -65,10 +65,8 @@ class JSONGenerator extends flat_file_base_lazy_1.FlatFileBaseLazy {
     buildRow(line) {
         let row = '';
         if (typeof this.options.template === 'string') {
-            row = (0, replace_with_map_1.replaceWithMap)(this.options.template, line.jsonLine);
-        }
-        else if (typeof this.options.template === 'function') {
-            row = this.options.template(line);
+            const metadata = Object.assign(Object.assign({}, line.allData), { metadata: this.options.metadata || {} });
+            row = (0, replace_with_function_1.replaceWithFunction)((0, replace_with_map_1.replaceWithMap)(this.options.template, line.jsonLine), metadata);
         }
         else {
             const { separator } = this.options;

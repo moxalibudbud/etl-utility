@@ -19,7 +19,8 @@ export class DefaultGenerator extends FlatFileBaseLazy implements FlatFileBaseLa
     const { filename } = this.options;
 
     if (typeof filename === 'object' && filename !== null) {
-      this.filename = replaceWithFunction(replaceWithMap(filename.template, line.jsonLine), line.allData);
+      const metadata = { ...line.allData, metadata: this.options.metadata };
+      this.filename = replaceWithFunction(replaceWithMap(filename.template, line.jsonLine), metadata);
     } else {
       this.filename = filename;
     }
@@ -34,7 +35,8 @@ export class DefaultGenerator extends FlatFileBaseLazy implements FlatFileBaseLa
   pushHeader(line: SourceLine) {
     if (!this.options.header) return;
 
-    const headerRow = replaceWithFunction(this.options.header, line.allData);
+    const metadata = { ...line.allData, metadata: this.options.metadata };
+    const headerRow = replaceWithFunction(this.options.header, metadata);
 
     // For headers to add new row
     this.createHeader(headerRow) + '\n';
@@ -44,9 +46,8 @@ export class DefaultGenerator extends FlatFileBaseLazy implements FlatFileBaseLa
     let row = '';
 
     if (typeof this.options.template === 'string') {
-      row = replaceWithMap(this.options.template, line.jsonLine);
-    } else if (typeof this.options.template === 'function') {
-      row = this.options.template(line);
+      const metadata = { ...line.allData, metadata: this.options.metadata || {} };
+      row = replaceWithFunction(replaceWithMap(this.options.template, line.jsonLine), metadata);
     } else {
       const { separator } = this.options;
       row = buildLineFromLineKeys(line.output, { separator });

@@ -92,9 +92,8 @@ export class JSONGenerator extends FlatFileBaseLazy implements FlatFileBaseLazyM
     let row = '';
 
     if (typeof this.options.template === 'string') {
-      row = replaceWithMap(this.options.template, line.jsonLine);
-    } else if (typeof this.options.template === 'function') {
-      row = this.options.template(line);
+      const metadata = { ...line.allData, metadata: this.options.metadata || {} };
+      row = replaceWithFunction(replaceWithMap(this.options.template, line.jsonLine), metadata);
     } else {
       const { separator } = this.options;
       row = buildLineFromLineKeys(line.output, { separator });

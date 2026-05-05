@@ -22,23 +22,16 @@ exports.line = {
     ],
     mandatoryFields: [],
     identifierMappings: {},
-    outputMappings: {
-        FDETL: 'FDETL',
-        timestamp: 'timestamp',
-        blank1: '',
-        sku: 'sku',
-        counted: 'counted',
-        blank2: '',
-        blank3: '',
-    },
+    outputMappings: {},
     separator: ';',
     withHeader: true,
 };
 exports.output = {
     filename: {
-        template: 'STK_{timestamp}_{store}.dat',
+        template: 'STK_[return args.metadata.timestamp]_{store}.dat',
     },
     header: 'FTAIL|[return args.store]|[return args.count_id]',
+    template: 'FDETL|[return args.metadata.timestamp]||{sku}|{counted}||',
     footer: '\nFTAIL|',
     separator: '|',
     uniqueKey: 'sku',
@@ -60,5 +53,5 @@ const etlOptions = {
     },
     line: exports.line,
 };
-const etl = new etl_1.ETL(etlOptions, new default_generator_1.DefaultGenerator(exports.output));
+const etl = new etl_1.ETL(etlOptions, new default_generator_1.DefaultGenerator(Object.assign(Object.assign({}, exports.output), { metadata: { timestamp: Date.now() } })));
 run(etl);

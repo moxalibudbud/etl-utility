@@ -14,7 +14,8 @@ class DefaultGenerator extends flat_file_base_lazy_1.FlatFileBaseLazy {
     setFilename(line) {
         const { filename } = this.options;
         if (typeof filename === 'object' && filename !== null) {
-            this.filename = (0, replace_with_function_1.replaceWithFunction)((0, replace_with_map_1.replaceWithMap)(filename.template, line.jsonLine), line.allData);
+            const metadata = Object.assign(Object.assign({}, line.allData), { metadata: this.options.metadata });
+            this.filename = (0, replace_with_function_1.replaceWithFunction)((0, replace_with_map_1.replaceWithMap)(filename.template, line.jsonLine), metadata);
         }
         else {
             this.filename = filename;
@@ -29,16 +30,15 @@ class DefaultGenerator extends flat_file_base_lazy_1.FlatFileBaseLazy {
     pushHeader(line) {
         if (!this.options.header)
             return;
-        const headerRow = (0, replace_with_function_1.replaceWithFunction)(this.options.header, line.allData);
+        const metadata = Object.assign(Object.assign({}, line.allData), { metadata: this.options.metadata });
+        const headerRow = (0, replace_with_function_1.replaceWithFunction)(this.options.header, metadata);
         this.createHeader(headerRow) + '\n';
     }
     buildRow(line) {
         let row = '';
         if (typeof this.options.template === 'string') {
-            row = (0, replace_with_map_1.replaceWithMap)(this.options.template, line.jsonLine);
-        }
-        else if (typeof this.options.template === 'function') {
-            row = this.options.template(line);
+            const metadata = Object.assign(Object.assign({}, line.allData), { metadata: this.options.metadata || {} });
+            row = (0, replace_with_function_1.replaceWithFunction)((0, replace_with_map_1.replaceWithMap)(this.options.template, line.jsonLine), metadata);
         }
         else {
             const { separator } = this.options;
