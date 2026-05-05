@@ -51,6 +51,13 @@ export class JSONSourceLine extends LineSourceBase {
     return mapWithDefault(this.jsonLine || {}, this.options.outputMappings);
   }
 
+  get allData() {
+    return {
+      ...this.jsonLine,
+      ...this.output,
+    };
+  }
+
   get isHeader(): boolean {
     if (this.options.withHeader) return this.currentLineNumber === 1;
 

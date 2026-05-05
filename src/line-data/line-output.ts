@@ -3,10 +3,10 @@ import { SourceLine } from './source-line';
 export type FileGeneratorValues = 'default-generator' | 'push-if-exist' | 'file-index-generator' | 'json-generator';
 
 type LineOutputBase = {
-  filename: string | ((line: SourceLine) => string) | { template: string };
+  filename: string | { template: string };
   separator: string;
-  header?: string | ((line: SourceLine) => string);
-  footer?: string | (() => string);
+  header?: string;
+  footer?: string;
 
   // If not provide (default) - Values will be automatically assign according to LineSourceBaseOptions.outputMappings and LineSourceBaseOptions.separator
   // If string = The value must follow template syntax. Example = false;{BARCODE};{PART_NUMBER};{DESCRIPTION};g
