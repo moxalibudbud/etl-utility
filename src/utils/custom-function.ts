@@ -1,4 +1,4 @@
-export function customFunction(fnBody: string, input: any, defaultValue: any): any {
+export function customFunction(fnBody: string, input: Object, defaultValue: any): any {
   try {
     const fn = new Function('input', fnBody);
     const result = fn(input);
