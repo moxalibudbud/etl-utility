@@ -88,22 +88,6 @@ export class JSONGenerator extends FlatFileBaseLazy implements FlatFileBaseLazyM
     };
   }
 
-  buildRow(line: SourceLine) {
-    let row = '';
-
-    if (typeof this.options.template === 'string') {
-      const metadata = { ...line.allData, metadata: this.options.metadata || {} };
-      row = replaceWithFunction(replaceWithMap(this.options.template, line.jsonLine), metadata);
-    } else {
-      const { separator } = this.options;
-      row = buildLineFromLineKeys(line.output, { separator });
-    }
-
-    // Only append new line for incoming row.
-    // This will prevent an empty row in the file
-    return line.isHeader ? row : '\n' + row;
-  }
-
   buildJson(line: SourceLine) {
     const arrayKey = this.options?.arrayField || 'lines';
 
@@ -112,9 +96,9 @@ export class JSONGenerator extends FlatFileBaseLazy implements FlatFileBaseLazyM
     }
 
     const bucket = this.arrayBuckets.get(arrayKey)!;
+    const metadata = { ...line.allData, metadata: this.options.metadata || {} };
+    let item = replaceWithFunction(replaceWithMap(this.options.template as string, line.jsonLine), metadata);
 
-    let item = replaceWithMap(this.options.template as string, line.jsonLine);
-    item = replaceWithFunction(item);
     bucket.push(JSON.parse(item));
   }
 

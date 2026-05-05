@@ -12,7 +12,6 @@ export declare class JSONGenerator extends FlatFileBaseLazy implements FlatFileB
     pushHeader(line: SourceLine): void;
     private parseRootPath;
     private parseArrayPath;
-    buildRow(line: SourceLine): string;
     buildJson(line: SourceLine): void;
     isRowExist({ jsonLine }: SourceLine): boolean | undefined;
     trackReference({ jsonLine }: SourceLine): void;

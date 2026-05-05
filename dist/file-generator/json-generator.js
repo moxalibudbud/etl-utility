@@ -4,7 +4,6 @@ exports.JSONGenerator = void 0;
 const tslib_1 = require("tslib");
 const promises_1 = tslib_1.__importDefault(require("fs/promises"));
 const flat_file_base_lazy_1 = require("./flat-file-base-lazy");
-const utils_1 = require("../utils");
 const replace_with_function_1 = require("../utils/replace-with-function");
 const replace_with_map_1 = require("../utils/replace-with-map");
 class JSONGenerator extends flat_file_base_lazy_1.FlatFileBaseLazy {
@@ -62,18 +61,6 @@ class JSONGenerator extends flat_file_base_lazy_1.FlatFileBaseLazy {
             arrayField: 'id',
         };
     }
-    buildRow(line) {
-        let row = '';
-        if (typeof this.options.template === 'string') {
-            const metadata = Object.assign(Object.assign({}, line.allData), { metadata: this.options.metadata || {} });
-            row = (0, replace_with_function_1.replaceWithFunction)((0, replace_with_map_1.replaceWithMap)(this.options.template, line.jsonLine), metadata);
-        }
-        else {
-            const { separator } = this.options;
-            row = (0, utils_1.buildLineFromLineKeys)(line.output, { separator });
-        }
-        return line.isHeader ? row : '\n' + row;
-    }
     buildJson(line) {
         var _a;
         const arrayKey = ((_a = this.options) === null || _a === void 0 ? void 0 : _a.arrayField) || 'lines';
@@ -81,8 +68,8 @@ class JSONGenerator extends flat_file_base_lazy_1.FlatFileBaseLazy {
             this.arrayBuckets.set(arrayKey, []);
         }
         const bucket = this.arrayBuckets.get(arrayKey);
-        let item = (0, replace_with_map_1.replaceWithMap)(this.options.template, line.jsonLine);
-        item = (0, replace_with_function_1.replaceWithFunction)(item);
+        const metadata = Object.assign(Object.assign({}, line.allData), { metadata: this.options.metadata || {} });
+        let item = (0, replace_with_function_1.replaceWithFunction)((0, replace_with_map_1.replaceWithMap)(this.options.template, line.jsonLine), metadata);
         bucket.push(JSON.parse(item));
     }
     isRowExist({ jsonLine }) {
