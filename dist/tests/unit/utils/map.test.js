@@ -74,9 +74,13 @@ const map_1 = require("../../../utils/map");
             priceWithTax: 105,
         });
     });
-    (0, globals_1.it)('returns empty object when config is empty', () => {
+    (0, globals_1.it)('returns input object when config is empty', () => {
         const result = (0, map_1.mapWithDefault)(input, {});
-        (0, globals_1.expect)(result).toEqual({});
+        (0, globals_1.expect)(result).toEqual({
+            CCID: 'S123',
+            INV_NO: 'INV-456',
+            PRICE: 100,
+        });
     });
     (0, globals_1.it)('maps config value if doesnt exist from input', () => {
         const config = {

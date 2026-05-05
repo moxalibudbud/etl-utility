@@ -12,8 +12,13 @@ export function mapFields(input: Object, config: Object | ((input: Object) => an
   return result;
 }
 
-export function mapWithDefault(input: Object, config: Object | ((input: Object) => any)): Object {
+export function mapWithDefault(input: Object, config: Object): Object {
   const result: Object = {};
+
+  // If config is empty, return input as default value
+  if (!Object.keys(config).length) {
+    return input;
+  }
 
   for (const [outputKey, rule] of Object.entries(config)) {
     if (typeof rule === 'string' && rule.startsWith('[') && rule.endsWith(']')) {

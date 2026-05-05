@@ -90,9 +90,13 @@ describe('mapWithDefault', () => {
     });
   });
 
-  it('returns empty object when config is empty', () => {
+  it('returns input object when config is empty', () => {
     const result = mapWithDefault(input, {});
-    expect(result).toEqual({});
+    expect(result).toEqual({
+      CCID: 'S123',
+      INV_NO: 'INV-456',
+      PRICE: 100,
+    });
   });
 
   it('maps config value if doesnt exist from input', () => {

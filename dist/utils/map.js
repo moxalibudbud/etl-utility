@@ -12,6 +12,9 @@ function mapFields(input, config) {
 }
 function mapWithDefault(input, config) {
     const result = {};
+    if (!Object.keys(config).length) {
+        return input;
+    }
     for (const [outputKey, rule] of Object.entries(config)) {
         if (typeof rule === 'string' && rule.startsWith('[') && rule.endsWith(']')) {
             const functionBody = rule.slice(1, -1).trim();
