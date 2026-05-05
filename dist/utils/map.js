@@ -2,6 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.mapFields = mapFields;
 exports.mapWithDefault = mapWithDefault;
+const custom_function_1 = require("./custom-function");
 function mapFields(input, config) {
     const result = {};
     for (const [outputKey, rule] of Object.entries(config)) {
@@ -13,15 +14,8 @@ function mapWithDefault(input, config) {
     const result = {};
     for (const [outputKey, rule] of Object.entries(config)) {
         if (typeof rule === 'string' && rule.startsWith('[') && rule.endsWith(']')) {
-            const fnBody = rule.slice(1, -1).trim();
-            try {
-                const fn = new Function('input', fnBody);
-                result[outputKey] = fn(input);
-            }
-            catch (err) {
-                console.error(`Error executing function for key "${fnBody}":`, err);
-                result[outputKey] = outputKey;
-            }
+            const functionBody = rule.slice(1, -1).trim();
+            result[outputKey] = (0, custom_function_1.customFunction)(functionBody, input, outputKey);
         }
         else {
             result[outputKey] = input.hasOwnProperty(rule) ? input[rule] : rule;

@@ -3,5 +3,7 @@
   "editor.formatOnSave": true,
   "npm-intellisense.importQuotes": "'",
   "prettier.printWidth": 120,
-  "typescript.tsdk": "node_modules/typescript/lib"
+  "prettier.singleQuote": true,
+  "typescript.tsdk": "node_modules/typescript/lib",
+  "js/ts.tsdk.path": "node_modules/typescript/lib"
 }

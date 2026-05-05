@@ -1,6 +1,6 @@
-import { FlatFileBaseLazy, FlatFileBaseLazyMethods, FlatFileBaseLazyOptions, JSONOutput } from './flat-file-base-lazy';
-import { SourceLine } from '../line-data';
-import { LineOutputOptions } from '../line-data/line-output';
+import { FlatFileBaseLazy, FlatFileBaseLazyMethods, FlatFileBaseLazyOptions, JSONOutput } from "./flat-file-base-lazy";
+import { SourceLine } from "../line-data";
+import { LineOutputOptions } from "../line-data/line-output";
 export declare class JSONGenerator extends FlatFileBaseLazy implements FlatFileBaseLazyMethods, JSONOutput {
     options: FlatFileBaseLazyOptions & LineOutputOptions;
     rowReferences: Set<string | number>;

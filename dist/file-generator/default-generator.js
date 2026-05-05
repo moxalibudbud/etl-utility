@@ -13,10 +13,10 @@ class DefaultGenerator extends flat_file_base_lazy_1.FlatFileBaseLazy {
     }
     setFilename(line) {
         const { filename } = this.options;
-        if (typeof filename === 'function') {
+        if (typeof filename === "function") {
             this.filename = filename(line);
         }
-        else if (typeof filename === 'object' && filename !== null) {
+        else if (typeof filename === "object" && filename !== null) {
             let name = (0, replace_with_map_1.replaceWithMap)(filename.template, line.jsonLine);
             name = (0, replace_with_function_1.replaceWithFunction)(name);
             this.filename = name;
@@ -30,29 +30,29 @@ class DefaultGenerator extends flat_file_base_lazy_1.FlatFileBaseLazy {
         const footer = (_a = this.options) === null || _a === void 0 ? void 0 : _a.footer;
         if (!footer)
             return;
-        const footerRow = typeof footer === 'function' ? footer() : footer;
+        const footerRow = typeof footer === "function" ? footer() : footer;
         (_b = this.writeStream) === null || _b === void 0 ? void 0 : _b.write(footerRow);
     }
     pushHeader(line) {
         const header = this.options.header;
         if (!header)
             return;
-        const headerRow = typeof header === 'function' ? header(line) : header;
-        this.createHeader(headerRow) + '\n';
+        const headerRow = typeof header === "function" ? header(line) : header;
+        this.createHeader(headerRow) + "\n";
     }
     buildRow(line) {
-        let row = '';
-        if (typeof this.options.template === 'string') {
+        let row = "";
+        if (typeof this.options.template === "string") {
             row = (0, replace_with_map_1.replaceWithMap)(this.options.template, line.jsonLine);
         }
-        else if (typeof this.options.template === 'function') {
+        else if (typeof this.options.template === "function") {
             row = this.options.template(line);
         }
         else {
             const { separator } = this.options;
             row = (0, utils_1.buildLineFromLineKeys)(line.output, { separator });
         }
-        return line.isHeader ? row : '\n' + row;
+        return line.isHeader ? row : "\n" + row;
     }
     isRowExist({ jsonLine }) {
         if (this.options.uniqueKey) {

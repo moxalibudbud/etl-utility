@@ -1,3 +1,5 @@
+import { customFunction } from './custom-function';
+
 type Object = Record<string, any>;
 
 export function mapFields(input: Object, config: Object | ((input: Object) => any)): Object {
@@ -15,14 +17,8 @@ export function mapWithDefault(input: Object, config: Object | ((input: Object) 
 
   for (const [outputKey, rule] of Object.entries(config)) {
     if (typeof rule === 'string' && rule.startsWith('[') && rule.endsWith(']')) {
-      const fnBody = rule.slice(1, -1).trim();
-      try {
-        const fn = new Function('input', fnBody);
-        result[outputKey] = fn(input);
-      } catch (err) {
-        console.error(`Error executing function for key "${fnBody}":`, err);
-        result[outputKey] = outputKey;
-      }
+      const functionBody = rule.slice(1, -1).trim();
+      result[outputKey] = customFunction(functionBody, input, outputKey);
     } else {
       result[outputKey] = input.hasOwnProperty(rule) ? input[rule] : rule;
     }

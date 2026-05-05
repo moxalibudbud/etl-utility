@@ -1,5 +1,5 @@
-import { LineSourceBase, LineSourceBaseOptions } from './line-source-base';
-import { JSONObject } from '../types';
+import { LineSourceBase, LineSourceBaseOptions } from "./line-source-base";
+import { JSONObject } from "../types";
 export declare class SourceLine extends LineSourceBase {
     line: string[];
     separator: string;
