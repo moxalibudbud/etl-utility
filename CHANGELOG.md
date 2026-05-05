@@ -1,3 +1,8 @@
+## 0.3.1-alpha (2026-05-05)
+
+- Pass custom functions to file generator pushHeader(), buildRow() and setFilename()
+- Pass metadata to file genrator constructor
+
 ## 0.2.5-alpha (2025-11-18)
 
 ### Features
