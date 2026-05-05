@@ -1,10 +1,10 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.customFunction = customFunction;
-function customFunction(fnBody, input, defaultValue) {
+function customFunction(fnBody, args, defaultValue) {
     try {
-        const fn = new Function('input', fnBody);
-        const result = fn(input);
+        const fn = new Function('args', fnBody);
+        const result = fn(args);
         return result;
     }
     catch (_a) {

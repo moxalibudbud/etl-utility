@@ -1,1 +1,1 @@
-export declare function customFunction(fnBody: string, input: any, defaultValue: any): any;
+export declare function customFunction(fnBody: string, args: Object, defaultValue: any): any;

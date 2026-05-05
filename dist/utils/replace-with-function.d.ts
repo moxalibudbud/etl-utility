@@ -1,1 +1,1 @@
-export declare function replaceWithFunction(template: string): string;
+export declare function replaceWithFunction(template: string, metadata?: Object): string;
