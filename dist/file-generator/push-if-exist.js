@@ -13,10 +13,7 @@ class PushIfExistGenerator extends flat_file_base_lazy_1.FlatFileBaseLazy {
     }
     setFilename(line) {
         const { filename } = this.options;
-        if (typeof filename === 'function') {
-            this.filename = filename(line);
-        }
-        else if (typeof filename === 'object' && filename !== null) {
+        if (typeof filename === 'object' && filename !== null) {
             let name = (0, replace_with_map_1.replaceWithMap)(filename.template, line.jsonLine);
             name = (0, replace_with_function_1.replaceWithFunction)(name);
             this.filename = name;
@@ -26,18 +23,15 @@ class PushIfExistGenerator extends flat_file_base_lazy_1.FlatFileBaseLazy {
         }
     }
     pushFooter() {
-        var _a, _b;
-        const footer = (_a = this.options) === null || _a === void 0 ? void 0 : _a.footer;
-        if (!footer)
-            return;
-        const footerRow = typeof footer === 'function' ? footer() : footer;
-        (_b = this.writeStream) === null || _b === void 0 ? void 0 : _b.write(footerRow);
+        var _a, _b, _c;
+        if ((_a = this.options) === null || _a === void 0 ? void 0 : _a.footer) {
+            (_b = this.writeStream) === null || _b === void 0 ? void 0 : _b.write((_c = this.options) === null || _c === void 0 ? void 0 : _c.footer);
+        }
     }
     pushHeader(line) {
-        const header = this.options.header;
-        if (!header)
+        if (!this.options.header)
             return;
-        const headerRow = typeof header === 'function' ? header(line) : header;
+        const headerRow = (0, replace_with_function_1.replaceWithFunction)(this.options.header, line.allData);
         this.createHeader(headerRow) + '\n';
     }
     buildRow(line) {

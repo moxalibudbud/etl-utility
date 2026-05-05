@@ -17,75 +17,68 @@ class JSONGenerator extends flat_file_base_lazy_1.FlatFileBaseLazy {
     }
     setFilename(line) {
         const { filename } = this.options;
-        if (typeof filename === "function") {
-            this.filename = filename(line);
-        }
-        else if (typeof filename === "object" && filename !== null) {
-            let name = (0, replace_with_map_1.replaceWithMap)(filename.template, line.jsonLine);
-            name = (0, replace_with_function_1.replaceWithFunction)(name);
-            this.filename = name;
+        if (typeof filename === 'object' && filename !== null) {
+            this.filename = (0, replace_with_function_1.replaceWithFunction)((0, replace_with_map_1.replaceWithMap)(filename.template, line.jsonLine));
         }
         else {
             this.filename = filename;
         }
     }
     pushFooter() {
-        var _a, _b;
-        const footer = (_a = this.options) === null || _a === void 0 ? void 0 : _a.footer;
-        if (!footer)
-            return;
-        const footerRow = typeof footer === "function" ? footer() : footer;
-        (_b = this.writeStream) === null || _b === void 0 ? void 0 : _b.write(footerRow);
+        var _a, _b, _c;
+        if ((_a = this.options) === null || _a === void 0 ? void 0 : _a.footer) {
+            (_b = this.writeStream) === null || _b === void 0 ? void 0 : _b.write((_c = this.options) === null || _c === void 0 ? void 0 : _c.footer);
+        }
     }
     pushHeader(line) {
-        const header = (0, replace_with_map_1.replaceWithMap)(this.options.header, line.jsonLine);
+        const header = (0, replace_with_function_1.replaceWithFunction)(this.options.header || '', line.allData);
         this.rootData = Object.assign({}, JSON.parse(header));
     }
     parseRootPath(path) {
         const rootMatch = path.match(/^root\.(\w+)$/);
         if (rootMatch) {
             return {
-                type: "root",
+                type: 'root',
                 rootKey: rootMatch[1],
             };
         }
         return {
-            type: "root",
-            rootKey: "id",
+            type: 'root',
+            rootKey: 'id',
         };
     }
     parseArrayPath(path) {
         const arrayMatch = path.match(/^(\w+)\[\]\.(\w+)$/);
         if (arrayMatch) {
             return {
-                type: "array",
+                type: 'array',
                 arrayKey: arrayMatch[1],
                 arrayField: arrayMatch[2],
             };
         }
         return {
-            type: "array",
-            arrayKey: "lines",
-            arrayField: "id",
+            type: 'array',
+            arrayKey: 'lines',
+            arrayField: 'id',
         };
     }
     buildRow(line) {
-        let row = "";
-        if (typeof this.options.template === "string") {
+        let row = '';
+        if (typeof this.options.template === 'string') {
             row = (0, replace_with_map_1.replaceWithMap)(this.options.template, line.jsonLine);
         }
-        else if (typeof this.options.template === "function") {
+        else if (typeof this.options.template === 'function') {
             row = this.options.template(line);
         }
         else {
             const { separator } = this.options;
             row = (0, utils_1.buildLineFromLineKeys)(line.output, { separator });
         }
-        return line.isHeader ? row : "\n" + row;
+        return line.isHeader ? row : '\n' + row;
     }
     buildJson(line) {
         var _a;
-        const arrayKey = ((_a = this.options) === null || _a === void 0 ? void 0 : _a.arrayField) || "lines";
+        const arrayKey = ((_a = this.options) === null || _a === void 0 ? void 0 : _a.arrayField) || 'lines';
         if (!this.arrayBuckets.has(arrayKey)) {
             this.arrayBuckets.set(arrayKey, []);
         }
@@ -118,14 +111,14 @@ class JSONGenerator extends flat_file_base_lazy_1.FlatFileBaseLazy {
     }
     buildFinalJSON() {
         const finalJSON = Object.assign({}, this.rootData);
-        const arrayKey = this.options.arrayField || "lines";
+        const arrayKey = this.options.arrayField || 'lines';
         finalJSON[arrayKey] = this.arrayBuckets.get(arrayKey) || [];
         return finalJSON;
     }
     pushFinalJSON() {
         return tslib_1.__awaiter(this, void 0, void 0, function* () {
             const finalJSON = this.buildFinalJSON();
-            yield promises_1.default.writeFile(this.filepath, JSON.stringify(finalJSON, null, 2), "utf-8");
+            yield promises_1.default.writeFile(this.filepath, JSON.stringify(finalJSON, null, 2), 'utf-8');
         });
     }
 }

@@ -15,8 +15,8 @@ const sourceLine = new SourceLine(LINE, { ...sourceLineOps, currentLineNumber: 2
 
 describe('default-generator tests', () => {
   const options: LineOutputOptions = {
-    filename: (args: SourceLine) => `${sourceLine.jsonLine.store}_fixed_filename.txt`,
-    header: (args: SourceLine) => `sample header|${sourceLine.jsonLine.store}`,
+    filename: `${sourceLine.jsonLine.store}_fixed_filename.txt`,
+    header: `sample header|${sourceLine.jsonLine.store}`,
     footer: 'sample footer',
     separator: ';',
     template: function ({ jsonLine }: SourceLine) {

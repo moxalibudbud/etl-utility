@@ -43,10 +43,7 @@ export const line: LineSourceBaseOptions = {
 
 export const output: LineOutputOptions = {
   // filename: 'Item Master.txt',
-  filename: (args: SourceLine) =>
-    args.output?.brandName
-      ? `${args.output?.brandName} - Item Master - ${Date.now()}.txt`
-      : `Item Master - ${Date.now()}.txt`,
+  filename: `Item Master - ${Date.now()}.txt`,
   // header: 'sample header\n',
   // footer: 'sample footer',
   // header: (args: SourceLine) => generatorOptions.columns.join(generatorOptions.separator) + '\n',

@@ -42,11 +42,6 @@ exports.line = {
     withHeader: false,
 };
 exports.output = {
-    filename: (args) => {
-        var _a, _b;
-        return ((_a = args.output) === null || _a === void 0 ? void 0 : _a.brandName)
-            ? `${(_b = args.output) === null || _b === void 0 ? void 0 : _b.brandName} - Item Master - ${Date.now()}.txt`
-            : `Item Master - ${Date.now()}.txt`;
-    },
+    filename: `Item Master - ${Date.now()}.txt`,
     separator: '\t',
 };

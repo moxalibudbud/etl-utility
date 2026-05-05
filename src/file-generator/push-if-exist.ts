@@ -35,20 +35,15 @@ export class PushIfExistGenerator extends FlatFileBaseLazy implements FlatFileBa
   }
 
   pushFooter() {
-    const footer = this.options?.footer;
-
-    if (!footer) return;
-
-    const footerRow = typeof footer === 'function' ? footer() : footer;
-    this.writeStream?.write(footerRow);
+    if (this.options?.footer) {
+      this.writeStream?.write(this.options?.footer);
+    }
   }
 
   pushHeader(line: SourceLine) {
-    const header = this.options.header;
+    if (!this.options.header) return;
 
-    if (!header) return;
-
-    const headerRow = typeof header === 'function' ? header(line) : header;
+    const headerRow = replaceWithFunction(this.options.header, line.allData);
 
     // For headers to add new row
     this.createHeader(headerRow) + '\n';

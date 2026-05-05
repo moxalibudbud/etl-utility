@@ -16,10 +16,10 @@ const sourceLine = new SourceLine(LINE, { ...sourceLineOps, currentLineNumber: 2
 describe('default-generator tests', () => {
   const options: LineOutputOptions = {
     // filename: 'fixed_filename.txt',
-    filename: (args: SourceLine) => `${sourceLine.jsonLine.store}_fixed_filename.txt`,
+    filename: `${sourceLine.jsonLine.store}_fixed_filename.txt`,
     // header: 'sample header\n',
     // footer: 'sample footer',
-    header: (args: SourceLine) => `sample header|${sourceLine.jsonLine.store}`,
+    header: `sample header|${sourceLine.jsonLine.store}`,
     footer: 'sample footer',
     separator: ';',
     template: '{store};{sku};{quantity};{countId}',

@@ -1,5 +1,5 @@
-import { LineSourceBase, LineSourceBaseOptions } from "./line-source-base";
-import { JSONObject } from "../types";
+import { LineSourceBase, LineSourceBaseOptions } from './line-source-base';
+import { JSONObject } from '../types';
 export declare class SourceLine extends LineSourceBase {
     line: string[];
     separator: string;
@@ -14,6 +14,9 @@ export declare class SourceLine extends LineSourceBase {
     get isValid(): boolean;
     get error(): string;
     get output(): {
+        [x: string]: any;
+    };
+    get allData(): {
         [x: string]: any;
     };
     get isHeader(): boolean;

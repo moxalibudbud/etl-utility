@@ -46,6 +46,9 @@ class SourceLineBase {
     get output() {
         return (0, utils_1.mapWithDefault)(this.jsonLine || {}, this.options.outputMappings);
     }
+    get allData() {
+        return Object.assign(Object.assign({}, this.jsonLine), this.output);
+    }
     get isHeader() {
         if (this.options.withHeader)
             return this.currentLineNumber === 1;

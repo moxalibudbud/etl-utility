@@ -14,8 +14,8 @@ const sourceLineOps = {
 const sourceLine = new index_1.SourceLine(LINE, Object.assign(Object.assign({}, sourceLineOps), { currentLineNumber: 2 }));
 (0, globals_1.describe)('default-generator tests', () => {
     const options = {
-        filename: (args) => `${sourceLine.jsonLine.store}_fixed_filename.txt`,
-        header: (args) => `sample header|${sourceLine.jsonLine.store}`,
+        filename: `${sourceLine.jsonLine.store}_fixed_filename.txt`,
+        header: `sample header|${sourceLine.jsonLine.store}`,
         footer: 'sample footer',
         separator: ';',
         template: function ({ jsonLine }) {

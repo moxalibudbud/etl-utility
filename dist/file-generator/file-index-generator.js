@@ -16,10 +16,7 @@ class FileIndexGenerator extends flat_file_base_lazy_1.FlatFileBaseLazy {
     }
     setFilename(line) {
         const { filename } = this.options;
-        if (typeof filename === 'function') {
-            this.filename = filename(line);
-        }
-        else if (typeof filename === 'object' && filename !== null) {
+        if (typeof filename === 'object' && filename !== null) {
             let name = (0, replace_with_map_1.replaceWithMap)(filename.template, line.jsonLine);
             name = (0, replace_with_function_1.replaceWithFunction)(name);
             this.filename = name;

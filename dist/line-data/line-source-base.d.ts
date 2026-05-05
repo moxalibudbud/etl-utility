@@ -15,6 +15,7 @@ export declare abstract class LineSourceBase {
     abstract get isValid(): boolean;
     abstract get error(): string;
     abstract get isHeader(): boolean;
+    abstract get allData(): JSONObject;
     currentLineNumber: number;
     errors: string[];
 }

@@ -11,7 +11,7 @@ class SourceLine extends line_source_base_1.LineSourceBase {
         this.currentLineNumber = options.currentLineNumber;
         this.separator = options.separator;
         this.columns = options.columns;
-        this.line = line.split(this.separator).map((value) => value.replace(/^"|"$/g, ""));
+        this.line = line.split(this.separator).map((value) => value.replace(/^"|"$/g, ''));
         this.jsonLine = this.toJSON();
     }
     toJSON() {
@@ -41,6 +41,9 @@ class SourceLine extends line_source_base_1.LineSourceBase {
     }
     get output() {
         return (0, utils_1.mapWithDefault)(this.jsonLine || {}, this.options.outputMappings);
+    }
+    get allData() {
+        return Object.assign(Object.assign({}, this.jsonLine), this.output);
     }
     get isHeader() {
         if (this.options.withHeader)

@@ -16,6 +16,9 @@ export declare class JSONSourceLine extends LineSourceBase {
     get output(): {
         [x: string]: any;
     };
+    get allData(): {
+        [x: string]: any;
+    };
     get isHeader(): boolean;
     get identifiers(): JSONObject;
 }
