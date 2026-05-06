@@ -1,6 +1,7 @@
 import { ReadStream } from 'fs';
 import { serviceClient } from '@altavant/azure-blob';
 import { ReadLineBase, ShouldInitiateInterface } from './read-line-base';
+import { createBlobClient } from 'azure-blob-wrapper';
 
 export class BlobReader extends ReadLineBase implements ShouldInitiateInterface {
   constructor(url: string) {
@@ -14,6 +15,17 @@ export class BlobReader extends ReadLineBase implements ShouldInitiateInterface 
     ];
     const client = serviceClient(accountName, accountKey);
     const blobClient = await client.blobClient(this.url);
+    const { readableStreamBody } = await blobClient.download(0);
+    return readableStreamBody as ReadStream;
+  }
+
+  async getReadStreamV2(): Promise<ReadStream> {
+    const auth = {
+      accountName: process.env.AZURE_BLOB_STORAGE_ACCOUNT_NAME as string,
+      accountKey: process.env.AZURE_BLOB_STORAGE_ACCOUNT_KEY as string,
+    };
+
+    const blobClient = createBlobClient(this.url, auth);
     const { readableStreamBody } = await blobClient.download(0);
     return readableStreamBody as ReadStream;
   }
