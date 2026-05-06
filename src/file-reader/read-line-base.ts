@@ -18,7 +18,7 @@ export interface ReadlineInterfacePromise {
   readlineInterfacePromise(
     onLineHandler: ReadlineInterfaceLineHandler,
     onCloseHandler: ReadlineInterfaceCloseHandler,
-    onErrorHandler: ReadlineInterfaceErrorHandler
+    onErrorHandler: ReadlineInterfaceErrorHandler,
   ): Promise<any> | void;
 }
 
@@ -66,7 +66,7 @@ export abstract class ReadLineBase {
     this.readlineInterface.removeAllListeners('error');
   }
 
-  setInterface(readStream: ReadStream) {
+  setInterface(readStream: NodeJS.ReadableStream) {
     this.readlineInterface = readline.createInterface({
       input: readStream,
       crlfDelay: Infinity,
@@ -77,7 +77,7 @@ export abstract class ReadLineBase {
   readlinePromise(
     onLineHandler: ReadlineInterfaceLineHandler,
     onCloseHandler: ReadlineInterfaceCloseHandler,
-    onErrorHandler: ReadlineInterfaceCloseHandler
+    onErrorHandler: ReadlineInterfaceCloseHandler,
   ): Promise<any> {
     this.cleanUpPreviousListeners();
 

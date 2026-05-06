@@ -7,7 +7,7 @@ export class BlobReader extends ReadLineBase implements ShouldInitiateInterface 
     super(url);
   }
 
-  async getReadStream(): Promise<ReadStream> {
+  async getReadStream(): Promise<NodeJS.ReadableStream> {
     const auth = {
       accountName: process.env.AZURE_BLOB_STORAGE_ACCOUNT_NAME as string,
       accountKey: process.env.AZURE_BLOB_STORAGE_ACCOUNT_KEY as string,
