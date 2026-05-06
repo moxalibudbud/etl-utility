@@ -24,14 +24,14 @@
     "access": "public"
   },
   "scripts": {
-    "build": "tsc --noEmit && sh -c '[ -d dist ] && rm -R dist' && pnpm tsc --build tsconfig.prod.json",
+    "build": "tsc --build tsconfig.prod.json",
+    "prepublishOnly": "pnpm build",
+    "release": "pnpm publish --access public",
     "lint": "tsc --noEmit",
     "ts": "tsc --build tsconfig.prod.json",
-    "push": "pnpm build && git add . && git commit -m 'build' && git push",
     "test": "jest",
     "test:prod": "jest --testPathPattern=dist/tests --detectOpenHandles",
-    "test:dev": "jest --testPathPattern=src/tests --detectOpenHandles",
-    "publish": "npm publish --access public"
+    "test:dev": "jest --testPathPattern=src/tests --detectOpenHandles"
   },
   "dependencies": {
     "@altavant/azure-blob": "0.0.1-alpha",
