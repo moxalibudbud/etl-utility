@@ -34,7 +34,6 @@
     "test:dev": "jest --testPathPattern=src/tests --detectOpenHandles"
   },
   "dependencies": {
-    "@altavant/azure-blob": "0.0.1-alpha",
     "azure-blob-wrapper": "^0.0.3",
     "exceljs": "^4.4.0"
   },
