@@ -33,15 +33,17 @@ export function validateLine({
 }: Props): string[] {
   const errors = [];
 
+  // TODO: Disable for now
   // Valdiate length if equal
-  if (line.length !== columns.length) {
-    errors.push(
-      `${errorPrefix(currentLineNumber)} Expected total columns is ${columns.length} but received ${
-        line.length
-      } | Required columns are ${columns.toString()} but line data is ${line.toString()}`
-    );
-  }
+  // if (line.length !== columns.length) {
+  //   errors.push(
+  //     `${errorPrefix(currentLineNumber)} Expected total columns is ${columns.length} but received ${
+  //       line.length
+  //     } | Required columns are ${columns.toString()} but line data is ${line.toString()}`
+  //   );
+  // }
 
+  // TODO: we need to move this outside of this function to follow SRP
   // Validate barcode
   if (!isHeader && barcode !== undefined && !isValidBarcode(barcode)) {
     errors.push(`${errorPrefix(currentLineNumber)} Invalid barcode column with value "${barcode}"`);
