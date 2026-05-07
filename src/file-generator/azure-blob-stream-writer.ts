@@ -81,7 +81,7 @@ export class AzureBlobStreamWriter extends FlatFileBaseLazy implements FlatFileB
     const headerRow = replaceWithFunction(this.options.header, metadata);
 
     // For headers to add new row
-    this.createHeader(headerRow) + '\n';
+    this.createHeader(headerRow);
   }
 
   pushFooter() {

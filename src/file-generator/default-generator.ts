@@ -33,7 +33,7 @@ export class DefaultGenerator extends FlatFileBaseLazy implements FlatFileBaseLa
     const headerRow = replaceWithFunction(this.options.header, metadata);
 
     // For headers to add new row
-    this.createHeader(headerRow) + '\n';
+    this.createHeader(headerRow);
   }
 
   buildRow(line: SourceLine) {
