@@ -46,7 +46,6 @@ export class ETL {
   }
 
   onLineHandler(chunk: string) {
-    console.log('on line event: ', this.lineIndex);
     try {
       this.lineIndex++;
 

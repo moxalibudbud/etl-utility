@@ -120,6 +120,5 @@ export class AzureBlobStreamWriter extends FlatFileBaseLazy implements FlatFileB
     const row = this.buildRow(sourceLine);
     this.writeStream?.write(row);
     this.trackReference(sourceLine);
-    console.log('on push event: ', sourceLine.currentLineNumber);
   }
 }
