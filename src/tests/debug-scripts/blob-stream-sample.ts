@@ -27,6 +27,7 @@ async function testAzureUpload() {
 
   const writer = new AzureBlobStreamWriter({
     containerName: 'wip', // change to your container
+    blobPrefix: 'debug-scripts', // optional virtual folder
   });
 
   writer.filename = 'blob-stream-sample.txt';
@@ -79,9 +80,9 @@ async function testS3Upload() {
     console.error('Azure test failed:', err);
   }
 
-  // try {
-  //   await testS3Upload();
-  // } catch (err) {
-  //   console.error('S3 test failed:', err);
-  // }
+  try {
+    await testS3Upload();
+  } catch (err) {
+    console.error('S3 test failed:', err);
+  }
 })();
