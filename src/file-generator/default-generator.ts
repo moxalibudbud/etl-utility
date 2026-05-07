@@ -1,10 +1,10 @@
 import { FlatFileBaseLazy } from './flat-file-base-lazy';
 import { SourceLine } from '../line-data';
 import { LineOutputOptions } from '../line-data/line-output';
-import { buildLineFromLineKeys } from '../utils';
+import { buildLineFromLineKeys, setFilename } from '../utils';
 import { replaceWithFunction } from '../utils/replace-with-function';
 import { replaceWithMap } from '../utils/replace-with-map';
-import { FlatFileBaseLazyMethods, FlatFileBaseLazyOptions } from '../types';
+import { FlatFileBaseLazyMethods, FlatFileBaseLazyOptions, JSONObject } from '../types';
 
 export class DefaultGenerator extends FlatFileBaseLazy implements FlatFileBaseLazyMethods {
   options: FlatFileBaseLazyOptions & LineOutputOptions;
@@ -17,14 +17,7 @@ export class DefaultGenerator extends FlatFileBaseLazy implements FlatFileBaseLa
   }
 
   setFilename(line: SourceLine) {
-    const { filename } = this.options;
-
-    if (typeof filename === 'object' && filename !== null) {
-      const metadata = { ...line.allData, metadata: this.options.metadata };
-      this.filename = replaceWithFunction(replaceWithMap(filename.template, line.jsonLine), metadata);
-    } else {
-      this.filename = filename;
-    }
+    this.filename = setFilename(this.options.filename, { line, metadata: this.metadata });
   }
 
   pushFooter() {

@@ -3,7 +3,7 @@ import { FlatFileBaseLazyMethods, FlatFileBaseLazyOptions, JSONOutput } from '..
 import { FlatFileBaseLazy } from './flat-file-base-lazy';
 import { SourceLine } from '../line-data';
 import { LineOutputOptions } from '../line-data/line-output';
-import { buildLineFromLineKeys } from '../utils';
+import { setFilename } from '../utils';
 import { replaceWithFunction } from '../utils/replace-with-function';
 import { replaceWithMap } from '../utils/replace-with-map';
 
@@ -34,13 +34,7 @@ export class JSONGenerator extends FlatFileBaseLazy implements FlatFileBaseLazyM
   }
 
   setFilename(line: SourceLine) {
-    const { filename } = this.options;
-
-    if (typeof filename === 'object' && filename !== null) {
-      this.filename = replaceWithFunction(replaceWithMap(filename.template, line.jsonLine));
-    } else {
-      this.filename = filename;
-    }
+    this.filename = setFilename(this.options.filename, { line, metadata: this.metadata });
   }
 
   pushFooter() {

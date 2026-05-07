@@ -25,7 +25,7 @@ export type ETLResult = {
 
 export type FlatFileBaseLazyOptions = {
   path?: string;
-  metadata?: Record<string, any>;
+  metadata?: JSONObject;
 };
 
 export interface FlatFileBaseLazyMethods {
@@ -42,3 +42,7 @@ export interface JSONOutput {
 export interface FlatFileBaseMethods {
   push(...args: any[]): any;
 }
+
+export type Filename = string | { template: string };
+
+export type FileGeneratorValues = 'default-generator' | 'push-if-exist' | 'file-index-generator' | 'json-generator';

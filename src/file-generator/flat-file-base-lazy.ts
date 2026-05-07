@@ -1,14 +1,16 @@
 import { createWriteStream, unlink, existsSync, chmod } from 'fs';
 import { Writable } from 'stream';
-import { FlatFileBaseLazyOptions } from '../types';
+import { FlatFileBaseLazyOptions, JSONObject } from '../types';
 
 export class FlatFileBaseLazy {
   private _filename: string = '';
   path: string;
   writeStream?: Writable;
+  metadata: JSONObject = {};
 
-  constructor(options: FlatFileBaseLazyOptions) {
+  constructor(options: FlatFileBaseLazyOptions = { metadata: {} }) {
     this.path = options?.path ? options.path : '/var/tmp';
+    this.metadata = { ...options.metadata };
   }
 
   createStream(options: { flags?: 'a' | 'w' } = { flags: 'a' }) {

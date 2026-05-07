@@ -1,7 +1,7 @@
 import { PassThrough } from 'stream';
 import { BlockBlobClient, StorageSharedKeyCredential } from '@azure/storage-blob';
 import { LineOutputOptions, SourceLine } from 'src/line-data';
-import { buildLineFromLineKeys } from '../utils';
+import { buildLineFromLineKeys, setFilename } from '../utils';
 import { replaceWithFunction } from '../utils/replace-with-function';
 import { replaceWithMap } from '../utils/replace-with-map';
 import { FlatFileBaseLazyMethods, FlatFileBaseLazyOptions } from '../types';
@@ -71,13 +71,7 @@ export class AzureBlobStreamWriter extends FlatFileBaseLazy implements FlatFileB
   }
 
   setFilename(line: SourceLine) {
-    const { filename } = this.options;
-    if (typeof filename === 'object' && filename !== null) {
-      const metadata = { ...line.allData, metadata: this.options.metadata };
-      this.filename = replaceWithFunction(replaceWithMap(filename.template, line.jsonLine), metadata);
-    } else {
-      this.filename = filename;
-    }
+    this.filename = setFilename(this.options.filename, { line, metadata: this.metadata });
   }
 
   pushHeader(line: SourceLine) {

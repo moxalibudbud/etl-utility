@@ -1,4 +1,4 @@
-import { FileGeneratorValues } from '../line-data';
+import { FileGeneratorValues } from '../types';
 import { DefaultGenerator } from './default-generator';
 import { PushIfExistGenerator } from './push-if-exist';
 import { FileIndexGenerator } from './file-index-generator';

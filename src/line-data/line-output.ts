@@ -1,9 +1,8 @@
+import { Filename, FileGeneratorValues } from '../types';
 import { SourceLine } from './source-line';
 
-export type FileGeneratorValues = 'default-generator' | 'push-if-exist' | 'file-index-generator' | 'json-generator';
-
 type LineOutputBase = {
-  filename: string | { template: string };
+  filename: Filename;
   separator: string;
   header?: string;
   footer?: string;
