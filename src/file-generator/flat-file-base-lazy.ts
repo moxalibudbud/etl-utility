@@ -1,4 +1,5 @@
-import { createWriteStream, WriteStream, unlink, existsSync, chmod } from 'fs';
+import { createWriteStream, unlink, existsSync, chmod } from 'fs';
+import { Writable } from 'stream';
 import { SourceLine } from '../line-data';
 
 export type FlatFileBaseLazyOptions = {
@@ -20,7 +21,7 @@ export interface JSONOutput {
 export class FlatFileBaseLazy {
   private _filename: string = '';
   path: string;
-  writeStream?: WriteStream;
+  writeStream?: Writable;
 
   constructor(options: FlatFileBaseLazyOptions) {
     this.path = options?.path ? options.path : '/var/tmp';
