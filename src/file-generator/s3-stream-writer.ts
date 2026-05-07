@@ -1,7 +1,8 @@
 import { PassThrough } from 'stream';
 import { Upload } from '@aws-sdk/lib-storage';
 import { S3Client, DeleteObjectCommand } from '@aws-sdk/client-s3';
-import { FlatFileBaseLazy, FlatFileBaseLazyOptions } from './flat-file-base-lazy';
+import { FlatFileBaseLazyOptions } from '../types';
+import { FlatFileBaseLazy } from './flat-file-base-lazy';
 
 export type S3StreamWriterOptions = FlatFileBaseLazyOptions & {
   bucket: string;
@@ -24,9 +25,7 @@ export class S3StreamWriter extends FlatFileBaseLazy {
     const pass = new PassThrough();
     this.writeStream = pass;
 
-    const key = this.s3Options.keyPrefix
-      ? `${this.s3Options.keyPrefix}/${this.filename}`
-      : (this.filename as string);
+    const key = this.s3Options.keyPrefix ? `${this.s3Options.keyPrefix}/${this.filename}` : (this.filename as string);
 
     const upload = new Upload({
       client: this._buildClient(),
@@ -55,12 +54,8 @@ export class S3StreamWriter extends FlatFileBaseLazy {
 
   async delete(): Promise<void> {
     if (!this.filename) return;
-    const key = this.s3Options.keyPrefix
-      ? `${this.s3Options.keyPrefix}/${this.filename}`
-      : (this.filename as string);
-    await this._buildClient().send(
-      new DeleteObjectCommand({ Bucket: this.s3Options.bucket, Key: key }),
-    );
+    const key = this.s3Options.keyPrefix ? `${this.s3Options.keyPrefix}/${this.filename}` : (this.filename as string);
+    await this._buildClient().send(new DeleteObjectCommand({ Bucket: this.s3Options.bucket, Key: key }));
   }
 
   private _buildClient(): S3Client {
@@ -68,8 +63,7 @@ export class S3StreamWriter extends FlatFileBaseLazy {
       region: this.s3Options.region ?? process.env.AWS_REGION,
       credentials: {
         accessKeyId: (this.s3Options.accessKeyId ?? process.env.AWS_ACCESS_KEY_ID) as string,
-        secretAccessKey: (this.s3Options.secretAccessKey ??
-          process.env.AWS_SECRET_ACCESS_KEY) as string,
+        secretAccessKey: (this.s3Options.secretAccessKey ?? process.env.AWS_SECRET_ACCESS_KEY) as string,
       },
     });
   }

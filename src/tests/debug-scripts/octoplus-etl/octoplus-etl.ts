@@ -1,4 +1,5 @@
-import { FlatFileBaseLazy, FlatFileBaseLazyMethods } from '../../../file-generator/flat-file-base-lazy';
+import { FlatFileBaseLazyMethods } from '../../../types';
+import { FlatFileBaseLazy } from '../../../file-generator/flat-file-base-lazy';
 import { ETL } from '../../../etl';
 import { OctoplusSourceLine } from './octoplus-source-line';
 import { SourceLine, SourceLineBaseOptions } from '../../../line-data';

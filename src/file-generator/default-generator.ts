@@ -1,9 +1,10 @@
-import { FlatFileBaseLazy, FlatFileBaseLazyMethods, FlatFileBaseLazyOptions } from './flat-file-base-lazy';
+import { FlatFileBaseLazy } from './flat-file-base-lazy';
 import { SourceLine } from '../line-data';
 import { LineOutputOptions } from '../line-data/line-output';
 import { buildLineFromLineKeys } from '../utils';
 import { replaceWithFunction } from '../utils/replace-with-function';
 import { replaceWithMap } from '../utils/replace-with-map';
+import { FlatFileBaseLazyMethods, FlatFileBaseLazyOptions } from '../types';
 
 export class DefaultGenerator extends FlatFileBaseLazy implements FlatFileBaseLazyMethods {
   options: FlatFileBaseLazyOptions & LineOutputOptions;

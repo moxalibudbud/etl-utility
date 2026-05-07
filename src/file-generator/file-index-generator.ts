@@ -1,5 +1,6 @@
 import path from 'path';
-import { FlatFileBaseLazy, FlatFileBaseLazyMethods, FlatFileBaseLazyOptions } from './flat-file-base-lazy';
+import { FlatFileBaseLazyMethods, FlatFileBaseLazyOptions } from '../types';
+import { FlatFileBaseLazy } from './flat-file-base-lazy';
 import { SourceLine } from '../line-data';
 import { LineOutputOptions } from '../line-data/line-output';
 import { buildLineFromLineKeys } from '../utils';

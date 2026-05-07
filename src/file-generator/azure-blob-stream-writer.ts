@@ -1,23 +1,30 @@
 import { PassThrough } from 'stream';
 import { BlockBlobClient, StorageSharedKeyCredential } from '@azure/storage-blob';
-import { FlatFileBaseLazy, FlatFileBaseLazyOptions } from './flat-file-base-lazy';
+import { LineOutputOptions, SourceLine } from 'src/line-data';
+import { buildLineFromLineKeys } from '../utils';
+import { replaceWithFunction } from '../utils/replace-with-function';
+import { replaceWithMap } from '../utils/replace-with-map';
+import { FlatFileBaseLazyMethods, FlatFileBaseLazyOptions } from '../types';
+import { FlatFileBaseLazy } from '../file-generator';
 
-export type AzureBlobStreamWriterOptions = FlatFileBaseLazyOptions & {
-  containerName: string;
-  accountName?: string;
-  accountKey?: string;
-  blobPrefix?: string;
-  bufferSize?: number;
-  maxConcurrency?: number;
-};
+export type AzureBlobStreamWriterOptions = FlatFileBaseLazyOptions &
+  LineOutputOptions & {
+    containerName: string;
+    accountName?: string;
+    accountKey?: string;
+    blobPrefix?: string;
+    bufferSize?: number;
+    maxConcurrency?: number;
+  };
 
-export class AzureBlobStreamWriter extends FlatFileBaseLazy {
-  private readonly azureOptions: AzureBlobStreamWriterOptions;
+export class AzureBlobStreamWriter extends FlatFileBaseLazy implements FlatFileBaseLazyMethods {
+  private readonly options: AzureBlobStreamWriterOptions;
   private uploadPromise?: Promise<any>;
+  rowReferences = new Set<number | string>();
 
   constructor(options: AzureBlobStreamWriterOptions) {
     super(options);
-    this.azureOptions = options;
+    this.options = options;
   }
 
   createStream(_options?: { flags?: 'a' | 'w' }): void {
@@ -26,9 +33,19 @@ export class AzureBlobStreamWriter extends FlatFileBaseLazy {
 
     this.uploadPromise = this._buildClient().uploadStream(
       pass,
-      this.azureOptions.bufferSize ?? 4 * 1024 * 1024,
-      this.azureOptions.maxConcurrency ?? 5,
+      this.options.bufferSize ?? 4 * 1024 * 1024,
+      this.options.maxConcurrency ?? 5,
     );
+  }
+
+  private _buildClient(): BlockBlobClient {
+    const accountName = (this.options.accountName ?? process.env.AZURE_BLOB_STORAGE_ACCOUNT_NAME) as string;
+    const accountKey = (this.options.accountKey ?? process.env.AZURE_BLOB_STORAGE_ACCOUNT_KEY) as string;
+    const blobName = this.options.blobPrefix
+      ? `${this.options.blobPrefix}/${this.filename}`
+      : (this.filename as string);
+    const url = `https://${accountName}.blob.core.windows.net/${this.options.containerName}/${blobName}`;
+    return new BlockBlobClient(url, new StorageSharedKeyCredential(accountName, accountKey));
   }
 
   async end(): Promise<object> {
@@ -53,15 +70,76 @@ export class AzureBlobStreamWriter extends FlatFileBaseLazy {
     await this._buildClient().delete();
   }
 
-  private _buildClient(): BlockBlobClient {
-    const accountName = (this.azureOptions.accountName ??
-      process.env.AZURE_BLOB_STORAGE_ACCOUNT_NAME) as string;
-    const accountKey = (this.azureOptions.accountKey ??
-      process.env.AZURE_BLOB_STORAGE_ACCOUNT_KEY) as string;
-    const blobName = this.azureOptions.blobPrefix
-      ? `${this.azureOptions.blobPrefix}/${this.filename}`
-      : (this.filename as string);
-    const url = `https://${accountName}.blob.core.windows.net/${this.azureOptions.containerName}/${blobName}`;
-    return new BlockBlobClient(url, new StorageSharedKeyCredential(accountName, accountKey));
+  setFilename(line: SourceLine) {
+    const { filename } = this.options;
+    if (typeof filename === 'object' && filename !== null) {
+      const metadata = { ...line.allData, metadata: this.options.metadata };
+      this.filename = replaceWithFunction(replaceWithMap(filename.template, line.jsonLine), metadata);
+    } else {
+      this.filename = filename;
+    }
+  }
+
+  pushHeader(line: SourceLine) {
+    if (!this.options.header) return;
+
+    const metadata = { ...line.allData, metadata: this.options.metadata };
+    const headerRow = replaceWithFunction(this.options.header, metadata);
+
+    // For headers to add new row
+    this.createHeader(headerRow) + '\n';
+  }
+
+  pushFooter() {
+    if (this.options?.footer) {
+      this.writeStream?.write(this.options?.footer);
+    }
+  }
+
+  buildRow(line: SourceLine) {
+    let row = '';
+
+    if (typeof this.options.template === 'string') {
+      const metadata = { ...line.allData, metadata: this.options.metadata || {} };
+      row = replaceWithFunction(replaceWithMap(this.options.template, line.jsonLine), metadata);
+    } else {
+      const { separator } = this.options;
+      row = buildLineFromLineKeys(line.output, { separator });
+    }
+
+    // Only append new line for incoming row.
+    // This will prevent an empty row in the file
+    return line.isHeader ? row : '\n' + row;
+  }
+
+  isRowExist({ jsonLine }: SourceLine) {
+    if (this.options.uniqueKey) {
+      return !!this.rowReferences.has(jsonLine[this.options.uniqueKey]);
+    }
+  }
+
+  trackReference({ jsonLine }: SourceLine) {
+    if (this.options.uniqueKey) {
+      const key = jsonLine[this.options.uniqueKey];
+      this.rowReferences.add(key);
+    }
+  }
+
+  push(sourceLine: SourceLine) {
+    const isRowExist = this.isRowExist(sourceLine);
+
+    if (!this.filename) {
+      this.setFilename(sourceLine);
+    }
+    if (!this.writeStream) {
+      this.createStream();
+      this.pushHeader(sourceLine);
+    }
+
+    if (isRowExist) return;
+
+    const row = this.buildRow(sourceLine);
+    this.writeStream?.write(row);
+    this.trackReference(sourceLine);
   }
 }

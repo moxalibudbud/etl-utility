@@ -1,22 +1,6 @@
 import { createWriteStream, unlink, existsSync, chmod } from 'fs';
 import { Writable } from 'stream';
-import { SourceLine } from '../line-data';
-
-export type FlatFileBaseLazyOptions = {
-  path?: string;
-  metadata?: Record<string, any>;
-};
-
-export interface FlatFileBaseLazyMethods {
-  push(line: SourceLine): any;
-  setFilename(line: SourceLine): any;
-  pushFooter(): void;
-}
-
-export interface JSONOutput {
-  buildFinalJSON(): void;
-  pushFinalJSON(): void;
-}
+import { FlatFileBaseLazyOptions } from '../types';
 
 export class FlatFileBaseLazy {
   private _filename: string = '';

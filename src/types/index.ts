@@ -1,3 +1,5 @@
+import { SourceLine } from '../line-data';
+
 export type NestedRecord = {
   [key: string]: string | number | boolean | NestedRecord | NestedRecord[];
 };
@@ -20,3 +22,23 @@ export type ETLResult = {
   localErrorReportFilename: string;
   metadata?: JSONObject | string;
 };
+
+export type FlatFileBaseLazyOptions = {
+  path?: string;
+  metadata?: Record<string, any>;
+};
+
+export interface FlatFileBaseLazyMethods {
+  push(line: SourceLine): any;
+  setFilename(line: SourceLine): any;
+  pushFooter(): void;
+}
+
+export interface JSONOutput {
+  buildFinalJSON(): void;
+  pushFinalJSON(): void;
+}
+
+export interface FlatFileBaseMethods {
+  push(...args: any[]): any;
+}

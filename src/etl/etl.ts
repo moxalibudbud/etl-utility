@@ -2,7 +2,8 @@ import { ErrorReport } from '../file-generator/error-report';
 import { ReadLineInterface, readLineInterface, ReadLineInterfaceType } from '../file-reader/readline-interface-factory';
 import { ETLResult, JSONObject } from '../types';
 import { SourceLine, LineSourceBaseOptions } from '../line-data';
-import { FlatFileBaseLazy, FlatFileBaseLazyMethods } from '../file-generator/flat-file-base-lazy';
+import { FlatFileBaseLazyMethods } from '../types';
+import { FlatFileBaseLazy } from '../file-generator';
 
 type ETLOptions = {
   line: LineSourceBaseOptions;

@@ -1,4 +1,5 @@
-import { FlatFileBase, FlatFileBaseMethods } from './flat-file-base';
+import { FlatFileBaseMethods } from '../types';
+import { FlatFileBase } from './flat-file-base';
 
 type ErrorReportOptions = {
   filename: string;

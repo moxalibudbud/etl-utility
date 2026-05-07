@@ -5,10 +5,6 @@ type FlatFileBaseOptions = {
   path?: string;
 };
 
-export interface FlatFileBaseMethods {
-  push(...args: any[]): any;
-}
-
 export class FlatFileBase {
   writeStream: WriteStream;
   filename: string;
