@@ -53,9 +53,8 @@ export class DefaultGenerator extends FlatFileBaseLazy implements FlatFileBaseLa
   }
 
   isRowExist({ jsonLine }: SourceLine) {
-    if (this.options.uniqueKey) {
-      return !!this.rowReferences.has(jsonLine[this.options.uniqueKey]);
-    }
+    if (!this.options.uniqueKey) return false;
+    return !!this.rowReferences.has(jsonLine[this.options.uniqueKey]);
   }
 
   accumulateNumberValue({ jsonLine }: SourceLine) {

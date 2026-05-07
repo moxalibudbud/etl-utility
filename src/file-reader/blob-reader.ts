@@ -14,6 +14,9 @@ export class BlobReader extends ReadLineBase implements ShouldInitiateInterface 
     };
 
     const blobClient = createBlobClient(this.url, auth);
+    const isBlobExist = await blobClient.exists();
+
+    if (!isBlobExist) throw new Error(`${this.url} does not exist.`);
     const { readableStreamBody } = await blobClient.download(0);
     return readableStreamBody as ReadStream;
   }

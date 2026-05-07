@@ -1,17 +1,18 @@
 import { PassThrough } from 'stream';
-import { BlockBlobClient, StorageSharedKeyCredential } from '@azure/storage-blob';
+import { BlobUploadCommonResponse, BlockBlobClient, StorageSharedKeyCredential } from '@azure/storage-blob';
 import { LineOutputOptions, SourceLine } from 'src/line-data';
 import { buildLineFromLineKeys, setFilename } from '../utils';
 import { replaceWithFunction } from '../utils/replace-with-function';
 import { replaceWithMap } from '../utils/replace-with-map';
 import { FlatFileBaseLazyMethods, FlatFileBaseLazyOptions } from '../types';
 import { FlatFileBaseLazy } from '../file-generator';
+const DEFAULT_BUFFER_SIZE = 4 * 1024 * 1024; // 4MB
+const DEFAULT_CONCURRENCY = 5;
 
 export type AzureBlobStreamWriterOptions = FlatFileBaseLazyOptions &
   LineOutputOptions & {
     containerName: string;
-    accountName?: string;
-    accountKey?: string;
+    connectionString?: string;
     blobPrefix?: string;
     bufferSize?: number;
     maxConcurrency?: number;
@@ -19,7 +20,8 @@ export type AzureBlobStreamWriterOptions = FlatFileBaseLazyOptions &
 
 export class AzureBlobStreamWriter extends FlatFileBaseLazy implements FlatFileBaseLazyMethods {
   private readonly options: AzureBlobStreamWriterOptions;
-  private uploadPromise?: Promise<any>;
+  private uploadPromise?: Promise<BlobUploadCommonResponse>;
+  private uploadError?: Error;
   rowReferences = new Set<number | string>();
 
   constructor(options: AzureBlobStreamWriterOptions) {
@@ -29,45 +31,28 @@ export class AzureBlobStreamWriter extends FlatFileBaseLazy implements FlatFileB
 
   createStream(_options?: { flags?: 'a' | 'w' }): void {
     const pass = new PassThrough();
+    const bufferSize = this.options.bufferSize ?? DEFAULT_BUFFER_SIZE;
+    const maxConcurrency = this.options.maxConcurrency ?? DEFAULT_CONCURRENCY;
     this.writeStream = pass;
 
-    this.uploadPromise = this._buildClient().uploadStream(
-      pass,
-      this.options.bufferSize ?? 4 * 1024 * 1024,
-      this.options.maxConcurrency ?? 5,
-    );
+    this.uploadPromise = this._buildClient()
+      .uploadStream(pass, bufferSize, maxConcurrency)
+      .catch((err) => {
+        this.uploadError = err;
+        pass.destroy(err); // makes future writes fail loudly
+        throw err; // preserved for end()
+      });
   }
 
   private _buildClient(): BlockBlobClient {
-    const accountName = (this.options.accountName ?? process.env.AZURE_BLOB_STORAGE_ACCOUNT_NAME) as string;
-    const accountKey = (this.options.accountKey ?? process.env.AZURE_BLOB_STORAGE_ACCOUNT_KEY) as string;
-    const blobName = this.options.blobPrefix
-      ? `${this.options.blobPrefix}/${this.filename}`
-      : (this.filename as string);
-    const url = `https://${accountName}.blob.core.windows.net/${this.options.containerName}/${blobName}`;
-    return new BlockBlobClient(url, new StorageSharedKeyCredential(accountName, accountKey));
-  }
-
-  async end(): Promise<object> {
-    return new Promise((resolve, reject) => {
-      if (!this.writeStream) {
-        resolve({});
-        return;
-      }
-      this.writeStream.end(async () => {
-        this.writeStream?.removeAllListeners();
-        try {
-          resolve((await this.uploadPromise) ?? {});
-        } catch (err) {
-          reject(err);
-        }
-      });
-    });
+    const connectionString = (this.options.connectionString ?? process.env.AZURE_BLOB_CONNECTION_STRING) || '';
+    const blobName = this.filename || `${Date.now()}_filename.txt`;
+    return new BlockBlobClient(connectionString, this.options.containerName, blobName);
   }
 
   async delete(): Promise<void> {
     if (!this.filename) return;
-    await this._buildClient().delete();
+    await this._buildClient().deleteIfExists();
   }
 
   setFilename(line: SourceLine) {
@@ -107,9 +92,8 @@ export class AzureBlobStreamWriter extends FlatFileBaseLazy implements FlatFileB
   }
 
   isRowExist({ jsonLine }: SourceLine) {
-    if (this.options.uniqueKey) {
-      return !!this.rowReferences.has(jsonLine[this.options.uniqueKey]);
-    }
+    if (!this.options.uniqueKey) return false;
+    return !!this.rowReferences.has(jsonLine[this.options.uniqueKey]);
   }
 
   trackReference({ jsonLine }: SourceLine) {
@@ -120,6 +104,7 @@ export class AzureBlobStreamWriter extends FlatFileBaseLazy implements FlatFileB
   }
 
   push(sourceLine: SourceLine) {
+    if (this.uploadError) throw this.uploadError;
     const isRowExist = this.isRowExist(sourceLine);
 
     if (!this.filename) {
@@ -135,5 +120,6 @@ export class AzureBlobStreamWriter extends FlatFileBaseLazy implements FlatFileB
     const row = this.buildRow(sourceLine);
     this.writeStream?.write(row);
     this.trackReference(sourceLine);
+    console.log('on push event: ', sourceLine.currentLineNumber);
   }
 }

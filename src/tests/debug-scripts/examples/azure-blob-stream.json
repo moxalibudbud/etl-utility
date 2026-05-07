@@ -23,7 +23,7 @@
     },
     "output": {
       "filename": {
-        "template": "STK_[return test]_{store}.dat"
+        "template": "STK_xxx_{store}.dat"
       },
       "header": "FTAIL|[return args.store]|[return args.count_id]",
       "template": "FDETL|[return args.metadata.timestamp]||{sku}|{counted}||",
