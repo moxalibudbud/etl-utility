@@ -90,6 +90,13 @@ describe('replaceWithFunction', () => {
       expect(result).toBe('count_42');
     });
 
+    it('concatenates surname and name with a hyphen using template literal', () => {
+      const template = '[return `${args.surname}-${args.name}`]';
+      const result = replaceWithFunction(template, { surname: 'Doe', name: 'John' });
+
+      expect(result).toBe('Doe-John');
+    });
+
     it('evaluates a boolean metadata field', () => {
       const template = 'flag_[return args.active]';
       const result = replaceWithFunction(template, { active: true });

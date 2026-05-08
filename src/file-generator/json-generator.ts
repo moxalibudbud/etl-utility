@@ -44,9 +44,10 @@ export class JSONGenerator extends FlatFileBaseLazy implements FlatFileBaseLazyM
   }
 
   pushHeader(line: SourceLine) {
-    const header = replaceWithFunction(this.options.header || '', line.allData);
-    // const header = replaceWithMap(this.options.header as string, line.jsonLine);
-    this.rootData = { ...JSON.parse(header) };
+    const metadata = { ...line.allData, metadata: this.options.metadata };
+    const headerRow = replaceWithFunction(this.options.header || '', metadata);
+
+    this.rootData = { ...JSON.parse(headerRow) };
   }
 
   private parseRootPath(path: string): ParsedPath {
