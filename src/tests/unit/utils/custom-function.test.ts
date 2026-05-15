@@ -37,4 +37,48 @@ describe('customFunction', () => {
       expect(result).toBe('default');
     });
   });
+
+  describe('regex operations on args values', () => {
+    it('removes all whitespace from a string value', () => {
+      const fnBody = 'return args.value.replace(/\\s+/g, "")';
+      const result = customFunction(fnBody, { value: 'hello world  foo' }, null);
+
+      expect(result).toBe('helloworldfoo');
+    });
+
+    it('replaces whitespace with underscores', () => {
+      const fnBody = 'return args.value.replace(/\\s+/g, "_")';
+      const result = customFunction(fnBody, { value: 'hello world' }, null);
+
+      expect(result).toBe('hello_world');
+    });
+
+    it('removes all double quotes from a string value', () => {
+      const fnBody = 'return args.value.replace(/"/g, "")';
+      const result = customFunction(fnBody, { value: '"hello" "world"' }, null);
+
+      expect(result).toBe('hello world');
+    });
+
+    it('replaces double quotes with single quotes', () => {
+      const fnBody = "return args.value.replace(/\"/g, \"'\")";
+      const result = customFunction(fnBody, { value: '"foo" and "bar"' }, null);
+
+      expect(result).toBe("'foo' and 'bar'");
+    });
+
+    it('removes both whitespace and double quotes', () => {
+      const fnBody = 'return args.value.replace(/[\\s"]+/g, "")';
+      const result = customFunction(fnBody, { value: ' "foo" "bar" ' }, null);
+
+      expect(result).toBe('foobar');
+    });
+
+    it('returns defaultValue when regex is applied to a non-string arg', () => {
+      const fnBody = 'return args.value.replace(/\\s+/g, "")';
+      const result = customFunction(fnBody, { value: 42 }, 'fallback');
+
+      expect(result).toBe('fallback');
+    });
+  });
 });
