@@ -6,7 +6,7 @@ import { LineOutputOptions } from '../line-data/line-output';
 import { setFilename } from '../utils';
 import { replaceWithFunction } from '../utils/replace-with-function';
 import { replaceWithMap } from '../utils/replace-with-map';
-import { sanitizeJsonStr } from 'src/utils/santize-string';
+import { sanitizeJsonStr } from '../utils/santize-string';
 
 // Parsed path information
 interface ParsedPath {
