@@ -1,4 +1,5 @@
 import { customFunction } from './custom-function';
+import { sanitizeString } from './santize-string';
 
 type SupportedFunctions = (...args: any[]) => string;
 
@@ -59,6 +60,7 @@ function dateTime(format: string = 'YYYY-MM-DDTHH:mm:ssZ', timezone: string = 'U
 const supportedFunctions: Record<string, SupportedFunctions> = {
   timestamp: () => Date.now().toString(),
   dateTime,
+  sanitizeString,
 };
 
 /**

@@ -75,6 +75,32 @@ describe('replaceWithFunction', () => {
     });
   });
 
+  describe('supported function: sanitizeString', () => {
+    it('returns the string unchanged when no special characters are present', () => {
+      const template = '[sanitizeString, hello world]';
+      const result = replaceWithFunction(template);
+      expect(result).toBe('hello world');
+    });
+
+    it('replaces control characters with spaces', () => {
+      const template = `[sanitizeString, hello\nworld]`;
+      const result = replaceWithFunction(template);
+      expect(result).toBe('hello world');
+    });
+
+    it('escapes bare backslashes', () => {
+      const template = '[sanitizeString, path\\kfile]';
+      const result = replaceWithFunction(template);
+      expect(result).toBe('path\\\\kfile');
+    });
+
+    it('escapes extra space', () => {
+      const template = '[sanitizeString, 031621123109        ]';
+      const result = replaceWithFunction(template);
+      expect(result).toBe('031621123109');
+    });
+  });
+
   describe('customFunction fallback (unknown function name)', () => {
     it('evaluates a simple property access from metadata', () => {
       const template = 'user_[return args.name].txt';
