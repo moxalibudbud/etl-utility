@@ -5,5 +5,8 @@ export function sanitizeString(string: string): string {
 }
 
 export function sanitizeJsonValue(value: string): string {
-  return sanitizeString(value).replace(/"/g, '\\"'); // escape double quotes so they don't break JSON structure
+  return value
+    .replace(/\\(?!["\\/bfnrtu])/g, '') // strip bare backslashes (not valid JSON escape sequences)
+    .replace(/[\x00-\x1F\x7F]/g, ' ')   // all control chars → space
+    .replace(/"/g, '\\"');               // escape double quotes so they don't break JSON structure
 }

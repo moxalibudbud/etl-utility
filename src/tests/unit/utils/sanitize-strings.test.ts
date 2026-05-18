@@ -1,5 +1,5 @@
 import { expect, describe, it } from '@jest/globals';
-import { sanitizeString } from '../../../utils/santize-string';
+import { sanitizeString, sanitizeJsonValue } from '../../../utils/santize-string';
 
 describe('sanitizeString', () => {
   describe('control characters → space', () => {
@@ -34,12 +34,12 @@ describe('sanitizeString', () => {
 
   describe('JSON backslash safety', () => {
     it('escapes a bare backslash not followed by a valid JSON escape char', () => {
-      const input = 'path\\qfile';  // value: path\qfile
-      expect(sanitizeString(input)).toBe('path\\\\qfile');  // value: path\\qfile
+      const input = 'path\\qfile'; // value: path\qfile
+      expect(sanitizeString(input)).toBe('path\\\\qfile'); // value: path\\qfile
     });
 
     it('leaves a backslash followed by a valid JSON escape char unchanged', () => {
-      const input = '\\nline\\ttab\\"quote';  // value: \nline\ttab\"quote — all valid JSON escapes
+      const input = '\\nline\\ttab\\"quote'; // value: \nline\ttab\"quote — all valid JSON escapes
       expect(sanitizeString(input)).toBe('\\nline\\ttab\\"quote');
     });
   });
@@ -95,6 +95,63 @@ describe('sanitizeString', () => {
 
     it('returns a string with numbers and symbols unchanged', () => {
       expect(sanitizeString('abc123 !@#$%^&*()')).toBe('abc123 !@#$%^&*()');
+    });
+  });
+});
+
+describe('sanitizeJsonValue', () => {
+  describe('double quote escaping', () => {
+    it('escapes a double quote', () => {
+      expect(sanitizeJsonValue('"hello"')).toBe('\\"hello\\"');
+    });
+
+    it('escapes multiple double quotes', () => {
+      expect(sanitizeJsonValue('say "hi" there')).toBe('say \\"hi\\" there');
+    });
+
+    it('returns empty string unchanged', () => {
+      expect(sanitizeJsonValue('')).toBe('');
+    });
+
+    it('returns a clean string unchanged', () => {
+      expect(sanitizeJsonValue('Hello World')).toBe('Hello World');
+    });
+  });
+
+  describe('inherits sanitizeString behaviour', () => {
+    it('replaces control characters with spaces', () => {
+      expect(sanitizeJsonValue('col1\tcol2\ncol3')).toBe('col1 col2 col3');
+    });
+
+    it('removes bare backslashes', () => {
+      expect(sanitizeJsonValue('path\\qfile')).toBe('pathqfile');
+    });
+  });
+
+  describe('combined control chars and double quotes', () => {
+    it('replaces control chars and escapes quotes together', () => {
+      expect(sanitizeJsonValue('"col1\ncol2"')).toBe('\\"col1 col2\\"');
+    });
+  });
+
+  describe('safe for JSON.parse', () => {
+    it('produces output that does not throw when embedded in a JSON string', () => {
+      const dirty = '"value" with\nnewline and\ttab';
+      const clean = sanitizeJsonValue(dirty);
+      expect(() => JSON.parse(`{"key": "${clean}"}`)).not.toThrow();
+    });
+
+    it('produces output safe for JSON.parse with control chars and quotes', () => {
+      const dirty = '"col1\x00col2"\x1F"col3"';
+      const clean = sanitizeJsonValue(dirty);
+      expect(() => JSON.parse(`{"key": "${clean}"}`)).not.toThrow();
+    });
+
+    it('produces output safe for JSON.parse with control chars and quotes', () => {
+      const dirty =
+        '{"sku": "032825445973", "productName": "WV3ABH807FS-0BO:VLT.0BO:41:CAMICIA M\\\LUNGHE SCUDETTO COLLEGE", "barcode": "8050943098055", "rsp": 3430.00, "cost": 1083.20, "categoryRef": "6755"}';
+      const clean = sanitizeJsonValue(dirty);
+      expect(() => JSON.parse(`{"key": "${clean}"}`)).not.toThrow();
     });
   });
 });
