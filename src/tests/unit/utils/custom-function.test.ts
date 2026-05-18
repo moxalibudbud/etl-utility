@@ -61,7 +61,7 @@ describe('customFunction', () => {
     });
 
     it('replaces double quotes with single quotes', () => {
-      const fnBody = "return args.value.replace(/\"/g, \"'\")";
+      const fnBody = 'return args.value.replace(/"/g, "\'")';
       const result = customFunction(fnBody, { value: '"foo" and "bar"' }, null);
 
       expect(result).toBe("'foo' and 'bar'");

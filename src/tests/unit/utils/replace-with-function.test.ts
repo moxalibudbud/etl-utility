@@ -171,6 +171,13 @@ describe('replaceWithFunction', () => {
 
       expect(result).toBe('0');
     });
+
+    it('removes all whitespace from a string value', () => {
+      const template = '[return args.value.replace(/\\s+/g, "")]';
+      const result = replaceWithFunction(template, { value: 'hello world  foo' });
+
+      expect(result).toBe('helloworldfoo');
+    });
   });
 
   describe('multiple placeholders', () => {

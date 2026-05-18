@@ -90,7 +90,7 @@ export function replaceWithFunction(template: string, metadata: Object = {}): st
           return match; // Keep original placeholder on error
         }
       } else {
-        const value = customFunction(functionName, metadata, match);
+        const value = customFunction(content, metadata, match);
         return value;
       }
     } catch (parseError) {
