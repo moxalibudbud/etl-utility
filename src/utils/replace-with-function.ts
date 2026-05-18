@@ -1,5 +1,5 @@
 import { customFunction } from './custom-function';
-import { sanitizeString } from './santize-string';
+import { sanitizeString, removeWhiteSpaces } from './santize-string';
 
 type SupportedFunctions = (...args: any[]) => string;
 
@@ -61,6 +61,7 @@ const supportedFunctions: Record<string, SupportedFunctions> = {
   timestamp: () => Date.now().toString(),
   dateTime,
   sanitizeString,
+  removeWhiteSpaces,
 };
 
 /**
@@ -78,7 +79,13 @@ export function replaceWithFunction(template: string, metadata: Object = {}): st
       // Split by comma and trim whitespace
       const parts = content.split(',').map((part: string) => part.trim());
       const functionName = parts[0];
-      const args = parts.slice(1);
+      const args = parts.slice(1).map((arg: string) => {
+        if (arg.startsWith('metadata.')) {
+          const key = arg.slice('metadata.'.length);
+          return (metadata as Record<string, unknown>)[key] ?? arg;
+        }
+        return arg;
+      });
 
       // Check if function exists
       if (supportedFunctions.hasOwnProperty(functionName)) {

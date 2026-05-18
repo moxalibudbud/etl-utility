@@ -88,9 +88,9 @@ describe('replaceWithFunction', () => {
       expect(result).toBe('hello world');
     });
 
-    it('escapes bare backslashes', () => {
-      const template = '[sanitizeString, path\\kfile]';
-      const result = replaceWithFunction(template);
+    it('escapes bare backslashes from a metadata value', () => {
+      const template = '[sanitizeString, metadata.path]';
+      const result = replaceWithFunction(template, { path: 'path\\kfile' });
       expect(result).toBe('path\\\\kfile');
     });
 
@@ -98,6 +98,18 @@ describe('replaceWithFunction', () => {
       const template = '[sanitizeString, 031621123109        ]';
       const result = replaceWithFunction(template);
       expect(result).toBe('031621123109');
+    });
+  });
+
+  describe('supported function: removeWhiteSpaces', () => {
+    it('removes all whitespace from a plain string argument', () => {
+      const result = replaceWithFunction('[removeWhiteSpaces, hello world]');
+      expect(result).toBe('helloworld');
+    });
+
+    it('removes whitespace from a metadata value', () => {
+      const result = replaceWithFunction('[removeWhiteSpaces, metadata.label]', { label: 'foo bar baz' });
+      expect(result).toBe('foobarbaz');
     });
   });
 

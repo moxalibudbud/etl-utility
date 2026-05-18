@@ -1,5 +1,5 @@
 import { expect, describe, it } from '@jest/globals';
-import { sanitizeString, sanitizeJsonValue } from '../../../utils/santize-string';
+import { sanitizeString, sanitizeJsonValue, removeWhiteSpaces } from '../../../utils/santize-string';
 
 describe('sanitizeString', () => {
   describe('control characters → space', () => {
@@ -41,6 +41,11 @@ describe('sanitizeString', () => {
     it('leaves a backslash followed by a valid JSON escape char unchanged', () => {
       const input = '\\nline\\ttab\\"quote'; // value: \nline\ttab\"quote — all valid JSON escapes
       expect(sanitizeString(input)).toBe('\\nline\\ttab\\"quote');
+    });
+
+    it('leaves a double backslash before a non-JSON-escape char unchanged', () => {
+      const input = 'M\\\\LUNGHE'; // value: M\\LUNGHE — \\ is a valid JSON escape for backslash
+      expect(sanitizeString(input)).toBe('M\\\\LUNGHE'); // second-pass re-processing must not split the \\ pair
     });
   });
 
@@ -99,6 +104,24 @@ describe('sanitizeString', () => {
   });
 });
 
+describe('removeWhiteSpaces', () => {
+  it('removes all spaces from a string', () => {
+    expect(removeWhiteSpaces('hello world')).toBe('helloworld');
+  });
+
+  it('removes tabs and newlines', () => {
+    expect(removeWhiteSpaces('hello\t\nworld')).toBe('helloworld');
+  });
+
+  it('returns an empty string unchanged', () => {
+    expect(removeWhiteSpaces('')).toBe('');
+  });
+
+  it('returns a string with no whitespace unchanged', () => {
+    expect(removeWhiteSpaces('nospaces')).toBe('nospaces');
+  });
+});
+
 describe('sanitizeJsonValue', () => {
   describe('double quote escaping', () => {
     it('escapes a double quote', () => {
@@ -125,6 +148,11 @@ describe('sanitizeJsonValue', () => {
 
     it('removes bare backslashes', () => {
       expect(sanitizeJsonValue('path\\qfile')).toBe('pathqfile');
+    });
+
+    it('leaves a double backslash before a non-JSON-escape char unchanged', () => {
+      const input = 'M\\\\LUNGHE'; // value: M\\LUNGHE — \\ is a valid JSON escape for backslash
+      expect(sanitizeJsonValue(input)).toBe('M\\\\LUNGHE'); // \\ pair must not be split; bare \L stripping should not touch it
     });
   });
 
