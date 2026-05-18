@@ -6,7 +6,7 @@ import { LineOutputOptions } from '../line-data/line-output';
 import { setFilename } from '../utils';
 import { replaceWithFunction } from '../utils/replace-with-function';
 import { replaceWithMap } from '../utils/replace-with-map';
-import { sanitizeString } from '../utils/santize-string';
+import { sanitizeString, sanitizeJsonValue } from '../utils/santize-string';
 
 // Parsed path information
 interface ParsedPath {
@@ -94,10 +94,15 @@ export class JSONGenerator extends FlatFileBaseLazy implements FlatFileBaseLazyM
 
     const bucket = this.arrayBuckets.get(arrayKey)!;
     const metadata = { ...line.allData, metadata: this.options.metadata || {} };
-    const jsonStr = replaceWithFunction(replaceWithMap(this.options.template as string, line.jsonLine), metadata);
+    const sanitizedLine = Object.fromEntries(Object.entries(line.jsonLine).map(([k, v]) => [k, sanitizeJsonValue(v)]));
+    const jsonStr = replaceWithFunction(replaceWithMap(this.options.template as string, sanitizedLine), metadata);
     const sanitizedJsonStr = sanitizeString(jsonStr);
 
-    bucket.push(JSON.parse(sanitizedJsonStr));
+    try {
+      bucket.push(JSON.parse(sanitizedJsonStr));
+    } catch (e) {
+      throw new Error(`JSON.parse failed.\nString: ${sanitizedJsonStr}\n\nOriginal error: ${(e as Error).message}`);
+    }
   }
 
   isRowExist({ jsonLine }: SourceLine) {
