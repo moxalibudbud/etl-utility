@@ -6,7 +6,7 @@ import { LineOutputOptions } from '../line-data/line-output';
 import { setFilename } from '../utils';
 import { replaceWithFunction } from '../utils/replace-with-function';
 import { replaceWithMap } from '../utils/replace-with-map';
-import { sanitizeJsonStr } from '../utils/santize-string';
+import { sanitizeString } from '../utils/santize-string';
 
 // Parsed path information
 interface ParsedPath {
@@ -95,7 +95,7 @@ export class JSONGenerator extends FlatFileBaseLazy implements FlatFileBaseLazyM
     const bucket = this.arrayBuckets.get(arrayKey)!;
     const metadata = { ...line.allData, metadata: this.options.metadata || {} };
     const jsonStr = replaceWithFunction(replaceWithMap(this.options.template as string, line.jsonLine), metadata);
-    const sanitizedJsonStr = sanitizeJsonStr(jsonStr);
+    const sanitizedJsonStr = sanitizeString(jsonStr);
 
     bucket.push(JSON.parse(sanitizedJsonStr));
   }
