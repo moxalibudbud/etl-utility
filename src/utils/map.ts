@@ -1,12 +1,13 @@
 import { customFunction } from './custom-function';
+import { replaceWithFunction } from './replace-with-function';
 
 type Object = Record<string, any>;
 
 export function mapFields(input: Object, config: Object | ((input: Object) => any)): Object {
   const result: Object = {};
 
-  for (const [outputKey, rule] of Object.entries(config)) {
-    result[outputKey] = typeof rule === 'function' ? rule(input) : input[rule];
+  for (const [outputKey, stringTemplate] of Object.entries(config)) {
+    result[outputKey] = typeof stringTemplate === 'function' ? stringTemplate(input) : input[stringTemplate];
   }
 
   return result;
@@ -20,12 +21,11 @@ export function mapWithDefault(input: Object, config: Object): Object {
     return input;
   }
 
-  for (const [outputKey, rule] of Object.entries(config)) {
-    if (typeof rule === 'string' && rule.startsWith('[') && rule.endsWith(']')) {
-      const functionBody = rule.slice(1, -1).trim();
-      result[outputKey] = customFunction(functionBody, input, outputKey);
+  for (const [outputKey, stringTemplate] of Object.entries(config)) {
+    if (typeof stringTemplate === 'string' && stringTemplate.startsWith('[') && stringTemplate.endsWith(']')) {
+      result[outputKey] = replaceWithFunction(stringTemplate, input);
     } else {
-      result[outputKey] = input.hasOwnProperty(rule) ? input[rule] : rule;
+      result[outputKey] = input.hasOwnProperty(stringTemplate) ? input[stringTemplate] : stringTemplate;
     }
   }
 

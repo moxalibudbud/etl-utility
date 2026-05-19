@@ -7,7 +7,7 @@ import config from './octoplus.po_receiving.cin7';
 async function run(etl: any) {
   try {
     const result = await etl.process();
-    console.log(result);
+    console.log(JSON.stringify(result, null, 2));
   } catch (error) {
     console.log(error);
   }

@@ -47,28 +47,28 @@ describe('replaceWithFunction', () => {
     });
 
     it('accepts a custom format argument', () => {
-      const template = 'backup_[dateTime, YYYY-MM-DD].sql';
+      const template = 'backup_[dateTime YYYY-MM-DD].sql';
       const result = replaceWithFunction(template);
 
       expect(result).toMatch(/^backup_\d{4}-\d{2}-\d{2}\.sql$/);
     });
 
     it('accepts both custom format and timezone arguments', () => {
-      const template = 'log_[dateTime, YYYY-MM-DD HH:mm:ss, UTC].log';
+      const template = 'log_[dateTime YYYY-MM-DDTHH:mm:ss UTC].log';
       const result = replaceWithFunction(template);
 
-      expect(result).toMatch(/^log_\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.log$/);
+      expect(result).toMatch(/^log_\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.log$/);
     });
 
     it('supports milliseconds via SSS token', () => {
-      const template = '[dateTime, YYYY-MM-DD_HH:mm:ss.SSS]';
+      const template = '[dateTime YYYY-MM-DD_HH:mm:ss.SSS]';
       const result = replaceWithFunction(template);
 
       expect(result).toMatch(/^\d{4}-\d{2}-\d{2}_\d{2}:\d{2}:\d{2}\.\d{3}$/);
     });
 
-    it('trims whitespace around comma-separated arguments', () => {
-      const template = '[dateTime , YYYY-MM-DD , UTC]';
+    it('trims whitespace around space-separated arguments', () => {
+      const template = '[dateTime YYYY-MM-DD UTC]';
       const result = replaceWithFunction(template);
 
       expect(result).toMatch(/^\d{4}-\d{2}-\d{2}$/);
@@ -77,25 +77,23 @@ describe('replaceWithFunction', () => {
 
   describe('supported function: sanitizeString', () => {
     it('returns the string unchanged when no special characters are present', () => {
-      const template = '[sanitizeString, hello world]';
-      const result = replaceWithFunction(template);
+      const result = replaceWithFunction('[sanitizeString data.val]', { val: 'hello world' });
       expect(result).toBe('hello world');
     });
 
     it('replaces control characters with spaces', () => {
-      const template = `[sanitizeString, hello\nworld]`;
-      const result = replaceWithFunction(template);
+      const result = replaceWithFunction('[sanitizeString data.val]', { val: 'hello\nworld' });
       expect(result).toBe('hello world');
     });
 
     it('escapes bare backslashes from a metadata value', () => {
-      const template = '[sanitizeString, metadata.path]';
+      const template = '[sanitizeString data.path]';
       const result = replaceWithFunction(template, { path: 'path\\kfile' });
       expect(result).toBe('path\\\\kfile');
     });
 
-    it('escapes extra space', () => {
-      const template = '[sanitizeString, 031621123109        ]';
+    it('sanitizes a plain string literal argument', () => {
+      const template = '[sanitizeString 031621123109]';
       const result = replaceWithFunction(template);
       expect(result).toBe('031621123109');
     });
@@ -103,13 +101,25 @@ describe('replaceWithFunction', () => {
 
   describe('supported function: removeWhiteSpaces', () => {
     it('removes all whitespace from a plain string argument', () => {
-      const result = replaceWithFunction('[removeWhiteSpaces, hello world]');
+      const result = replaceWithFunction('[removeWhiteSpaces helloworld]');
       expect(result).toBe('helloworld');
     });
 
     it('removes whitespace from a metadata value', () => {
-      const result = replaceWithFunction('[removeWhiteSpaces, metadata.label]', { label: 'foo bar baz' });
+      const result = replaceWithFunction('[removeWhiteSpaces data.label]', { label: 'foo bar baz' });
       expect(result).toBe('foobarbaz');
+    });
+
+    it('removes whitespace from a metadata value passed via data. prefix', () => {
+      const result = replaceWithFunction('[removeWhiteSpaces data.val]', { val: 'hello world' });
+      expect(result).toBe('helloworld');
+    });
+
+    it('resolves nested metadata path via data. prefix', () => {
+      const result = replaceWithFunction('value: [removeWhiteSpaces data.somedata.price]', {
+        somedata: { price: 'foo bar' },
+      });
+      expect(result).toBe('value: foobar');
     });
   });
 
@@ -194,14 +204,14 @@ describe('replaceWithFunction', () => {
 
   describe('multiple placeholders', () => {
     it('handles multiple supported-function placeholders in one template', () => {
-      const template = '[timestamp]_[dateTime, YYYY-MM-DD]_data';
+      const template = '[timestamp]_[dateTime YYYY-MM-DD]_data';
       const result = replaceWithFunction(template);
 
       expect(result).toMatch(/^\d+_\d{4}-\d{2}-\d{2}_data$/);
     });
 
     it('mixes supported functions, customFunction hits, and unknown placeholders', () => {
-      const template = '[timestamp]_[return args.name]_[unknownFunc]_[dateTime, YYYY]';
+      const template = '[timestamp]_[return args.name]_[unknownFunc]_[dateTime YYYY]';
       const result = replaceWithFunction(template, { name: 'alice' });
 
       expect(result).toMatch(/^\d+_alice_\[unknownFunc\]_\d{4}$/);
