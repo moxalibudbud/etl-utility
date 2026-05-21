@@ -85,6 +85,8 @@ export class JsonETL {
     for (const element of this.options.json) {
       this.onLineHandler(element);
     }
+
+    this.outputFileWriter.pushFooter();
   }
 
   async forceCleanUp() {
