@@ -1,5 +1,5 @@
 import { expect, describe, it } from '@jest/globals';
-import { sanitizeString, sanitizeJsonValue, removeWhiteSpaces } from '../../../utils/santize-string';
+import { sanitizeString, sanitizeJsonValue, removeWhiteSpaces, replaceString } from '../../../utils/santize-string';
 
 describe('sanitizeString', () => {
   describe('control characters → space', () => {
@@ -119,6 +119,54 @@ describe('removeWhiteSpaces', () => {
 
   it('returns a string with no whitespace unchanged', () => {
     expect(removeWhiteSpaces('nospaces')).toBe('nospaces');
+  });
+});
+
+describe('replaceString', () => {
+  describe('replaces all occurrences', () => {
+    it('replaces every occurrence of a char in the middle', () => {
+      expect(replaceString('a-b-c-d', '-', '_')).toBe('a_b_c_d');
+    });
+
+    it('replaces a char that appears at the start and end', () => {
+      expect(replaceString('-hello-', '-', '_')).toBe('_hello_');
+    });
+
+    it('replaces consecutive occurrences', () => {
+      expect(replaceString('a--b', '-', '_')).toBe('a__b');
+    });
+
+    it('replaces a char with an empty string (removal)', () => {
+      expect(replaceString('h-e-l-l-o', '-', '')).toBe('hello');
+    });
+
+    it('replaces a char with a multi-char string', () => {
+      expect(replaceString('a.b.c', '.', '->'))  .toBe('a->b->c');
+    });
+  });
+
+  describe('special regex characters in char', () => {
+    it('treats a dot as a literal character, not a wildcard', () => {
+      expect(replaceString('a.b.c', '.', '-')).toBe('a-b-c');
+    });
+
+    it('treats a pipe as a literal character', () => {
+      expect(replaceString('a|b|c', '|', '-')).toBe('a-b-c');
+    });
+
+    it('treats parentheses as literal characters', () => {
+      expect(replaceString('(a)(b)', '(', '[')).toBe('[a)[b)');
+    });
+  });
+
+  describe('no match', () => {
+    it('returns the original string when char is not found', () => {
+      expect(replaceString('hello', '-', '_')).toBe('hello');
+    });
+
+    it('returns an empty string unchanged', () => {
+      expect(replaceString('', '-', '_')).toBe('');
+    });
   });
 });
 

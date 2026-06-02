@@ -1,5 +1,5 @@
 import { customFunction } from './custom-function';
-import { sanitizeString, removeWhiteSpaces } from './santize-string';
+import { sanitizeString, removeWhiteSpaces, replaceString } from './santize-string';
 
 type SupportedFunctions = (...args: any[]) => string;
 type ReplaceWithFunctionMetadata = {
@@ -72,6 +72,7 @@ const supportedFunctions: Record<string, SupportedFunctions> = {
   dateTime,
   sanitizeString,
   removeWhiteSpaces,
+  replaceString,
 };
 
 /**

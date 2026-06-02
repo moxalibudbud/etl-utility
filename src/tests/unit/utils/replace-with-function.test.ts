@@ -123,6 +123,45 @@ describe('replaceWithFunction', () => {
     });
   });
 
+  describe('supported function: replaceString', () => {
+    it('replaces all occurrences of a char in a metadata value', () => {
+      const result = replaceWithFunction('[replaceString data.sku - _]', { sku: 'ABC-123-DEF' });
+      expect(result).toBe('ABC_123_DEF');
+    });
+
+    it('replaces a char in a plain string literal argument', () => {
+      const result = replaceWithFunction('[replaceString hello-world - _]');
+      expect(result).toBe('hello_world');
+    });
+
+    it('treats a dot as a literal character, not a wildcard', () => {
+      const result = replaceWithFunction('[replaceString data.code . -]', { code: 'a.b.c' });
+      expect(result).toBe('a-b-c');
+    });
+
+    it('resolves a nested metadata path', () => {
+      const result = replaceWithFunction('[replaceString data.item.ref - _]', { item: { ref: 'X-Y-Z' } });
+      expect(result).toBe('X_Y_Z');
+    });
+
+    it('works inside a larger template with other text', () => {
+      const result = replaceWithFunction('export_[replaceString data.name - _].csv', { name: 'foo-bar-baz' });
+      expect(result).toBe('export_foo_bar_baz.csv');
+    });
+
+    it('removes thousand separator from a retail price so JSON.parse succeeds', () => {
+      const result = replaceWithFunction('[replaceString data.price ,]', { price: '1,234.56' });
+      expect(result).toBe('1234.56');
+      expect(() => JSON.parse(result)).not.toThrow();
+      expect(JSON.parse(result)).toBe(1234.56);
+    });
+
+    it('falls back to the literal arg string when metadata field is missing', () => {
+      const result = replaceWithFunction('[replaceString data.missing - _]', {});
+      expect(result).toBe('data.missing');
+    });
+  });
+
   describe('customFunction fallback (unknown function name)', () => {
     it('evaluates a simple property access from metadata', () => {
       const template = 'user_[return args.name].txt';
