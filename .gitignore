@@ -1,0 +1,11 @@
+# OS
+.DS_Store
+
+# Editor
+.history
+
+# Local data / secrets (also covered in each subproject)
+.env
+.devdata
+
+# Per-implementation ignores live in typescript/.gitignore and go/.gitignore
