@@ -23,18 +23,16 @@ func writeFixture(t *testing.T, content string) string {
 func baseConfig(source, outDir string) Config {
 	return Config{
 		Source: source,
-		Output: OutputConfig{
-			Kind: writer.KindDefault,
-			Options: writer.OutputOptions{
-				Path:      outDir,
-				Filename:  "out.csv",
-				Separator: ";",
-				Header:    "sku;name",
-				Footer:    "EOF",
-			},
+		Output: writer.OutputConfig{
+			Type:      "",
+			Path:      outDir,
+			Filename:  "out.csv",
+			Separator: ";",
+			Header:    "sku;name",
+			Footer:    "EOF",
 		},
 		Options: Options{
-			Line: line.Options{
+			Line: line.LineConfig{
 				Columns:            []string{"BARCODE", "SKU", "NAME"},
 				MandatoryFields:    []string{"BARCODE", "SKU"},
 				IdentifierMappings: []line.Mapping{{Out: "barcode", Src: "BARCODE"}},

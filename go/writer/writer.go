@@ -22,9 +22,10 @@ type Writer interface {
 	Path() string
 }
 
-// OutputOptions configures a Writer. Filename is used verbatim; FilenameTemplate
+// OutputConfig configures a Writer. Filename is used verbatim; FilenameTemplate
 // (when set) is rendered through the templating layers instead.
-type OutputOptions struct {
+type OutputConfig struct {
+	Type             string            `json:"fileGenerator"`
 	Path             string            `json:"path"`
 	Filename         string            `json:"filename"`
 	FilenameTemplate string            `json:"filenameTemplate"`
@@ -36,22 +37,14 @@ type OutputOptions struct {
 	Metadata         map[string]string `json:"metadata"`
 }
 
-// Kind selects a Writer implementation. Only the default delimited/template
-// writer is implemented in the Go core.
-type Kind string
-
-const (
-	KindDefault Kind = "default-generator"
-)
-
 // Factory returns a Writer for the given kind. An empty kind defaults to the
 // delimited/template writer. Unsupported kinds (json/excel/dedup variants) return
 // an explicit error.
-func Factory(kind Kind, opts OutputOptions) (Writer, error) {
-	switch kind {
-	case KindDefault, "":
+func Factory(opts OutputConfig) (Writer, error) {
+	switch opts.Type {
+	case "default-generator", "":
 		return NewDefaultWriter(opts), nil
 	default:
-		return nil, fmt.Errorf("writer kind %q is not supported in the Go core yet", kind)
+		return nil, fmt.Errorf("writer type %q is not supported in the Go core yet", opts.Type)
 	}
 }

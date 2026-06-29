@@ -10,26 +10,20 @@ type Config struct {
 	// Source is the local file path to read.
 	Source string `json:"source"`
 	// Output selects and configures the writer.
-	Output OutputConfig `json:"output"`
+	Output writer.OutputConfig `json:"output"`
 	// Options are the line rules + reject behaviour.
 	Options Options `json:"options"`
-}
-
-// OutputConfig pairs a writer kind with its options.
-type OutputConfig struct {
-	Kind    writer.Kind          `json:"kind"`
-	Options writer.OutputOptions `json:"options"`
 }
 
 // Run executes a Config end to end and returns the Result. This is the function
 // every entrypoint funnels through.
 func Run(cfg Config) (Result, error) {
-	out, err := writer.Factory(cfg.Output.Kind, cfg.Output.Options)
+	outputWriter, err := writer.Factory(cfg.Output)
 	if err != nil {
 		return Result{}, err
 	}
 
-	pipeline, err := New(cfg.Source, cfg.Options, out)
+	pipeline, err := New(cfg.Source, cfg.Options, outputWriter)
 	if err != nil {
 		return Result{}, err
 	}

@@ -15,8 +15,8 @@ type Mapping struct {
 	Src string `json:"src"`
 }
 
-// Options is the port of LineSourceBaseOptions.
-type Options struct {
+// LineConfig is the port of LineSourceBaseOptions.
+type LineConfig struct {
 	Columns            []string  `json:"columns"`
 	MandatoryFields    []string  `json:"mandatoryFields"`
 	IdentifierMappings []Mapping `json:"identifierMappings"`

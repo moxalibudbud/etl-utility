@@ -16,7 +16,7 @@ const defaultLineSeparator = "|"
 // DefaultWriter is the port of DefaultGenerator: a lazily-created delimited or
 // templated text writer with optional uniqueKey de-duplication.
 type DefaultWriter struct {
-	opts     OutputOptions
+	opts     OutputConfig
 	filename string
 	file     *os.File
 	bw       *bufio.Writer
@@ -25,7 +25,7 @@ type DefaultWriter struct {
 
 // NewDefaultWriter constructs a DefaultWriter, defaulting Path to the OS temp dir
 // (the TS default is the hard-coded /var/tmp).
-func NewDefaultWriter(opts OutputOptions) *DefaultWriter {
+func NewDefaultWriter(opts OutputConfig) *DefaultWriter {
 	if opts.Path == "" {
 		opts.Path = os.TempDir()
 	}

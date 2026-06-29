@@ -5,26 +5,20 @@
       "name": "debug file",
       "type": "go",
       "request": "launch",
-      "mode": "auto", 
+      "mode": "auto",
       "program": "${fileDirname}"
     },
     {
-      "name": "Debug cmd/etl",
+      "name": "Debug cmd/worker",
       "type": "go",
       "request": "launch",
       "mode": "debug",
-      "program": "${workspaceFolder}/cmd/etl",
+      "program": "${workspaceFolder}/cmd/worker",
       "args": [
-        "-source", "/var/tmp/INT01_8001_21364_202605200906.csv",
-        "-columns", "TYPE_ATTRIBUT,CODE_ATTRIBUT,LIBELLE_ATTRIBUT,TYPE_ATTRIBUT_PARENT,CODE_ATTRIBUT_PARENT",
-        "-mandatory", "TYPE_ATTRIBUT,CODE_ATTRIBUT",
-        "-separator", ";",
-        "-with-header",
-        "-out-path", "/var/tmp",
-        "-out-filename", "out.csv",
-        "-out-separator", ";",
-        "-header", "code,label",
-        "-footer", "EOF"
+        "-config",
+        "/Users/dev/dev/etl-utility/go/samples/csv-to-csv/config.default.json",
+        "-source",
+        "/Users/dev/dev/etl-utility/go/samples/csv-to-csv/ItemMast_260618_001_1005.csv"
       ]
     }
   ]

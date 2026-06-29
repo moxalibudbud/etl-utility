@@ -17,7 +17,7 @@ import (
 // Options is the port of ETLOptions (minus the file source, which is passed
 // separately as the reader is constructed from it).
 type Options struct {
-	Line line.Options `json:"line"`
+	Line line.LineConfig `json:"line"`
 	// RejectOnInvalidRow: when true, any invalid row marks the whole result
 	// invalid. When false (default) invalid rows are skipped.
 	RejectOnInvalidRow bool `json:"rejectOnInvalidRow"`

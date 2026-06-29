@@ -8,7 +8,7 @@ type SourceLine struct {
 	Separator         string
 	Columns           []string
 	JSONLine          map[string]string
-	Opts              Options
+	Opts              LineConfig
 	CurrentLineNumber int
 	Errors            []string
 }
@@ -16,7 +16,7 @@ type SourceLine struct {
 // New parses a raw delimited line into a SourceLine. Fields are split on the
 // separator and a single pair of surrounding double quotes is stripped, matching
 // `line.split(sep).map(v => v.replace(/^"|"$/g, ”))`.
-func New(raw string, opts Options, lineNumber int) *SourceLine {
+func New(raw string, opts LineConfig, lineNumber int) *SourceLine {
 	if opts.Separator == "" {
 		opts.Separator = DefaultSeparator
 	}

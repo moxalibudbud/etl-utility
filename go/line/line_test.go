@@ -5,8 +5,8 @@ import (
 	"testing"
 )
 
-func baseOpts() Options {
-	return Options{
+func baseOpts() LineConfig {
+	return LineConfig{
 		Columns:         []string{"BARCODE", "SKU", "NAME"},
 		MandatoryFields: []string{"BARCODE", "SKU"},
 		Separator:       ",",
