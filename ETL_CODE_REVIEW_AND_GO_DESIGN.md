@@ -22,14 +22,14 @@ and an **output writer**, it:
 
 ### Module map (TypeScript)
 
-| Concern | File |
-|---|---|
-| Orchestrator | `src/etl/etl.ts` |
-| Source streaming | `src/file-reader/` (`readline-interface-factory.ts`, `file-reader.ts`, `blob-reader.ts`, `read-line-base.ts`) |
-| Line parse/validate | `src/line-data/` (`source-line.ts`, `line-source-base.ts`) + `src/utils/line-validator.ts`, `line-data-to-json.ts` |
-| Output writers | `src/file-generator/` (`flat-file-base-lazy.ts`, `default-generator.ts`, `json-generator.ts`, `error-report.ts`, cloud writers) + `file-generator-factory.ts` |
-| Templating / mapping | `src/utils/` (`replace-with-map.ts`, `replace-with-function.ts`, `map.ts`, `filename.ts`) |
-| Types | `src/types/index.ts` |
+| Concern              | File                                                                                                                                                          |
+| -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Orchestrator         | `src/etl/etl.ts`                                                                                                                                              |
+| Source streaming     | `src/file-reader/` (`readline-interface-factory.ts`, `file-reader.ts`, `blob-reader.ts`, `read-line-base.ts`)                                                 |
+| Line parse/validate  | `src/line-data/` (`source-line.ts`, `line-source-base.ts`) + `src/utils/line-validator.ts`, `line-data-to-json.ts`                                            |
+| Output writers       | `src/file-generator/` (`flat-file-base-lazy.ts`, `default-generator.ts`, `json-generator.ts`, `error-report.ts`, cloud writers) + `file-generator-factory.ts` |
+| Templating / mapping | `src/utils/` (`replace-with-map.ts`, `replace-with-function.ts`, `map.ts`, `filename.ts`)                                                                     |
+| Types                | `src/types/index.ts`                                                                                                                                          |
 
 ### Templating model (preserved in the port)
 
@@ -47,23 +47,23 @@ and an **output writer**, it:
 
 ### Correctness / bugs
 
-| # | Issue | Location | Fix |
-|---|---|---|---|
-| 1 | **Footer race** — `onCloseHandler` calls `resolve({})` *before* `pushFooter()`, so `cleanUp()`/`end()` can run before the footer write lands. | `etl.ts:64-67` | Write footer, *then* resolve. |
-| 2 | **`forceCleanUp()` not awaited** in the `catch` — streams may not close / files not delete before the error propagates. | `etl.ts:169` | `await this.forceCleanUp()`. |
-| 3 | **Lost parse errors** — `onLineHandler` re-emits errors onto the same readline interface; if listeners are already cleaned up the error is dropped. | `etl.ts:59-61` | Reject the processing promise via a stored `reject` ref. |
-| 4 | **`fileSource` via truthiness + `as string` cast** hides the "neither provided" case. | `etl.ts:31` | Guard and throw a clear error. |
+| #   | Issue                                                                                                                                               | Location       | Fix                                                      |
+| --- | --------------------------------------------------------------------------------------------------------------------------------------------------- | -------------- | -------------------------------------------------------- |
+| 1   | **Footer race** — `onCloseHandler` calls `resolve({})` _before_ `pushFooter()`, so `cleanUp()`/`end()` can run before the footer write lands.       | `etl.ts:64-67` | Write footer, _then_ resolve.                            |
+| 2   | **`forceCleanUp()` not awaited** in the `catch` — streams may not close / files not delete before the error propagates.                             | `etl.ts:169`   | `await this.forceCleanUp()`.                             |
+| 3   | **Lost parse errors** — `onLineHandler` re-emits errors onto the same readline interface; if listeners are already cleaned up the error is dropped. | `etl.ts:59-61` | Reject the processing promise via a stored `reject` ref. |
+| 4   | **`fileSource` via truthiness + `as string` cast** hides the "neither provided" case.                                                               | `etl.ts:31`    | Guard and throw a clear error.                           |
 
 ### Design / maintainability
 
-| # | Issue | Location |
-|---|---|---|
-| 5 | `processLines()` **reimplements** the existing `ReadLineBase.readlinePromise()` helper. Reuse it. | `etl.ts:97-107` |
-| 6 | `cleanUp()` and `forceCleanUp()` are **near-duplicates** — only the conditional deletes differ. Collapse into `cleanUp(force)`. | `etl.ts:109-137` |
-| 7 | `populate()` re-evaluates `isValid && !isHeader` **twice**; fold into one branch. | `etl.ts:78-86` |
-| 8 | `onCloseHandler(resolve: Function)` uses the loose `Function` type. | `etl.ts:64` |
-| 9 | `lineIndex` is really a **1-based line number** — rename to match `SourceLine.currentLineNumber`. | `etl.ts:24,50` |
-| 10 | **No write backpressure** — `outputFileWriter.push()` ignores `write()`'s return / `drain`; can balloon memory on very large files. | `etl.ts:79` |
+| #   | Issue                                                                                                                               | Location         |
+| --- | ----------------------------------------------------------------------------------------------------------------------------------- | ---------------- |
+| 5   | `processLines()` **reimplements** the existing `ReadLineBase.readlinePromise()` helper. Reuse it.                                   | `etl.ts:97-107`  |
+| 6   | `cleanUp()` and `forceCleanUp()` are **near-duplicates** — only the conditional deletes differ. Collapse into `cleanUp(force)`.     | `etl.ts:109-137` |
+| 7   | `populate()` re-evaluates `isValid && !isHeader` **twice**; fold into one branch.                                                   | `etl.ts:78-86`   |
+| 8   | `onCloseHandler(resolve: Function)` uses the loose `Function` type.                                                                 | `etl.ts:64`      |
+| 9   | `lineIndex` is really a **1-based line number** — rename to match `SourceLine.currentLineNumber`.                                   | `etl.ts:24,50`   |
+| 10  | **No write backpressure** — `outputFileWriter.push()` ignores `write()`'s return / `drain`; can balloon memory on very large files. | `etl.ts:79`      |
 
 ### Minor / subtle
 
@@ -87,12 +87,12 @@ single `etl.Run(Config)`.
 
 The binary/core is consumable four ways, all funneling through `etl.Run`:
 
-| Surface | How |
-|---|---|
-| **Terminal (args)** | `cmd/etl` flags: `-source -columns -mandatory -separator -with-header -out-* -header -footer -template`. |
-| **BullMQ worker (Node)** | Worker spawns the binary, pipes a JSON `Config` to `-config -` (stdin), reads the JSON `Result` from stdout. |
+| Surface                     | How                                                                                                                |
+| --------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| **Terminal (args)**         | `cmd/etl` flags: `-source -columns -mandatory -separator -with-header -out-* -header -footer -template`.           |
+| **BullMQ worker (Node)**    | Worker spawns the binary, pipes a JSON `Config` to `-config -` (stdin), reads the JSON `Result` from stdout.       |
 | **Lambda / Cloud Function** | Go runtime imports `flatfile-go/etl` and calls `etl.Run(cfg)`; or the function shells out to the binary with JSON. |
-| **In-process helper (API)** | Import `etl`, build a `Config` (or call `etl.New(source, opts, writer)` directly) and `Process()`. |
+| **In-process helper (API)** | Import `etl`, build a `Config` (or call `etl.New(source, opts, writer)` directly) and `Process()`.                 |
 
 The JSON `Config` is the stable contract shared by every surface, so they all
 exercise identical core logic.
@@ -135,20 +135,20 @@ etl.Run(Config)
 
 ### TS → Go type mapping
 
-| TypeScript | Go |
-|---|---|
-| `ReadLineInterface` union + `readLineInterface()` | `reader.Reader` interface + `reader.New()` factory |
-| Node `readline` (event-based) | `bufio.Scanner` (`ScanLines` drops trailing `\r` → CRLF tolerant) |
-| `LineSourceBaseOptions` | `line.Options` (JSON-tagged) |
-| `SourceLine` class + getters | `line.SourceLine` + methods `Validate/IsValid/Error/IsHeader/Output/AllData/Identifiers` |
-| `jsonLine: JSONObject` | `map[string]string` |
-| `outputMappings` / `identifierMappings` (objects) | `[]line.Mapping{Out,Src}` — **ordered** so delimited output is deterministic |
-| `FlatFileBaseLazy & FlatFileBaseLazyMethods` | `writer.Writer` interface |
-| `DefaultGenerator` | `writer.DefaultWriter` (lazy create, uniqueKey dedup) |
-| `ErrorReport` | `writer.ErrorReport` (lazy; `InvalidRows` counter) |
-| `FileGeneratorFactory` | `writer.Factory(Kind, OutputOptions)` |
-| `replaceWithMap/Function`, `mapFields`, `mapWithDefault` | `template.*` + `line.mapWithDefault/mapFields` |
-| `ETLResult` | `etl.Result` (JSON-tagged) |
+| TypeScript                                               | Go                                                                                       |
+| -------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| `ReadLineInterface` union + `readLineInterface()`        | `reader.Reader` interface + `reader.New()` factory                                       |
+| Node `readline` (event-based)                            | `bufio.Scanner` (`ScanLines` drops trailing `\r` → CRLF tolerant)                        |
+| `LineSourceBaseOptions`                                  | `line.Options` (JSON-tagged)                                                             |
+| `SourceLine` class + getters                             | `line.SourceLine` + methods `Validate/IsValid/Error/IsHeader/Output/AllData/Identifiers` |
+| `jsonLine: JSONObject`                                   | `map[string]string`                                                                      |
+| `outputMappings` / `identifierMappings` (objects)        | `[]line.Mapping{Out,Src}` — **ordered** so delimited output is deterministic             |
+| `FlatFileBaseLazy & FlatFileBaseLazyMethods`             | `writer.Writer` interface                                                                |
+| `DefaultGenerator`                                       | `writer.DefaultWriter` (lazy create, uniqueKey dedup)                                    |
+| `ErrorReport`                                            | `writer.ErrorReport` (lazy; `InvalidRows` counter)                                       |
+| `FileGeneratorFactory`                                   | `writer.Factory(Kind, OutputOptions)`                                                    |
+| `replaceWithMap/Function`, `mapFields`, `mapWithDefault` | `template.*` + `line.mapWithDefault/mapFields`                                           |
+| `ETLResult`                                              | `etl.Result` (JSON-tagged)                                                               |
 
 > **Why ordered `[]Mapping` instead of a map?** Go maps have no stable order and
 > JS object key order is not guaranteed across a JSON boundary. Arrays of
