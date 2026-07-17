@@ -138,8 +138,8 @@ func (w *DefaultWriter) pushHeader(sl *line.SourceLine) error {
 	return err
 }
 
-// buildRow renders a single row. Data rows are newline-prefixed (the header is
-// not), matching DefaultGenerator.buildRow.
+// buildRow renders a data row. The ETL orchestrator filters source header rows
+// before calling Writer.Push.
 func (w *DefaultWriter) buildRow(sl *line.SourceLine) string {
 	var row string
 	if w.opts.Template != "" {
@@ -151,9 +151,6 @@ func (w *DefaultWriter) buildRow(sl *line.SourceLine) string {
 		row = buildLineFromOutput(sl.Output(), w.opts.Separator)
 	}
 
-	if sl.IsHeader() {
-		return row
-	}
 	return "\n" + row
 }
 
