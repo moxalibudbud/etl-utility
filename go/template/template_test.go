@@ -56,6 +56,39 @@ func TestReplaceWithFunctionDataPath(t *testing.T) {
 	}
 }
 
+func TestReplaceWithFunctionJSONMetadataPaths(t *testing.T) {
+	data := map[string]any{
+		"metadata": map[string]any{
+			"stores": []any{map[string]any{"code": "DXB 01"}},
+			"count":  float64(42),
+			"active": true,
+			"empty":  nil,
+		},
+	}
+	tests := []struct {
+		name string
+		path string
+		want string
+	}{
+		{name: "nested array", path: "data.metadata.stores.0.code", want: "DXB01"},
+		{name: "number", path: "data.metadata.count", want: "42"},
+		{name: "boolean", path: "data.metadata.active", want: "true"},
+		{name: "missing", path: "data.metadata.missing", want: "data.metadata.missing"},
+		{name: "invalid array index", path: "data.metadata.stores.2.code", want: "data.metadata.stores.2.code"},
+		{name: "non-numeric array index", path: "data.metadata.stores.first.code", want: "data.metadata.stores.first.code"},
+		{name: "null", path: "data.metadata.empty", want: "data.metadata.empty"},
+		{name: "container leaf", path: "data.metadata.stores", want: "data.metadata.stores"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := ReplaceWithFunction("[removeWhiteSpaces "+tt.path+"]", data)
+			if got != tt.want {
+				t.Fatalf("got %q, want %q", got, tt.want)
+			}
+		})
+	}
+}
+
 func TestReplaceWithFunctionDateTime(t *testing.T) {
 	got := ReplaceWithFunction("[dateTime YYYYMMDD]", nil)
 	if len(got) != 8 {

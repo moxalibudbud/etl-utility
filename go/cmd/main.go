@@ -28,14 +28,13 @@ import (
 )
 
 type options struct {
-	configPath   string
-	source       string
+	configPath string
+	source     string
 }
 
 type configData struct {
-	Line     line.LineConfig        `json:"line"`
-	Output   writer.OutputConfig    `json:"output"`
-	Metadata map[string]interface{} `json:"metadata"`
+	Line   line.LineConfig     `json:"line"`
+	Output writer.OutputConfig `json:"output"`
 }
 
 func main() {
@@ -50,7 +49,6 @@ func run(args []string, _ io.Reader, stdout io.Writer) error {
 
 	configPath := fs.String("config", "", `path to a JSON Config, or "-" to read from stdin`)
 	source := fs.String("source", "", "source file path")
-	
 
 	if err := fs.Parse(args); err != nil {
 		return err
@@ -61,8 +59,8 @@ func run(args []string, _ io.Reader, stdout io.Writer) error {
 	}
 
 	cfg, err := buildETLConfig(options{
-		configPath:   *configPath,
-		source:       *source,
+		configPath: *configPath,
+		source:     *source,
 	})
 	if err != nil {
 		return err

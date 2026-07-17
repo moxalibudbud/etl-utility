@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"regexp"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -74,7 +75,9 @@ func firstArg(args []string) string {
 	return ""
 }
 
-// resolvePath walks a dotted path (e.g. "metadata.region") through nested maps.
+// resolvePath walks a dotted path (e.g. "metadata.stores.0.region") through
+// nested maps and arrays. Only scalar leaves are resolved; nil and container
+// leaves retain the caller's unresolved-argument fallback.
 func resolvePath(data map[string]any, path string) (string, bool) {
 	if data == nil {
 		return "", false
@@ -94,14 +97,48 @@ func resolvePath(data map[string]any, path string) (string, bool) {
 				return "", false
 			}
 			current = v
+		case []any:
+			index, err := strconv.Atoi(key)
+			if err != nil || index < 0 || index >= len(m) {
+				return "", false
+			}
+			current = m[index]
 		default:
 			return "", false
 		}
 	}
-	if s, ok := current.(string); ok {
-		return s, true
+	switch value := current.(type) {
+	case string:
+		return value, true
+	case bool:
+		return strconv.FormatBool(value), true
+	case float64:
+		return strconv.FormatFloat(value, 'f', -1, 64), true
+	case float32:
+		return strconv.FormatFloat(float64(value), 'f', -1, 32), true
+	case int:
+		return strconv.Itoa(value), true
+	case int8:
+		return strconv.FormatInt(int64(value), 10), true
+	case int16:
+		return strconv.FormatInt(int64(value), 10), true
+	case int32:
+		return strconv.FormatInt(int64(value), 10), true
+	case int64:
+		return strconv.FormatInt(value, 10), true
+	case uint:
+		return strconv.FormatUint(uint64(value), 10), true
+	case uint8:
+		return strconv.FormatUint(uint64(value), 10), true
+	case uint16:
+		return strconv.FormatUint(uint64(value), 10), true
+	case uint32:
+		return strconv.FormatUint(uint64(value), 10), true
+	case uint64:
+		return strconv.FormatUint(value, 10), true
+	default:
+		return "", false
 	}
-	return fmt.Sprintf("%v", current), true
 }
 
 // dateTime formats the current time using moment-style tokens. Port of the

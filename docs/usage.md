@@ -252,7 +252,7 @@ separator and **one** leading plus **one** trailing double quote is stripped
 | `header` | `string` | ⬜ | First line of the output file, written once when the first row arrives. Supports `[func ...]` tokens. |
 | `footer` | `string` | ⬜ | Written raw at the end — **no leading newline**, so it concatenates onto the last row (`...WidgetEOF`). This is intentional parity with the TypeScript `DefaultGenerator`; include a leading `\n` in the footer string if you want it on its own line. |
 | `uniqueKey` | `string` | ⬜ | Source column name used to de-duplicate rows in-memory: rows whose value for this column was already written are skipped. |
-| `metadata` | `object` | ⬜ | Arbitrary string map exposed to templates as `data.metadata.<key>` (e.g. `[replaceString data.metadata.region - _]`). |
+| `metadata` | `object` | ⬜ | Arbitrary JSON object exposed to filename, header, and row function templates under `data.metadata` (e.g. `[replaceString data.metadata.store.code - _]`). |
 
 ### 4.4 Ordered mappings — why arrays, not objects
 
@@ -300,6 +300,11 @@ Replaced with the current row's value for that column name.
 Arguments starting with `data.` are resolved as dot-paths against the row data
 merged with the writer's `metadata` option — e.g.
 `[sanitizeString data.NAME]` or `[replaceString data.metadata.region - _]`.
+Nested metadata objects and arrays are supported; numeric path segments index
+arrays (for example `data.metadata.stores.0.code`). String, number, and boolean
+leaves are passed to template functions as strings. Missing paths, invalid
+indexes, nulls, and object/array leaves retain the literal `data...` argument
+rather than being serialized.
 Unknown function names are left in place untouched (the TS JS-eval
 `customFunction` fallback is intentionally not ported).
 

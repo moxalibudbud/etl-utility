@@ -30,7 +30,7 @@ TypeScript original in `typescript/src`.
 | `OutputConfig` | `Footer` | **Keep** | Written raw (documented parity quirk). |
 | `OutputConfig` | `Template` | **Keep** (document) | Mutually exclusive with `Separator`-joined projection. |
 | `OutputConfig` | `UniqueKey` | **Keep** | Legitimate TS parity — see §3.3. |
-| `OutputConfig` | `Metadata` | **Keep** (note typing) | Narrower than the TS `any` metadata — see §3.4. |
+| `OutputConfig` | `Metadata` | **Fixed** (widened) | Accepts arbitrary JSON values and nested template paths — see §3.4. |
 | `SourceLine` (related) | `Separator` | **Fixed** (`0658b82`) | Was written, never read — removed. See §2.2. |
 | `SourceLine` (related) | `Columns` | **Fixed** (`0658b82`) | Duplicated `Opts.Columns` — removed. See §2.2. |
 
@@ -51,6 +51,7 @@ further recommendations from §4 are implemented.
 | §3.1 — `Filename`/`FilenameTemplate` redundant pair | ✅ Fixed | *(uncommitted)* | Merged into one always-templated `Filename`. `OutputConfig.UnmarshalJSON` accepts all three wire shapes (flat string, TS `{"template"}` object, legacy `filenameTemplate` key — legacy key keeps its old precedence when both are set). Covered by `go/writer/writer_test.go`. |
 | §3.2 — `Template`/`Separator` silent mutual exclusion | ✅ Fixed | *(uncommitted)* | The `OutputConfig` doc comment now states that `Template` takes precedence and `Separator` is ignored when both are set. |
 | §3.3 — `uniqueKey` documentation contradiction | ✅ Fixed | *(uncommitted)* | `MIGRATION_PROCESS.md` now defers only the `PushIfExist`/`FileIndexGenerator` variants and `indexFile`, while explicitly noting that the default writer supports in-memory `uniqueKey` deduplication. |
+| §3.4 — metadata typing and dead CLI field | ✅ Fixed | *(uncommitted)* | `OutputConfig.Metadata` now accepts arbitrary JSON values; template paths traverse nested objects and arrays. The unused top-level CLI metadata field was removed; `output.metadata` is canonical. |
 
 ---
 
@@ -219,21 +220,53 @@ as working. The migration tracker now states that the *writer variants* and
 `indexFile` are not ported, while in-memory `uniqueKey` dedup in the default
 writer is supported.
 
-### 3.4 `Metadata map[string]string` — typing is narrower than TS
+### 3.4 `Metadata map[string]string` — typing is narrower than TS — ✅ FIXED
 
-TS metadata is an arbitrary object; templates resolve dot-paths into it
-(`[return \`${args.metadata.store}_...\`]` in the with-template sample, and
-`data.metadata.<key>` per `usage.md` §4.3). The Go `map[string]string`
-supports flat string values only, and `resolvePath` in
-`template/function.go` can already walk `map[string]any`. If nested metadata
-is ever needed, widen to `map[string]any`; until then the flat map is fine —
-flagged so the limitation is a decision, not an accident.
+> **Status: fixed.** `OutputConfig.Metadata` is now `map[string]any`, matching
+> the TS writer's arbitrary JSON object. The unused top-level `metadata` field
+> was removed from the CLI config struct; writer metadata belongs under
+> `output.metadata`.
 
-Separately, `cmd/main.go:35-39` parses a **top-level** `"metadata"` key into
-`configData.Metadata` and then drops it on the floor (`buildETLConfig` never
-copies it anywhere; `RejectOnInvalidRow` carries a `// TODO: parse from
-metadata`). Dead config surface — either wire it into
-`OutputConfig.Metadata`/`Options` or delete the field.
+There are two distinct kinds of metadata in this project:
+
+- **Writer input metadata** (`output.metadata`) is supplied by configuration
+  and exposed to filename, header, and row function templates under
+  `data.metadata`.
+- **Result metadata** (`result.metadata`) is produced by the ETL run from the
+  first valid row merged with `identifierMappings`. It is not sourced from
+  `output.metadata`, and this change does not alter its type or merge rules.
+
+Writer metadata accepts JSON strings, numbers, booleans, nulls, nested
+objects, and arrays. Template arguments use dot paths through objects and
+numeric path segments through arrays. For example:
+
+```json
+{
+  "output": {
+    "metadata": {
+      "store": {"code": "DXB-01"},
+      "regions": [{"name": "Middle East"}],
+      "active": true
+    },
+    "template": "[replaceString data.metadata.store.code - _]"
+  }
+}
+```
+
+`data.metadata.store.code` resolves to `DXB-01`,
+`data.metadata.regions.0.name` resolves to `Middle East`, and scalar numbers
+and booleans are converted to their string representations before being
+passed to a supported template function. Missing paths, invalid array
+indexes, null values, and paths ending at an object or array remain unresolved,
+so the original literal argument (for example `data.metadata.missing`) is
+passed through. Containers are traversable but are not implicitly serialized
+into template arguments.
+
+The previous `cmd.configData.Metadata` field accepted a top-level `metadata`
+key but `buildETLConfig` never used it. Removing that field eliminates the dead
+Go surface without adding a second metadata location or silently merging it
+into `output.metadata`. The broader duplicate run-config shapes described in
+§3.6 remain a separate open recommendation.
 
 ### 3.5 `Type` / `fileGenerator` naming mismatch
 
@@ -276,11 +309,14 @@ the FIXES table.
    now unmarshals, but it still names an unsupported generator (§3.1).
 3. ~~**Remove `SourceLine.Separator` and `SourceLine.Columns`**, reading through
    `Opts` (§2.2).~~ ✅ Done in `0658b82` — see FIXES.
-4. **Unify the config JSON shape**: make `cmd/main.go` unmarshal `etl.Config`
-   directly; delete the dead top-level `metadata` or wire it through (§3.4, §3.6).
+4. ~~**Remove the dead top-level CLI `metadata` field** and make
+   `output.metadata` canonical (§3.4).~~ ✅ Done. The broader run-config shape
+   unification remains open under §3.6.
 5. ~~**Document mutual exclusivity** of `Template` vs `Separator` on the struct
    (§3.2).~~ ✅ Done — the `OutputConfig` doc comment states that `Template`
    takes precedence and `Separator` is ignored.
 6. ~~**Correct `MIGRATION_PROCESS.md:97`** re: `uniqueKey` (§3.3).~~ ✅ Done —
    the deferred list now separates unsupported writer variants and `indexFile`
    from supported default-writer `uniqueKey` deduplication.
+7. **Unify the run-config JSON shape**: make `cmd/main.go` unmarshal
+   `etl.Config` directly and converge the samples on that shape (§3.6).
