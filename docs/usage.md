@@ -184,7 +184,7 @@ async function runEtl(sourcePath) {
 }
 ```
 
-Build the binary once with `cd go && go build -o etl ./cmd`.
+Build the binary once with `cd go && go build -o ./bin/etl ./cmd`.
 
 ### 3.3 CLI config file shape
 
@@ -384,7 +384,7 @@ go build ./...   # build everything
 go test ./...    # unit + e2e pipeline tests
 
 # Smoke-test the binary with your own config:
-go build -o etl ./cmd
+go build -o ./bin/etl ./cmd
 printf 'BARCODE,SKU,NAME\n123,A1,Widget\n' > /tmp/in.csv
 ./etl -source /tmp/in.csv -config your-config.json
 ```
