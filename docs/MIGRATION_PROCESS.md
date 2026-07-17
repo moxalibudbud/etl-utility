@@ -94,7 +94,8 @@ go test ./...    # ok: template, line, etl
 - Azure Blob + S3 readers/writers
 - Excel writer (`ExcelJS`)
 - `JSONGenerator` (nested JSON output)
-- `PushIfExist` / `FileIndexGenerator` dedup variants + `uniqueKey`/`indexFile`
+- `PushIfExist` / `FileIndexGenerator` dedup variants and `indexFile`
+  (`uniqueKey` in-memory deduplication is supported by the default writer)
 - JS-eval `customFunction` template fallback
 
 The `Reader`/`Writer` interfaces + factories are shaped so these slot in **without

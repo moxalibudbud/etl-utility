@@ -49,6 +49,7 @@ further recommendations from §4 are implemented.
 | --- | --- | --- | --- |
 | §2.2 — `SourceLine` duplicated `Separator`/`Columns` from `Opts` | ✅ Fixed | `0658b82` | Both fields removed from the struct; `Output()` now reads `sl.Opts.Columns`. `Opts` is the single source of truth. |
 | §3.1 — `Filename`/`FilenameTemplate` redundant pair | ✅ Fixed | *(uncommitted)* | Merged into one always-templated `Filename`. `OutputConfig.UnmarshalJSON` accepts all three wire shapes (flat string, TS `{"template"}` object, legacy `filenameTemplate` key — legacy key keeps its old precedence when both are set). Covered by `go/writer/writer_test.go`. |
+| §3.3 — `uniqueKey` documentation contradiction | ✅ Fixed | *(uncommitted)* | `MIGRATION_PROCESS.md` now defers only the `PushIfExist`/`FileIndexGenerator` variants and `indexFile`, while explicitly noting that the default writer supports in-memory `uniqueKey` deduplication. |
 
 ---
 
@@ -197,7 +198,11 @@ a config that sets `Template` together with a non-default `Separator`
 expectation. `usage.md` §4.3 documents the precedence; the struct itself does
 not.
 
-### 3.3 `UniqueKey` — keep; fix the doc contradiction
+### 3.3 `UniqueKey` — keep; fix the doc contradiction — ✅ FIXED
+
+> **Status: fixed.** `docs/MIGRATION_PROCESS.md` now distinguishes the deferred
+> `PushIfExist`/`FileIndexGenerator` variants and `indexFile` support from
+> in-memory `uniqueKey` deduplication, which the default writer already supports.
 
 Verified against TS: `uniqueKey` de-duplication is part of
 `typescript/src/file-generator/default-generator.ts:56-68` itself, not only of
@@ -269,4 +274,6 @@ Ordered by value:
    directly; delete the dead top-level `metadata` or wire it through (§3.4, §3.6).
 5. **Document mutual exclusivity** of `Template` vs `Separator` on the struct
    (§3.2).
-6. **Correct `MIGRATION_PROCESS.md:97`** re: `uniqueKey` (§3.3).
+6. ~~**Correct `MIGRATION_PROCESS.md:97`** re: `uniqueKey` (§3.3).~~ ✅ Done —
+   the deferred list now separates unsupported writer variants and `indexFile`
+   from supported default-writer `uniqueKey` deduplication.
