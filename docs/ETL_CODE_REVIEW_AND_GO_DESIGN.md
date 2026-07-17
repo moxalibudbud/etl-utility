@@ -89,7 +89,7 @@ The binary/core is consumable four ways, all funneling through `etl.Run`:
 
 | Surface                     | How                                                                                                                |
 | --------------------------- | ------------------------------------------------------------------------------------------------------------------ |
-| **Terminal (args)**         | `cmd/etl` flags: `-source -columns -mandatory -separator -with-header -out-* -header -footer -template`.           |
+| **Terminal / worker**       | `cmd/etl -config <path-or->`; `-` reads canonical JSON from stdin and optional `-source` overrides its source.      |
 | **BullMQ worker (Node)**    | Worker spawns the binary, pipes a JSON `Config` to `-config -` (stdin), reads the JSON `Result` from stdout.       |
 | **Lambda / Cloud Function** | Go runtime imports `flatfile-go/etl` and calls `etl.Run(cfg)`; or the function shells out to the binary with JSON. |
 | **In-process helper (API)** | Import `etl`, build a `Config` (or call `etl.New(source, opts, writer)` directly) and `Process()`.                 |
@@ -139,14 +139,14 @@ etl.Run(Config)
 | -------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
 | `ReadLineInterface` union + `readLineInterface()`        | `reader.Reader` interface + `reader.New()` factory                                       |
 | Node `readline` (event-based)                            | `bufio.Scanner` (`ScanLines` drops trailing `\r` → CRLF tolerant)                        |
-| `LineSourceBaseOptions`                                  | `line.Options` (JSON-tagged)                                                             |
+| `LineSourceBaseOptions`                                  | `line.LineConfig` (JSON-tagged)                                                          |
 | `SourceLine` class + getters                             | `line.SourceLine` + methods `Validate/IsValid/Error/IsHeader/Output/AllData/Identifiers` |
 | `jsonLine: JSONObject`                                   | `map[string]string`                                                                      |
 | `outputMappings` / `identifierMappings` (objects)        | `[]line.Mapping{Out,Src}` — **ordered** so delimited output is deterministic             |
 | `FlatFileBaseLazy & FlatFileBaseLazyMethods`             | `writer.Writer` interface                                                                |
 | `DefaultGenerator`                                       | `writer.DefaultWriter` (lazy create, uniqueKey dedup)                                    |
 | `ErrorReport`                                            | `writer.ErrorReport` (lazy; `InvalidRows` counter)                                       |
-| `FileGeneratorFactory`                                   | `writer.Factory(Kind, OutputOptions)`                                                    |
+| `FileGeneratorFactory`                                   | `writer.Factory(OutputConfig)`                                                           |
 | `replaceWithMap/Function`, `mapFields`, `mapWithDefault` | `template.*` + `line.mapWithDefault/mapFields`                                           |
 | `ETLResult`                                              | `etl.Result` (JSON-tagged)                                                               |
 
@@ -154,6 +154,21 @@ etl.Run(Config)
 > JS object key order is not guaranteed across a JSON boundary. Arrays of
 > `{out, src}` keep the delimited writer's column order deterministic and survive
 > JSON round-trips from a worker/function.
+
+### Configuration contract
+
+- Every entrypoint uses the canonical `etl.Config` JSON shape: `source`,
+  `output`, and `options`. The CLI decodes that shape strictly from a file or
+  stdin and rejects retired wrapper/envelope shapes.
+- `OutputConfig.FileGenerator` matches the `fileGenerator` JSON key.
+- `filename` is canonically a flat string and is always passed through field
+  and function templating. The TypeScript object form and legacy
+  `filenameTemplate` key remain temporary read-time compatibility inputs.
+- `output.metadata` is the sole writer-metadata location. It accepts arbitrary
+  JSON values; template paths can traverse nested objects and arrays and use
+  string, numeric, and boolean leaves.
+- A row `template` takes precedence over output `separator` projection when
+  both are configured.
 
 ### Behavior-parity notes (faithful to TS)
 
@@ -176,9 +191,9 @@ etl.Run(Config)
 
 Azure Blob + S3 readers/writers, Excel (`ExcelJS`), `JSONGenerator`, the
 `PushIfExist` / `FileIndexGenerator` dedup variants, the JS-eval `customFunction`
-template fallback, and `uniqueKey`/`indexFile` external dedup. The `Reader` /
-`Writer` interfaces + factory are shaped so these slot in **without touching
-`etl.go`**.
+template fallback, and `indexFile` external dedup. In-memory `uniqueKey`
+deduplication is supported by the default writer. The `Reader` / `Writer`
+interfaces + factory are shaped so these slot in **without touching `etl.go`**.
 
 ---
 
@@ -193,16 +208,13 @@ go build ./...
 # Unit + e2e tests (template, line, etl pipeline)
 go test ./...
 
-# Terminal run (flags)
-go run ./cmd/etl \
-  -source in.csv -columns BARCODE,SKU,NAME -mandatory BARCODE,SKU \
-  -separator , -with-header \
-  -out-path /tmp -out-filename out.csv -out-separator ';' -header 'sku;name' -footer 'EOF'
+# Terminal run (canonical JSON config file)
+go run ./cmd/etl -config ./samples/csv-to-csv/config.default.json
 
-# Worker / function run (JSON config via stdin → JSON result on stdout)
+# Worker / function run (the same canonical JSON via stdin → JSON result on stdout)
 echo '{ "source":"in.csv",
-        "output":{"kind":"default-generator","options":{"path":"/tmp","filename":"out.csv",
-          "separator":";","template":"{SKU};{NAME}","header":"sku;name","footer":"EOF"}},
+        "output":{"fileGenerator":"default-generator","path":"/tmp","filename":"out.csv",
+          "separator":";","template":"{SKU};{NAME}","header":"sku;name","footer":"EOF"},
         "options":{"line":{"columns":["BARCODE","SKU","NAME"],"mandatoryFields":["BARCODE","SKU"],
           "separator":",","withHeader":true,
           "identifierMappings":[{"out":"barcode","src":"BARCODE"}]}} }' \

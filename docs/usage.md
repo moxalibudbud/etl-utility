@@ -372,8 +372,7 @@ the invalid/error paths.
   the footer is appended raw. The output has no trailing newline.
 - **Not yet supported** (explicit errors, planned per the design doc): remote
   sources (Azure Blob, S3), JSON/Excel writers, `PushIfExist`/file-index dedup
-  variants, custom JS template functions, `-config -` stdin mode, flags-only
-  CLI mode.
+  variants, custom JS template functions, and flags-only CLI mode.
 
 ---
 

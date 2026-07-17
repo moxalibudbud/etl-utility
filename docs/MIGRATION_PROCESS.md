@@ -48,7 +48,7 @@ is the shared contract.
 
 | Surface | How |
 |---|---|
-| Terminal (args) | `cmd/etl` flags (`-source`, `-columns`, `-mandatory`, `-out-*`, `-template`, …) |
+| Terminal / worker | `cmd/etl -config <path-or->`; optional `-source` overrides the source in canonical config JSON |
 | BullMQ worker | spawn binary, JSON `Config` on stdin (`-config -`) → JSON `Result` on stdout |
 | Lambda / cloud function | import `flatfile-go/etl` (Go runtime) or shell out with JSON |
 | Helper / API | import `etl`, call `Run(cfg)` or `New(source, opts, writer).Process()` |
@@ -60,6 +60,15 @@ is the shared contract.
 - **Ordered mappings.** `outputMappings`/`identifierMappings` are `[]line.Mapping{Out,Src}`,
   not maps — Go maps are unordered and JS object key order isn't guaranteed across a
   JSON boundary. Arrays keep delimited output deterministic and survive round-trips.
+- **One configuration shape.** The library and CLI use canonical `etl.Config`
+  JSON (`source`, `output`, `options`). The CLI reads it from a file or stdin,
+  rejects retired wrapper/envelope shapes, and optionally overrides `source`.
+- **Writer configuration alignment.** `FileGenerator` matches the
+  `fileGenerator` wire key; `filename` is a flat, always-templated string;
+  `output.metadata` accepts arbitrary nested JSON for template lookups. Legacy
+  filename wire forms remain temporary read-time compatibility inputs.
+- **Row-mode precedence.** A configured row `template` takes precedence over
+  separator-joined output mappings.
 - **Lazy writers.** Output file + header are created on the first `Push`, so an empty
   or all-invalid input produces no output file.
 - **Faithful parity quirk.** The footer is written raw (no leading newline), so it
@@ -79,8 +88,9 @@ go vet ./...     # OK
 go test ./...    # ok: template, line, etl
 ```
 
-- Ran the binary in **flags mode** and **JSON-stdin mode** — both produced the
-  correct output file, `<source>.error.txt`, and JSON `Result` with sample metadata.
+- Verified the binary with canonical JSON from a **config file** and **stdin**,
+  including the optional source override and strict rejection of retired JSON
+  wrapper/envelope shapes.
 - Test coverage: `template` (substitution, `[timestamp]`/`[dateTime]`, data-path,
   sanitize); `line` (quote stripping, missing columns, mandatory validation, header
   detection, ordered output + defaults, identifiers); `etl` end-to-end (happy path
@@ -105,9 +115,8 @@ touching `etl.go`**.
 
 ## 6. Notes / follow-ups
 
-- In flags mode **without** `outputMappings`, output uses all `columns` in order, so
-  a literal `-header 'sku;name'` (2 cols) won't line up with 3-column rows. That's
-  config responsibility; the template path (`{SKU};{NAME}`) is the cleaner way to
-  shape rows.
+- Without `outputMappings`, output uses all configured `columns` in order. A
+  two-column output header therefore will not line up with a three-column row
+  unless mappings or a row template such as `{SKU};{NAME}` shape the output.
 - Mandatory-field error text prints the empty value as `""` (TS prints `"undefined"`
   for a missing key) — cosmetic difference in the error report only.
