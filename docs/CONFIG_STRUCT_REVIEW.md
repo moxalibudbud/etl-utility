@@ -53,6 +53,7 @@ further recommendations from §4 are implemented.
 | §3.3 — `uniqueKey` documentation contradiction | ✅ Fixed | *(uncommitted)* | `MIGRATION_PROCESS.md` now defers only the `PushIfExist`/`FileIndexGenerator` variants and `indexFile`, while explicitly noting that the default writer supports in-memory `uniqueKey` deduplication. |
 | §3.4 — metadata typing and dead CLI field | ✅ Fixed | *(uncommitted)* | `OutputConfig.Metadata` now accepts arbitrary JSON values; template paths traverse nested objects and arrays. The unused top-level CLI metadata field was removed; `output.metadata` is canonical. |
 | §3.5 — `Type`/`fileGenerator` naming mismatch | ✅ Fixed | *(uncommitted)* | Renamed the Go field to `FileGenerator` and updated the factory and Go call sites. The `fileGenerator` JSON key is unchanged. |
+| §3.1/#2 — unsupported `config.with-template.json` sample | ✅ Fixed | *(uncommitted)* | Moved the TypeScript-oriented configuration into `go/samples/legacy-typescript` and documented it as a non-runnable migration fixture. |
 
 ---
 
@@ -173,20 +174,21 @@ filename containing `{word}` or `[...]` would be rewritten — no such config
 exists in this repo, and those characters are pathological in filenames
 anyway.)
 
-**Related breakage found while verifying:** the sample
-`go/samples/csv-to-csv/config.with-template.json:29-31` uses the TS object
+**Related breakage found while verifying:** the former Go sample, now
+quarantined at
+`go/samples/legacy-typescript/config.with-template.json`, uses the TS object
 form:
 
 ```json
 "filename": { "template": "stoksmart_soh_[return ...].json" }
 ```
 
-This does **not** unmarshal into the current `Filename string` — the whole
-config load fails with a JSON type error. Either the sample must be migrated
-to the Go shape, or `OutputConfig` needs a custom `UnmarshalJSON` that accepts
-the TS object form. (That sample also uses `fileGenerator: "json-generator"`,
-which the factory rejects, so the file appears to be an aspirational TS
-carry-over rather than a working Go sample — worth marking it as such.)
+The compatibility unmarshaller now accepts this filename shape. However, the
+fixture also uses `fileGenerator: "json-generator"` and JSON-generator options
+that the Go core does not support. It has therefore been moved out of the
+runnable `csv-to-csv` samples and documented as a non-runnable legacy
+TypeScript fixture. A working Go version should be added only with a native
+JSON generator and the canonical run-config shape.
 
 ### 3.2 `Separator` vs `Template` — silent mutual exclusion — ✅ FIXED
 
@@ -286,12 +288,13 @@ or TypeScript compatibility.
 
 `cmd/main.go` defines its own `configData` (`line` + `output` + `metadata` at
 top level), while the canonical `etl.Config` (`etl/run.go:9-16`) is
-`source` + `output` + `options{line, rejectOnInvalidRow}`. The samples use the
-cmd shape (and `config.with-template.json` wraps everything in yet a third
-`{"config": {...}}` envelope). Since `run.go`'s stated design goal is “the
+`source` + `output` + `options{line, rejectOnInvalidRow}`. The runnable samples
+use the cmd shape. The quarantined legacy TypeScript fixture
+`config.with-template.json` wraps everything in yet a third
+`{"config": {...}}` envelope. Since `run.go`'s stated design goal is “the
 single JSON-serializable request that drives a run”, `cmd/main.go` should
-unmarshal straight into `etl.Config` and the samples should converge on that
-one shape.
+unmarshal straight into `etl.Config` and the runnable samples should converge
+on that one shape.
 
 ### 3.7 Minor: unreachable header branch in the writer
 
@@ -311,8 +314,10 @@ the FIXES table.
 1. ~~**Merge `Filename`/`FilenameTemplate`** into one always-templated
    `Filename` field (§3.1); decide whether to add `UnmarshalJSON` for the TS
    object form.~~ ✅ Done (with `UnmarshalJSON` compat) — see FIXES.
-2. **Fix or quarantine `config.with-template.json`** — its TS filename object
-   now unmarshals, but it still names an unsupported generator (§3.1).
+2. ~~**Fix or quarantine `config.with-template.json`** — its TS filename object
+   now unmarshals, but it still names an unsupported generator (§3.1).~~
+   ✅ Done by moving it to `go/samples/legacy-typescript` and documenting it as
+   a non-runnable migration fixture.
 3. ~~**Remove `SourceLine.Separator` and `SourceLine.Columns`**, reading through
    `Opts` (§2.2).~~ ✅ Done in `0658b82` — see FIXES.
 4. ~~**Remove the dead top-level CLI `metadata` field** and make
