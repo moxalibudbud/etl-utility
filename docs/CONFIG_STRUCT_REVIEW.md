@@ -31,12 +31,23 @@ TypeScript original in `typescript/src`.
 | `OutputConfig` | `Template` | **Keep** (document) | Mutually exclusive with `Separator`-joined projection. |
 | `OutputConfig` | `UniqueKey` | **Keep** | Legitimate TS parity — see §3.3. |
 | `OutputConfig` | `Metadata` | **Keep** (note typing) | Narrower than the TS `any` metadata — see §3.4. |
-| `SourceLine` (related) | `Separator` | **Remove** | Written, never read — dead field. See §2.2. |
-| `SourceLine` (related) | `Columns` | **Remove** | Duplicates `Opts.Columns`. See §2.2. |
+| `SourceLine` (related) | `Separator` | **Fixed** (`0658b82`) | Was written, never read — removed. See §2.2. |
+| `SourceLine` (related) | `Columns` | **Fixed** (`0658b82`) | Duplicated `Opts.Columns` — removed. See §2.2. |
 
 Net: no `LineConfig` option is redundant; the real redundancies are the
-`Filename`/`FilenameTemplate` pair in `OutputConfig` and the duplicated
-fields inside `SourceLine`.
+`Filename`/`FilenameTemplate` pair in `OutputConfig` and the (since fixed)
+duplicated fields inside `SourceLine`.
+
+---
+
+## FIXES
+
+Findings from this review that have been resolved. Append new rows as
+further recommendations from §4 are implemented.
+
+| Finding | Status | Commit | Notes |
+| --- | --- | --- | --- |
+| §2.2 — `SourceLine` duplicated `Separator`/`Columns` from `Opts` | ✅ Fixed | `0658b82` | Both fields removed from the struct; `Output()` now reads `sl.Opts.Columns`. `Opts` is the single source of truth. |
 
 ---
 
@@ -68,9 +79,15 @@ Nothing to omit from the struct itself. The two `Separator` fields across
 splits input, the other joins output (and they legitimately differ in the
 samples: `","` in, `";"` out).
 
-### 2.2 The actual redundancy: `SourceLine` duplicates its own options
+### 2.2 The actual redundancy: `SourceLine` duplicates its own options — ✅ FIXED
 
-`go/line/sourceline.go:6-14`:
+> **Status: fixed in `0658b82`** ("remove Columns and Separator in Sourceline").
+> The struct (`sourceline.go:6-12`) is now `Line, JSONLine, Opts,
+> CurrentLineNumber, Errors`, and `Output()` (`sourceline.go:66`) reads
+> `sl.Opts.Columns`. Original finding kept below for the record.
+
+As originally reviewed, the struct stored `Separator` and `Columns` as
+top-level fields *and* the whole `Opts LineConfig`:
 
 ```go
 type SourceLine struct {
@@ -83,15 +100,14 @@ type SourceLine struct {
 }
 ```
 
-- **`SourceLine.Separator`** is assigned in `New` (`sourceline.go:31`) and never
-  read anywhere in the package or its callers. Dead field — remove.
-- **`SourceLine.Columns`** is assigned in `New` and read only once, in
-  `Output()` (`sourceline.go:70`). It is always identical to `sl.Opts.Columns`.
-  Remove and read through `sl.Opts.Columns`, matching how every other option
-  (`MandatoryFields`, `WithHeader`, mappings) is already accessed.
+- **`SourceLine.Separator`** was assigned in `New` and never read anywhere in
+  the package or its callers. Dead field.
+- **`SourceLine.Columns`** was assigned in `New` and read only once, in
+  `Output()`, always identical to `sl.Opts.Columns`.
 
-This removes two of the three copies of the same data and makes `Opts` the
-single source of truth.
+The fix removed two of the three copies of the same data and made `Opts` the
+single source of truth, matching how every other option (`MandatoryFields`,
+`WithHeader`, mappings) was already accessed.
 
 ### 2.3 Improvement (optional, breaks strict parity)
 
@@ -237,8 +253,8 @@ Ordered by value:
    object form.
 2. **Fix or quarantine `config.with-template.json`** — today it neither
    unmarshals nor names a supported generator (§3.1).
-3. **Remove `SourceLine.Separator` and `SourceLine.Columns`**, reading through
-   `Opts` (§2.2).
+3. ~~**Remove `SourceLine.Separator` and `SourceLine.Columns`**, reading through
+   `Opts` (§2.2).~~ ✅ Done in `0658b82` — see FIXES.
 4. **Unify the config JSON shape**: make `cmd/main.go` unmarshal `etl.Config`
    directly; delete the dead top-level `metadata` or wire it through (§3.4, §3.6).
 5. **Document mutual exclusivity** of `Template` vs `Separator` on the struct
