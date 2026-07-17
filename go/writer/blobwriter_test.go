@@ -2,7 +2,10 @@ package writer
 
 import (
 	"context"
+	"errors"
+	"io"
 	"os"
+	"sync"
 	"testing"
 
 	"flatfile-go/line"
@@ -13,10 +16,17 @@ var _ Writer = (*AzureBlobWriter)(nil)
 const testContainerURL = "https://acct.blob.core.windows.net/exports/daily"
 
 // fakeBlob captures upload/delete calls so tests never contact Azure.
+// startedURL/starts record the call itself; uploadedURL/uploadedData/
+// completions record only once the fake has read body to EOF (i.e. after
+// End closes the pipe) — this distinguishes "upload started" from "upload
+// finished" the same way the real streaming client does.
 type fakeBlob struct {
+	mu           sync.Mutex
+	startedURL   string
+	starts       int
 	uploadedURL  string
 	uploadedData []byte
-	uploads      int
+	completions  int
 	deletedURL   string
 	deletes      int
 }
@@ -26,15 +36,29 @@ func newBlobWriterForTest(t *testing.T, opts OutputConfig) (*AzureBlobWriter, *f
 	opts.DestinationConfig = DestinationConfig{Type: DestinationAzureBlob, URL: testContainerURL}
 	w := NewAzureBlobWriter(opts)
 	fake := &fakeBlob{}
-	w.upload = func(_ context.Context, destURL string, data []byte) error {
+	w.startUpload = func(_ context.Context, destURL string, body io.Reader) error {
+		fake.mu.Lock()
+		fake.startedURL = destURL
+		fake.starts++
+		fake.mu.Unlock()
+
+		data, err := io.ReadAll(body)
+		if err != nil {
+			return err
+		}
+
+		fake.mu.Lock()
 		fake.uploadedURL = destURL
-		fake.uploadedData = append([]byte(nil), data...)
-		fake.uploads++
+		fake.uploadedData = data
+		fake.completions++
+		fake.mu.Unlock()
 		return nil
 	}
 	w.deleteBlob = func(_ context.Context, destURL string) error {
+		fake.mu.Lock()
 		fake.deletedURL = destURL
 		fake.deletes++
+		fake.mu.Unlock()
 		return nil
 	}
 	return w, fake
@@ -60,15 +84,18 @@ func TestBlobWriterUploadsOnceOnEnd(t *testing.T) {
 	if err := w.PushFooter(); err != nil {
 		t.Fatalf("push footer: %v", err)
 	}
-	if fake.uploads != 0 {
-		t.Fatalf("uploaded before End: %d", fake.uploads)
+	if fake.starts != 1 {
+		t.Fatalf("starts = %d, want 1 (upload begins on first Push)", fake.starts)
+	}
+	if fake.completions != 0 {
+		t.Fatalf("upload completed before End: %d", fake.completions)
 	}
 	if err := w.End(); err != nil {
 		t.Fatalf("end: %v", err)
 	}
 
-	if fake.uploads != 1 {
-		t.Fatalf("uploads = %d, want 1", fake.uploads)
+	if fake.completions != 1 {
+		t.Fatalf("completions = %d, want 1", fake.completions)
 	}
 	if want := testContainerURL + "/out_1005.csv"; fake.uploadedURL != want {
 		t.Fatalf("uploaded URL = %q, want %q", fake.uploadedURL, want)
@@ -133,8 +160,8 @@ func TestBlobWriterLazyNoUploadOnEmptyInput(t *testing.T) {
 	if err := w.End(); err != nil {
 		t.Fatalf("end: %v", err)
 	}
-	if fake.uploads != 0 {
-		t.Fatalf("uploads = %d, want 0 for empty input", fake.uploads)
+	if fake.starts != 0 {
+		t.Fatalf("starts = %d, want 0 for empty input", fake.starts)
 	}
 	if err := w.Delete(); err != nil {
 		t.Fatalf("delete: %v", err)
@@ -180,6 +207,65 @@ func TestBlobWriterEmptyFilenameErrors(t *testing.T) {
 	sl := line.New("1005;ABC", line.LineConfig{Columns: []string{"LOC", "ITEM"}}, 1)
 	if err := w.Push(sl); err == nil {
 		t.Fatal("expected error for empty filename")
+	}
+}
+
+// TestBlobWriterUploadFailureSurfacesThroughPush proves a background upload
+// failure is not silently swallowed: since Push writes block until the
+// upload goroutine reads a match, a goroutine that gives up unblocks the
+// blocked write with the real error via CloseWithError, not a generic
+// closed-pipe error.
+func TestBlobWriterUploadFailureSurfacesThroughPush(t *testing.T) {
+	w, fake := newBlobWriterForTest(t, OutputConfig{Filename: "out.csv", Template: "{ITEM}"})
+	wantErr := errors.New("network reset")
+	w.startUpload = func(context.Context, string, io.Reader) error { return wantErr }
+
+	sl := line.New("1005;ABC", line.LineConfig{Columns: []string{"LOC", "ITEM"}}, 1)
+	if err := w.Push(sl); !errors.Is(err, wantErr) {
+		t.Fatalf("Push() error = %v, want %v", err, wantErr)
+	}
+
+	// End still runs first in the real ETL cleanup path (etl.cleanUp always
+	// calls output.End() before output.Delete()); it must surface the same
+	// upload error rather than block or double-report it.
+	if err := w.End(); !errors.Is(err, wantErr) {
+		t.Fatalf("End() error = %v, want %v", err, wantErr)
+	}
+	if err := w.Delete(); err != nil {
+		t.Fatalf("delete after failed upload: %v", err)
+	}
+	if fake.deletes != 0 {
+		t.Fatalf("deletes = %d, want 0 (nothing was ever committed)", fake.deletes)
+	}
+}
+
+// TestBlobWriterDeleteAbortsUnfinishedUpload proves Delete does not deadlock
+// or leave the background goroutine running when called before End (e.g. a
+// caller that skips End entirely) — it must cancel the in-flight upload and
+// wait for the goroutine to actually exit.
+func TestBlobWriterDeleteAbortsUnfinishedUpload(t *testing.T) {
+	w, fake := newBlobWriterForTest(t, OutputConfig{Filename: "out.csv", Template: "{ITEM}"})
+	started := make(chan struct{})
+	w.startUpload = func(_ context.Context, _ string, body io.Reader) error {
+		close(started)
+		_, err := io.ReadAll(body) // blocks until Delete aborts the pipe
+		return err
+	}
+
+	sl := line.New("1005;ABC", line.LineConfig{Columns: []string{"LOC", "ITEM"}}, 1)
+	if err := w.Push(sl); err != nil {
+		t.Fatalf("push: %v", err)
+	}
+	<-started
+
+	if err := w.Delete(); err != nil {
+		t.Fatalf("delete: %v", err)
+	}
+	if fake.completions != 0 {
+		t.Fatalf("completions = %d, want 0 (upload was aborted, not finished)", fake.completions)
+	}
+	if fake.deletes != 0 {
+		t.Fatalf("deletes = %d, want 0 (nothing was ever committed)", fake.deletes)
 	}
 }
 
