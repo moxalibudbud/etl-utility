@@ -6,7 +6,6 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 	"strings"
 
@@ -53,8 +52,7 @@ func handleRequest(req events.LambdaFunctionURLRequest) (events.LambdaFunctionUR
 
 	result, err := etl.Run(cfg)
 	if err != nil {
-		log.Printf("ETL run failed: %v", err)
-		return jsonResponse(http.StatusInternalServerError, errorResponse{Error: "ETL run failed"})
+		return jsonResponse(http.StatusInternalServerError, errorResponse{Error: err.Error()})
 	}
 
 	return jsonResponse(http.StatusOK, result)
