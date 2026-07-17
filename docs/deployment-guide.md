@@ -22,12 +22,22 @@ Function URLs and accepts the ETL config as the HTTP request body.
 From the repository root:
 
 ```bash
-cd go
-GOOS=linux GOARCH=arm64 CGO_ENABLED=0 go build -o ./bin/bootstrap -tags lambda.norpc ./cmd/lambda
-zip ./bin/lambda.zip ./bin/bootstrap
+./lambda/build.sh
 ```
 
-Use `GOARCH=amd64` instead if your Lambda function is configured for x86_64.
+This compiles the Lambda entrypoint from `go/cmd/lambda` and writes the runtime
+artifact into the `lambda` folder:
+
+```text
+lambda/bootstrap
+lambda/bootstrap.zip
+```
+
+The zip contains a root-level `bootstrap` executable, which is required for the
+`provided.al2023` custom runtime.
+
+The current script builds for `arm64`. Use `GOARCH=amd64` in
+`lambda/build.sh` instead if your Lambda function is configured for x86_64.
 
 ### 1.2 Create/configure the Lambda function
 
@@ -39,9 +49,27 @@ Recommended runtime settings:
 | Architecture | `arm64` or `x86_64`, matching the build command |
 | Handler | `bootstrap` |
 | Package type | `.zip` |
+| Timeout | `900` seconds |
+| Region | `ap-south-1` |
 
-Upload `go/lambda.zip` as the function code, or wire the same artifact into
-your IaC/deployment pipeline.
+Upload `lambda/bootstrap.zip` as the function code, or deploy it with:
+
+```bash
+./lambda/deploy.sh
+```
+
+`lambda/deploy.sh` currently updates the existing Lambda function named
+`go-etl`:
+
+```bash
+aws lambda update-function-code \
+  --function-name go-etl \
+  --zip-file fileb://lambda/bootstrap.zip \
+  --region ap-south-1
+```
+
+The script resolves the zip path from its own location, so it can be run from
+the repository root or from inside the `lambda` folder.
 
 Create a Lambda Function URL for the function. The handler accepts:
 
@@ -189,8 +217,9 @@ Useful checks before deployment:
 cd go
 go test ./...
 go build ./...
-GOOS=linux GOARCH=arm64 CGO_ENABLED=0 go build -tags lambda.norpc -o /tmp/bootstrap ./cmd/lambda
+cd ..
+./lambda/build.sh
+unzip -l lambda/bootstrap.zip
 ```
 
-The Lambda build command is a packaging smoke test; use the artifact flow in
-section 1 when creating the actual zip.
+The zip listing should show a root-level `bootstrap` file.
