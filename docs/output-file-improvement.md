@@ -50,10 +50,23 @@ Concretely, this plan's proposals were **not** followed as written:
   struct (extracted from `go/reader` so source and destination can use
   different storage accounts) rather than assumed from the provider default
   chain only.
-- Upload is a single in-memory buffer flushed through the SDK's block-blob
-  upload on `End`, not hand-rolled bounded block streaming with configurable
-  concurrency; the SDK chunks internally, but whole-output buffering is a
-  known limitation.
+- Upload streams through an `io.Pipe` into the SDK's block-blob
+  `UploadStream` as rows are pushed, not hand-rolled bounded block streaming
+  with configurable concurrency — the SDK owns block sizing and concurrency
+  internally. Memory use is not proportional to output size, matching the
+  reader side. `End` closes the pipe (letting the SDK commit the block list)
+  and waits for the background upload to finish; `Delete` called before `End`
+  aborts the in-flight upload instead of committing then removing it.
+- Known limitation, kept for now: the orchestrator's forced cleanup
+  (`etl.cleanUp(force)`) always calls `output.End()` before `output.Delete()`,
+  so on a mid-run failure the partial blob output is committed then deleted —
+  the writer's abort path is never taken from that call site — and cleanup
+  errors are discarded (`etl.Process` ignores the forced cleanup's return).
+  If the commit succeeds but the delete then fails, a stray partial blob can
+  remain with no error surfaced. Fixing this belongs with the
+  [cleanup phase](#context-errors-and-cleanup) work (abort-aware cleanup and
+  reported cleanup failures); see also the operational note in
+  [usage.md](usage.md).
 - Error reports remain local-only, and `Writer.Path()` keeps returning a local
   staging directory (OS temp dir for blob output) so the orchestrator is
   unchanged.

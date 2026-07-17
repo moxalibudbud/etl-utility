@@ -323,11 +323,13 @@ inside `output`, so existing local-only configs are unchanged:
 Unlike the source `url` (which names the exact blob to read), the output `url`
 is a **container/prefix**: the rendered `filename` is appended to it, the same
 way `path` + `filename` are joined for local output. The rendered output is
-buffered in memory and uploaded as a single block blob when the run ends;
-nothing is uploaded when no valid row was produced. Error reports always stay
-on local disk (under `path`'s default, the OS temp dir). Source and output
-each carry their own `auth`, so a run can read from one storage account and
-write to another.
+streamed to a block blob as rows are pushed (an `io.Pipe` feeds the SDK's
+`UploadStream`, so memory use isn't proportional to output size); nothing is
+uploaded when no valid row was produced, and the blob is only committed —
+visible to readers — once the run ends without error. Error reports always
+stay on local disk (under `path`'s default, the OS temp dir). Source and
+output each carry their own `auth`, so a run can read from one storage
+account and write to another.
 
 | JSON key | Type | Required | Description |
 | --- | --- | --- | --- |
@@ -450,10 +452,22 @@ the invalid/error paths.
   exception — it keeps one map entry per distinct key value.
 - **Output row endings**: rows are newline-*prefixed* (the header is not), and
   the footer is appended raw. The output has no trailing newline.
-- **Azure Blob output**: the whole rendered output is buffered in memory and
-  uploaded once at the end of the run, so output size is bounded by available
-  memory (unlike the streaming blob *source*). Bounded block streaming is
-  planned hardening.
+- **Azure Blob output**: rows stream to the destination as they're pushed
+  (via `io.Pipe` into the SDK's block-blob `UploadStream`), symmetric with
+  the streaming blob *source* — output size isn't bounded by memory. The blob
+  is only committed (visible to readers) when the run ends; a run that fails
+  before then leaves nothing visible at the destination.
+- **Cleanup on failure is best-effort for blob output**: when a run fails
+  mid-stream (e.g. the source connection drops), the orchestrator's forced
+  cleanup calls the writer's `End()` *before* `Delete()` — so the partial
+  output is first committed, then deleted, rather than aborted in-flight. If
+  that commit fails too (say the network is down), nothing is committed and
+  the run's original error is returned — but cleanup's own errors are
+  discarded, so in the narrow case where the commit succeeds and the
+  follow-up delete then fails, a stray partial blob can remain at the
+  destination without any error surfaced. If your integration is sensitive
+  to stray partials, verify the destination after a failed run (the blob URL
+  is deterministic: `url` + rendered `filename`).
 - **Not yet supported** (explicit errors, planned per the design doc): S3
   sources and destinations, JSON/Excel writers, `PushIfExist`/file-index dedup
   variants, custom JS template functions, and flags-only CLI mode.
