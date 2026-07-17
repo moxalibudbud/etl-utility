@@ -23,8 +23,8 @@ TypeScript original in `typescript/src`.
 | `LineConfig` | `WithHeader` | **Keep** | Drives `IsHeader()` / header-row skipping. |
 | `OutputConfig` | `Type` | **Keep** (note naming) | Factory switch; json tag `fileGenerator` diverges from field name. |
 | `OutputConfig` | `Path` | **Keep** | Output directory, defaulted to OS temp dir. |
-| `OutputConfig` | `Filename` | **Merge** | Redundant with `FilenameTemplate` — see §3.1. |
-| `OutputConfig` | `FilenameTemplate` | **Merge** | Strict superset of `Filename` — see §3.1. |
+| `OutputConfig` | `Filename` | **Fixed** (merged) | Now the single, always-templated field — see §3.1. |
+| `OutputConfig` | `FilenameTemplate` | **Fixed** (removed) | Was a strict superset of `Filename`; struct field removed, wire key still accepted — see §3.1. |
 | `OutputConfig` | `Separator` | **Keep** (document) | Silently ignored when `Template` is set — see §3.2. |
 | `OutputConfig` | `Header` | **Keep** | Written once on first push; `[func ...]` templated. |
 | `OutputConfig` | `Footer` | **Keep** | Written raw (documented parity quirk). |
@@ -48,6 +48,7 @@ further recommendations from §4 are implemented.
 | Finding | Status | Commit | Notes |
 | --- | --- | --- | --- |
 | §2.2 — `SourceLine` duplicated `Separator`/`Columns` from `Opts` | ✅ Fixed | `0658b82` | Both fields removed from the struct; `Output()` now reads `sl.Opts.Columns`. `Opts` is the single source of truth. |
+| §3.1 — `Filename`/`FilenameTemplate` redundant pair | ✅ Fixed | *(uncommitted)* | Merged into one always-templated `Filename`. `OutputConfig.UnmarshalJSON` accepts all three wire shapes (flat string, TS `{"template"}` object, legacy `filenameTemplate` key — legacy key keeps its old precedence when both are set). Covered by `go/writer/writer_test.go`. |
 
 ---
 
@@ -123,6 +124,8 @@ parity-focused port.
 
 ## 3. `OutputConfig` (`go/writer/writer.go`)
 
+As originally reviewed (`FilenameTemplate` has since been removed — see §3.1):
+
 ```go
 type OutputConfig struct {
 	Type             string            `json:"fileGenerator"`
@@ -138,7 +141,14 @@ type OutputConfig struct {
 }
 ```
 
-### 3.1 `Filename` vs `FilenameTemplate` — the redundant pair (main finding)
+### 3.1 `Filename` vs `FilenameTemplate` — the redundant pair (main finding) — ✅ FIXED
+
+> **Status: fixed.** `FilenameTemplate` was removed from the struct;
+> `Filename` is now always rendered through both template layers, and
+> `OutputConfig.UnmarshalJSON` accepts the flat string, the TS
+> `{"template": "..."}` object form, and the legacy `filenameTemplate` key
+> (legacy precedence preserved when both are set) — so the sample below now
+> parses too. Original finding kept below for the record.
 
 The TS original has **one** polymorphic option: `filename: string | { template: string }`.
 The Go port split it into two fields, with `FilenameTemplate` taking precedence
@@ -248,9 +258,9 @@ ever exposed as a public API for non-ETL callers.
 
 Ordered by value:
 
-1. **Merge `Filename`/`FilenameTemplate`** into one always-templated
+1. ~~**Merge `Filename`/`FilenameTemplate`** into one always-templated
    `Filename` field (§3.1); decide whether to add `UnmarshalJSON` for the TS
-   object form.
+   object form.~~ ✅ Done (with `UnmarshalJSON` compat) — see FIXES.
 2. **Fix or quarantine `config.with-template.json`** — today it neither
    unmarshals nor names a supported generator (§3.1).
 3. ~~**Remove `SourceLine.Separator` and `SourceLine.Columns`**, reading through

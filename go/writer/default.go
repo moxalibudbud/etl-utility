@@ -111,7 +111,7 @@ func (w *DefaultWriter) Delete() error {
 
 func (w *DefaultWriter) createStream() error {
 	if w.filename == "" {
-		return fmt.Errorf("output filename is empty; set Filename or FilenameTemplate")
+		return fmt.Errorf(`output filename is empty; set "filename"`)
 	}
 	f, err := os.OpenFile(w.Filepath(), os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0o777)
 	if err != nil {
@@ -123,14 +123,10 @@ func (w *DefaultWriter) createStream() error {
 }
 
 func (w *DefaultWriter) setFilename(sl *line.SourceLine) {
-	if w.opts.FilenameTemplate != "" {
-		w.filename = template.ReplaceWithFunction(
-			template.ReplaceWithMap(w.opts.FilenameTemplate, sl.JSONLine),
-			w.buildMeta(sl),
-		)
-		return
-	}
-	w.filename = w.opts.Filename
+	w.filename = template.ReplaceWithFunction(
+		template.ReplaceWithMap(w.opts.Filename, sl.JSONLine),
+		w.buildMeta(sl),
+	)
 }
 
 func (w *DefaultWriter) pushHeader(sl *line.SourceLine) error {

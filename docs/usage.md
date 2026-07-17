@@ -246,8 +246,7 @@ separator and **one** leading plus **one** trailing double quote is stripped
 | --- | --- | --- | --- |
 | `fileGenerator` | `string` | ⬜ | Writer kind. `"default-generator"` (or empty) is the delimited/templated text writer. Other kinds (json/excel/dedup variants) return an explicit "not supported yet" error. |
 | `path` | `string` | ⬜ | Output directory. Default: the OS temp dir. |
-| `filename` | `string` | ✅ (or `filenameTemplate`) | Output filename, used verbatim. |
-| `filenameTemplate` | `string` | ⬜ | Templated filename rendered from the **first pushed row** (supports `{field}` and `[func ...]`, see §5). Takes precedence over `filename`. |
+| `filename` | `string` | ✅ | Output filename, always rendered through the template layers from the **first pushed row** (supports `{field}` and `[func ...]`, see §5). A plain name contains no tokens and is used as-is. Also accepted for compatibility: the object form `{"template": "..."}` and the legacy `filenameTemplate` key (which keeps its old precedence if both are set). |
 | `separator` | `string` | ⬜ | Output column separator when using the `outputMappings` projection. Default: `"\|"`. |
 | `template` | `string` | ⬜ | Full row template (see §5). When set, it takes precedence over the `outputMappings` projection. |
 | `header` | `string` | ⬜ | First line of the output file, written once when the first row arrives. Supports `[func ...]` tokens. |
@@ -280,7 +279,7 @@ For `identifierMappings`, `src` is a column lookup only.
 
 ## 5. Templating reference
 
-Two token kinds, usable in `template` and `filenameTemplate` (`header` supports
+Two token kinds, usable in `template` and `filename` (`header` supports
 functions only):
 
 ### `{field}` — record substitution
@@ -348,7 +347,7 @@ the invalid/error paths.
 
 - **Concurrency**: each run writes `filename` into `path` and
   `<source-filename>.error.txt` next to it. If your web app processes uploads
-  concurrently, give each job a unique output `path` (or a `filenameTemplate`
+  concurrently, give each job a unique output `path` (or a `filename`
   with `[timestamp]`) and unique source filenames to avoid collisions.
 - **Large files**: the pipeline streams line by line with buffered writes, so
   memory stays flat regardless of file size. `uniqueKey` de-duplication is the
