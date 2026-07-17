@@ -7,6 +7,9 @@ transformed into a delimited output file.
 For the internal design and TS→Go migration rationale, see
 [ETL_CODE_REVIEW_AND_GO_DESIGN.md](ETL_CODE_REVIEW_AND_GO_DESIGN.md).
 
+For build and hosting instructions, see
+[deployment-guide.md](deployment-guide.md).
+
 ---
 
 ## 1. What it does
@@ -41,8 +44,9 @@ behavior is identical whether you call it in-process or spawn the binary.
 | **In-process (Go)** | Import `flatfile-go/etl`, build an `etl.Config` struct, call `etl.Run(cfg)` | ✅ Available |
 | **Spawned binary (any language)** | `etl -config <config.json>`; read the JSON result from stdout. `-source <path-or-url>` may override `source` from the config. | ✅ Available |
 | **JSON config via stdin** (`-config -`) | Pipe the same canonical config JSON to the process | ✅ Available |
+| **HTTP server** | Run `cmd/http`; `POST /etl` with canonical config JSON in the request body | ✅ Available |
+| **AWS Lambda Function URL** | Deploy `cmd/lambda`; `POST /` or `POST /etl` with canonical config JSON in the request body | ✅ Available |
 | **Flags-only terminal run** (`-columns`, `-mandatory`, …) | Individual CLI flags | 🔜 Planned |
-| **Lambda / Cloud Function** | Import the `etl` package or shell out to the binary | Same as the two available surfaces |
 
 > **Note for binary integrators:** the CLI reads the same `etl.Config` JSON shape
 > used in-process: `source`, `output`, and `options`. The optional `-source`
@@ -490,3 +494,7 @@ printf 'BARCODE,SKU,NAME\n123,A1,Widget\n' > /tmp/in.csv
 Runnable reference configs (local object form and every Azure Blob auth mode)
 are under [`samples/`](../samples) at the repo root — see
 [`samples/README.md`](../samples/README.md).
+
+For deployment-specific commands, including Lambda zip packaging, running the
+HTTP server, and compiling the CLI binary, see
+[deployment-guide.md](deployment-guide.md).
