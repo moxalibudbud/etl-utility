@@ -5,8 +5,6 @@ import "strings"
 // SourceLine is the port of the SourceLine class (line-data/source-line.ts).
 type SourceLine struct {
 	Line              []string
-	Separator         string
-	Columns           []string
 	JSONLine          map[string]string
 	Opts              LineConfig
 	CurrentLineNumber int
@@ -28,8 +26,6 @@ func New(raw string, opts LineConfig, lineNumber int) *SourceLine {
 
 	sl := &SourceLine{
 		Line:              fields,
-		Separator:         opts.Separator,
-		Columns:           opts.Columns,
 		Opts:              opts,
 		CurrentLineNumber: lineNumber,
 	}
@@ -67,7 +63,7 @@ func (sl *SourceLine) IsHeader() bool {
 
 // Output returns the ordered output projection (mapWithDefault).
 func (sl *SourceLine) Output() []KV {
-	return mapWithDefault(sl.JSONLine, sl.Columns, sl.Opts.OutputMappings)
+	return mapWithDefault(sl.JSONLine, sl.Opts.Columns, sl.Opts.OutputMappings)
 }
 
 // AllData merges the parsed record with the output projection (output wins),
