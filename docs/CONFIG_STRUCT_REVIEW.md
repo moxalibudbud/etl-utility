@@ -132,7 +132,7 @@ As originally reviewed (`FilenameTemplate` has since been removed — see §3.1)
 
 ```go
 type OutputConfig struct {
-	FileGenerator    string            `json:"fileGenerator"`
+	Type             string            `json:"fileGenerator"`
 	Path             string            `json:"path"`
 	Filename         string            `json:"filename"`
 	FilenameTemplate string            `json:"filenameTemplate"`
@@ -324,9 +324,9 @@ the FIXES table.
 6. ~~**Correct `MIGRATION_PROCESS.md:97`** re: `uniqueKey` (§3.3).~~ ✅ Done —
    the deferred list now separates unsupported writer variants and `indexFile`
    from supported default-writer `uniqueKey` deduplication.
-7. **Unify the run-config JSON shape**: make `cmd/main.go` unmarshal
-   `etl.Config` directly and converge the samples on that shape (§3.6).
-8. ~~**Align the Go generator field with its wire name** by renaming
+7. ~~**Align the Go generator field with its wire name** by renaming
    `OutputConfig.Type` to `OutputConfig.FileGenerator` while retaining the
    `fileGenerator` JSON key (§3.5).~~ ✅ Done. This changes Go struct literals
    but leaves serialized configurations unchanged.
+8. **Unify the run-config JSON shape**: make `cmd/main.go` unmarshal
+   `etl.Config` directly and converge the samples on that shape (§3.6).
