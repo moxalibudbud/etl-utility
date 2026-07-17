@@ -8,9 +8,8 @@
 //	# 2. JSON config from stdin (e.g. a BullMQ worker or cloud function spawning the binary)
 //	echo '{"source":"in.csv", ...}' | etl -config -
 //
-//	# 3. Plain flags for quick terminal runs
-//	etl -source in.csv -columns BARCODE,SKU -mandatory BARCODE \
-//	    -separator , -with-header -out-filename out.csv -out-separator ';'
+//	# 3. JSON config with a source override
+//	etl -config job.json -source override.csv
 //
 // The JSON Result is written to stdout; errors go to stderr with a non-zero exit.
 package main
@@ -49,8 +48,8 @@ func run(args []string, _ io.Reader, stdout io.Writer) error {
 		return err
 	}
 
-	if *source == "" && *configPath == "" {
-		return fmt.Errorf("either -configPath or -source is required")
+	if *configPath == "" {
+		return fmt.Errorf("-config is required")
 	}
 
 	cfg, err := buildETLConfig(options{

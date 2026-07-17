@@ -54,6 +54,7 @@ further recommendations from §4 are implemented.
 | §3.4 — metadata typing and dead CLI field | ✅ Fixed | *(uncommitted)* | `OutputConfig.Metadata` now accepts arbitrary JSON values; template paths traverse nested objects and arrays. The unused top-level CLI metadata field was removed; `output.metadata` is canonical. |
 | §3.5 — `Type`/`fileGenerator` naming mismatch | ✅ Fixed | *(uncommitted)* | Renamed the Go field to `FileGenerator` and updated the factory and Go call sites. The `fileGenerator` JSON key is unchanged. |
 | §3.1/#2 — unsupported `config.with-template.json` sample | ✅ Fixed | *(uncommitted)* | Moved the TypeScript-oriented configuration into `go/samples/legacy-typescript` and documented it as a non-runnable migration fixture. |
+| §3.6 — two JSON shapes for one run config | ✅ Fixed | *(uncommitted)* | `cmd/main.go` now unmarshals canonical `etl.Config` directly, supports `-config -`, and rejects retired top-level wrapper fields. The runnable sample now uses `source` + `output` + `options`. |
 
 ---
 
@@ -286,15 +287,25 @@ or TypeScript compatibility.
 
 ### 3.6 Two JSON shapes for one run config
 
-`cmd/main.go` defines its own `configData` (`line` + `output` + `metadata` at
-top level), while the canonical `etl.Config` (`etl/run.go:9-16`) is
-`source` + `output` + `options{line, rejectOnInvalidRow}`. The runnable samples
-use the cmd shape. The quarantined legacy TypeScript fixture
-`config.with-template.json` wraps everything in yet a third
-`{"config": {...}}` envelope. Since `run.go`'s stated design goal is “the
-single JSON-serializable request that drives a run”, `cmd/main.go` should
-unmarshal straight into `etl.Config` and the runnable samples should converge
-on that one shape.
+> **Status: fixed.** `cmd/main.go` now unmarshals straight into the canonical
+> `etl.Config` (`source` + `output` + `options{line, rejectOnInvalidRow}`), so
+> the CLI and in-process entrypoint share the same JSON request contract.
+
+The previous CLI-only `configData` wrapper (`line` + `output` at top level) was
+removed. The loader now uses a strict top-level JSON decoder, so the retired
+wrapper shape fails with an `unknown field "line"` error instead of silently
+ignoring the line rules. The quarantined TypeScript envelope
+`{"config": {...}}` similarly fails with `unknown field "config"`.
+
+`-config -` is also wired now: stdin config JSON uses the same `etl.Config`
+shape as config files. The `-source` flag remains a convenience override for
+callers that pass the source path separately; when present, it replaces the
+parsed `Config.Source`.
+
+The runnable sample `go/samples/csv-to-csv/config.default.json` has been
+converged to the canonical shape. The TypeScript-oriented
+`config.with-template.json` remains quarantined under
+`go/samples/legacy-typescript` as a migration fixture, not a runnable Go sample.
 
 ### 3.7 Minor: unreachable header branch in the writer
 
@@ -321,8 +332,7 @@ the FIXES table.
 3. ~~**Remove `SourceLine.Separator` and `SourceLine.Columns`**, reading through
    `Opts` (§2.2).~~ ✅ Done in `0658b82` — see FIXES.
 4. ~~**Remove the dead top-level CLI `metadata` field** and make
-   `output.metadata` canonical (§3.4).~~ ✅ Done. The broader run-config shape
-   unification remains open under §3.6.
+   `output.metadata` canonical (§3.4).~~ ✅ Done.
 5. ~~**Document mutual exclusivity** of `Template` vs `Separator` on the struct
    (§3.2).~~ ✅ Done — the `OutputConfig` doc comment states that `Template`
    takes precedence and `Separator` is ignored.
@@ -333,5 +343,8 @@ the FIXES table.
    `OutputConfig.Type` to `OutputConfig.FileGenerator` while retaining the
    `fileGenerator` JSON key (§3.5).~~ ✅ Done. This changes Go struct literals
    but leaves serialized configurations unchanged.
-8. **Unify the run-config JSON shape**: make `cmd/main.go` unmarshal
-   `etl.Config` directly and converge the samples on that shape (§3.6).
+8. ~~**Unify the run-config JSON shape**: make `cmd/main.go` unmarshal
+   `etl.Config` directly and converge the samples on that shape (§3.6).~~
+   ✅ Done. The CLI now reads canonical `etl.Config` JSON from files or stdin,
+   rejects retired wrapper/envelope shapes, and the runnable sample has been
+   updated.
