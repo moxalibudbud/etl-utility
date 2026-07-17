@@ -209,10 +209,11 @@ Verified against TS: `uniqueKey` de-duplication is part of
 the `PushIfExist`/`FileIndexGenerator` variants. So `UniqueKey` in the Go
 `DefaultWriter` (`default.go:173-185`) is correct parity, **not** scope creep.
 
-However `docs/MIGRATION_PROCESS.md:97` lists “dedup variants + `uniqueKey`” as
-not ported, while `docs/usage.md` §4.3 documents `uniqueKey` as working. The
-MIGRATION_PROCESS line should be reworded: the *writer variants* are not
-ported; in-memory `uniqueKey` dedup in the default writer is.
+Before the fix, `docs/MIGRATION_PROCESS.md:97` listed “dedup variants +
+`uniqueKey`” as not ported, while `docs/usage.md` §4.3 documented `uniqueKey`
+as working. The migration tracker now states that the *writer variants* and
+`indexFile` are not ported, while in-memory `uniqueKey` dedup in the default
+writer is supported.
 
 ### 3.4 `Metadata map[string]string` — typing is narrower than TS
 
@@ -259,15 +260,16 @@ ever exposed as a public API for non-ETL callers.
 
 ---
 
-## 4. Recommended changes (not applied — review only)
+## 4. Recommended changes
 
-Ordered by value:
+Ordered by value. Completed recommendations are marked below and recorded in
+the FIXES table.
 
 1. ~~**Merge `Filename`/`FilenameTemplate`** into one always-templated
    `Filename` field (§3.1); decide whether to add `UnmarshalJSON` for the TS
    object form.~~ ✅ Done (with `UnmarshalJSON` compat) — see FIXES.
-2. **Fix or quarantine `config.with-template.json`** — today it neither
-   unmarshals nor names a supported generator (§3.1).
+2. **Fix or quarantine `config.with-template.json`** — its TS filename object
+   now unmarshals, but it still names an unsupported generator (§3.1).
 3. ~~**Remove `SourceLine.Separator` and `SourceLine.Columns`**, reading through
    `Opts` (§2.2).~~ ✅ Done in `0658b82` — see FIXES.
 4. **Unify the config JSON shape**: make `cmd/main.go` unmarshal `etl.Config`
