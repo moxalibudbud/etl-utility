@@ -101,7 +101,8 @@ go test ./...    # ok: template, line, etl
 
 ## 5. Deferred (not yet migrated)
 
-- Azure Blob + S3 readers/writers
+- Azure Blob + S3 readers
+- Azure Blob + S3 writers
 - Excel writer (`ExcelJS`)
 - `JSONGenerator` (nested JSON output)
 - `PushIfExist` / `FileIndexGenerator` dedup variants and `indexFile`
