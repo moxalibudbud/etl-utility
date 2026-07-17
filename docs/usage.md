@@ -38,14 +38,15 @@ behavior is identical whether you call it in-process or spawn the binary.
 | Surface | How you pass parameters | Status |
 | --- | --- | --- |
 | **In-process (Go)** | Import `flatfile-go/etl`, build an `etl.Config` struct, call `etl.Run(cfg)` | ✅ Available |
-| **Spawned binary (any language)** | `etl -source <file> -config <config.json>`; read the JSON result from stdout | ✅ Available |
-| **JSON config via stdin** (`-config -`) | Pipe the config JSON to the process | 🔜 Planned (per design doc, not yet wired in `cmd`) |
+| **Spawned binary (any language)** | `etl -config <config.json>`; read the JSON result from stdout. `-source <file>` may override `source` from the config. | ✅ Available |
+| **JSON config via stdin** (`-config -`) | Pipe the same canonical config JSON to the process | ✅ Available |
 | **Flags-only terminal run** (`-columns`, `-mandatory`, …) | Individual CLI flags | 🔜 Planned |
 | **Lambda / Cloud Function** | Import the `etl` package or shell out to the binary | Same as the two available surfaces |
 
-> **Note for binary integrators:** today the CLI requires **both** `-source` (the
-> file path) and `-config` (a JSON file containing the `line` and `output`
-> sections). `rejectOnInvalidRow` is currently only settable in-process.
+> **Note for binary integrators:** the CLI reads the same `etl.Config` JSON shape
+> used in-process: `source`, `output`, and `options`. The optional `-source`
+> flag overrides `source` from the JSON for callers that keep the file path
+> outside the config payload.
 
 ---
 
@@ -145,17 +146,7 @@ import path from "node:path";
 
 async function runEtl(sourcePath) {
   const config = {
-    line: {
-      columns: ["BARCODE", "SKU", "NAME"],
-      mandatoryFields: ["BARCODE", "SKU"],
-      separator: ",",
-      withHeader: true,
-      outputMappings: [
-        { out: "sku", src: "SKU" },
-        { out: "name", src: "NAME" },
-      ],
-      identifierMappings: [{ out: "barcode", src: "BARCODE" }],
-    },
+    source: sourcePath,
     output: {
       fileGenerator: "default-generator",
       path: "/var/data/out",
@@ -164,13 +155,27 @@ async function runEtl(sourcePath) {
       header: "sku;name",
       footer: "EOF",
     },
+    options: {
+      line: {
+        columns: ["BARCODE", "SKU", "NAME"],
+        mandatoryFields: ["BARCODE", "SKU"],
+        separator: ",",
+        withHeader: true,
+        outputMappings: [
+          { out: "sku", src: "SKU" },
+          { out: "name", src: "NAME" },
+        ],
+        identifierMappings: [{ out: "barcode", src: "BARCODE" }],
+      },
+      rejectOnInvalidRow: false,
+    },
   };
 
   const configPath = path.join(os.tmpdir(), `etl-job-${Date.now()}.json`);
   await writeFile(configPath, JSON.stringify(config));
 
   return new Promise((resolve, reject) => {
-    execFile("etl", ["-source", sourcePath, "-config", configPath],
+    execFile("etl", ["-config", configPath],
       (err, stdout, stderr) => {
         if (err) return reject(new Error(stderr || err.message));
         resolve(JSON.parse(stdout)); // the Result object, see §6
@@ -183,22 +188,11 @@ Build the binary once with `cd go && go build -o etl ./cmd`.
 
 ### 3.3 CLI config file shape
 
-The JSON file passed to `-config` has **two top-level sections** (the source
-comes from the `-source` flag, not the file):
+The JSON file passed to `-config` is the canonical `etl.Config` shape:
 
 ```json
 {
-  "line": {
-    "columns": ["BARCODE", "SKU", "NAME"],
-    "mandatoryFields": ["BARCODE", "SKU"],
-    "separator": ",",
-    "withHeader": true,
-    "outputMappings": [
-      { "out": "sku", "src": "SKU" },
-      { "out": "name", "src": "NAME" }
-    ],
-    "identifierMappings": [{ "out": "barcode", "src": "BARCODE" }]
-  },
+  "source": "/var/data/in/products.csv",
   "output": {
     "fileGenerator": "default-generator",
     "path": "/var/data/out",
@@ -206,9 +200,26 @@ comes from the `-source` flag, not the file):
     "separator": ";",
     "header": "sku;name",
     "footer": "EOF"
+  },
+  "options": {
+    "line": {
+      "columns": ["BARCODE", "SKU", "NAME"],
+      "mandatoryFields": ["BARCODE", "SKU"],
+      "separator": ",",
+      "withHeader": true,
+      "outputMappings": [
+        { "out": "sku", "src": "SKU" },
+        { "out": "name", "src": "NAME" }
+      ],
+      "identifierMappings": [{ "out": "barcode", "src": "BARCODE" }]
+    },
+    "rejectOnInvalidRow": false
   }
 }
 ```
+
+`etl -source /override.csv -config job.json` is also allowed; the flag replaces
+the JSON `source` value after the file is parsed.
 
 ---
 
@@ -273,7 +284,7 @@ For `identifierMappings`, `src` is a column lookup only.
 
 | JSON key | Type | Default | Description |
 | --- | --- | --- | --- |
-| `rejectOnInvalidRow` | `bool` | `false` | `false`: invalid rows are skipped (logged to the error report) and the run stays `valid`. `true`: any invalid row marks the **whole result** invalid, and the output file is deleted. ⚠️ Currently only settable **in-process** (`etl.Options`); the CLI hardcodes `false`. |
+| `rejectOnInvalidRow` | `bool` | `false` | `false`: invalid rows are skipped (logged to the error report) and the run stays `valid`. `true`: any invalid row marks the **whole result** invalid, and the output file is deleted. Settable in-process and through CLI JSON under `options.rejectOnInvalidRow`. |
 
 ---
 

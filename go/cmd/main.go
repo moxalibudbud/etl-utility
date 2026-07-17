@@ -16,6 +16,7 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -23,18 +24,12 @@ import (
 	"os"
 
 	"flatfile-go/etl"
-	"flatfile-go/line"
-	"flatfile-go/writer"
 )
 
 type options struct {
-	configPath string
-	source     string
-}
-
-type configData struct {
-	Line   line.LineConfig     `json:"line"`
-	Output writer.OutputConfig `json:"output"`
+	configPath   string
+	configReader io.Reader
+	source       string
 }
 
 func main() {
@@ -59,8 +54,9 @@ func run(args []string, _ io.Reader, stdout io.Writer) error {
 	}
 
 	cfg, err := buildETLConfig(options{
-		configPath: *configPath,
-		source:     *source,
+		configPath:   *configPath,
+		configReader: os.Stdin,
+		source:       *source,
 	})
 	if err != nil {
 		return err
@@ -76,30 +72,37 @@ func run(args []string, _ io.Reader, stdout io.Writer) error {
 	return enc.Encode(result)
 }
 
-// buildETLConfig prefers an explicit JSON config (file or stdin) and otherwise
-// assembles a Config from the individual flags.
+// buildETLConfig reads the canonical etl.Config JSON shape used by every
+// entrypoint. A non-empty -source flag overrides Config.Source for convenience.
 func buildETLConfig(opts options) (etl.Config, error) {
+	if opts.configPath == "" {
+		return etl.Config{}, fmt.Errorf("-config is required")
+	}
+
 	var data []byte
 	var err error
-	data, err = os.ReadFile(opts.configPath)
-
+	if opts.configPath == "-" {
+		if opts.configReader == nil {
+			return etl.Config{}, fmt.Errorf("config reader is required when -config is -")
+		}
+		data, err = io.ReadAll(opts.configReader)
+	} else {
+		data, err = os.ReadFile(opts.configPath)
+	}
 	if err != nil {
 		return etl.Config{}, err
 	}
 
-	var configData configData
-	if err := json.Unmarshal(data, &configData); err != nil {
+	var cfg etl.Config
+	dec := json.NewDecoder(bytes.NewReader(data))
+	dec.DisallowUnknownFields()
+	if err := dec.Decode(&cfg); err != nil {
 		return etl.Config{}, fmt.Errorf("invalid config JSON: %w", err)
 	}
 
-	etlConfig := etl.Config{
-		Source: opts.source,
-		Output: configData.Output,
-		Options: etl.Options{
-			Line:               configData.Line,
-			RejectOnInvalidRow: false, // TODO: parse from metadata
-		},
+	if opts.source != "" {
+		cfg.Source = opts.source
 	}
 
-	return etlConfig, nil
+	return cfg, nil
 }
