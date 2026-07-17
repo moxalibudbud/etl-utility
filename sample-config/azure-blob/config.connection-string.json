@@ -1,17 +1,21 @@
 {
   "source": {
     "type": "azure-blob",
-    "url": "https://<account>.blob.core.windows.net/<container>/daily/products.csv",
+    "url": "https://<account>.blob.core.windows.net/wip/ItemMast_251015_3147_12706.txt",
     "auth": {
-      "sasToken": "sv=2024-11-04&ss=b&srt=o&sp=r&se=2026-01-01T00:00:00Z&sig=<signature>"
+      "connectionString": "DefaultEndpointsProtocol="
     }
   },
   "output": {
-    "filename": "item_master.csv",
-    "header": "TYPE_MOUVEMENT;CODE_ARTICLE;MAIN_EAN",
-    "template": "M;{ITEM};{BARCODE}",
-    "separator": ";",
-    "path": "/var/tmp"
+    "type": "azure-blob",
+    "url": "https://<account>.blob.core.windows.net/wip",
+    "auth": {
+      "connectionString": "DefaultEndpointsProtocol="
+    },
+    "filename": "ItemMast_251015_3147_12706_XXX.csv",
+    "header": "SKU;BARCODE",
+    "template": "{ITEM};{BARCODE}",
+    "separator": ";"
   },
   "options": {
     "line": {

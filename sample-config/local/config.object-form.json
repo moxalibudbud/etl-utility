@@ -1,7 +1,7 @@
 {
   "source": {
     "type": "local",
-    "path": "go/samples/csv-to-csv/ItemMast_260618_001_1005.csv"
+    "path": "/var/ItemMast_260618_001_1005.csv"
   },
   "output": {
     "filename": "item_master.csv",
