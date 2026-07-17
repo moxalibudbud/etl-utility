@@ -25,6 +25,42 @@ SourceLine -> Generator -> byte stream -> Destination
                   `- JSON                 `- Azure Blob Storage
 ```
 
+## Implementation Status
+
+An Azure Blob destination has shipped, but as a narrower, more direct change
+than the design below — the same precedent as the blob reader documented in
+[`source-file-improvement.md`](source-file-improvement.md). See
+`go/writer/blobwriter.go`, `render.go`, the `DestinationConfig` in
+`writer.go`, the shared `go/azureauth` package, and
+[usage.md](usage.md), §4.3, for the resulting configuration shape.
+Concretely, this plan's proposals were **not** followed as written:
+
+- No public `Generator`/`Destination`/`Upload` interface split —
+  `AzureBlobWriter` implements the existing `Writer` interface directly, the
+  same shape as `DefaultWriter`. The generation/storage separation exists but
+  as an unexported `renderer` type (filename/header/row/footer templating and
+  `uniqueKey` de-duplication, no I/O) shared by both writers.
+- `DestinationConfig` is flatter than the `Local`/`S3`/`Azure` nested-pointer
+  shape sketched in [Proposed Configuration](#proposed-configuration):
+  `{Type, Path, URL, Auth}`, embedded in `OutputConfig` so the wire form stays
+  flat (`type`/`url`/`auth` beside `filename`), mirroring the reader's
+  `SourceConfig`. The output `url` is a container/prefix; the rendered
+  `filename` is appended to it.
+- Credentials are caller-supplied through the shared `azureauth.AzureAuth`
+  struct (extracted from `go/reader` so source and destination can use
+  different storage accounts) rather than assumed from the provider default
+  chain only.
+- Upload is a single in-memory buffer flushed through the SDK's block-blob
+  upload on `End`, not hand-rolled bounded block streaming with configurable
+  concurrency; the SDK chunks internally, but whole-output buffering is a
+  known limitation.
+- Error reports remain local-only, and `Writer.Path()` keeps returning a local
+  staging directory (OS temp dir for blob output) so the orchestrator is
+  unchanged.
+- S3, the JSON generator, `context.Context` threading, the `Result`
+  `outputLocation` fields, and upload tuning remain unimplemented — the phased
+  design below is still the reference for that future work.
+
 ## Motivation
 
 The current `DefaultWriter` combines:

@@ -300,10 +300,42 @@ separator and **one** leading plus **one** trailing double quote is stripped
 
 ### 4.3 Output definition — `output` / `writer.OutputConfig`
 
+The output destination mirrors the source (§4.1): local disk by default, or
+Azure Blob Storage when `type`/`url` are set. The destination fields sit flat
+inside `output`, so existing local-only configs are unchanged:
+
+```json
+"output": {
+  "filename": "products_{LOC}.csv",
+  "path": "/var/data/out"
+}
+```
+
+```json
+"output": {
+  "type": "azure-blob",
+  "url": "https://acct.blob.core.windows.net/exports/daily",
+  "auth": { "accountName": "acct", "accountKey": "<key>" },
+  "filename": "products_{LOC}.csv"
+}
+```
+
+Unlike the source `url` (which names the exact blob to read), the output `url`
+is a **container/prefix**: the rendered `filename` is appended to it, the same
+way `path` + `filename` are joined for local output. The rendered output is
+buffered in memory and uploaded as a single block blob when the run ends;
+nothing is uploaded when no valid row was produced. Error reports always stay
+on local disk (under `path`'s default, the OS temp dir). Source and output
+each carry their own `auth`, so a run can read from one storage account and
+write to another.
+
 | JSON key | Type | Required | Description |
 | --- | --- | --- | --- |
 | `fileGenerator` | `string` | ⬜ | Writer kind. `"default-generator"` (or empty) is the delimited/templated text writer. Other kinds (json/excel/dedup variants) return an explicit "not supported yet" error. |
-| `path` | `string` | ⬜ | Output directory. Default: the OS temp dir. |
+| `type` | `string` | ⬜ | Destination kind: `"local"` (default) or `"azure-blob"`. Empty is inferred: `url` set → `azure-blob`, otherwise `local`. **S3 is not yet supported** and is rejected with an explicit error. |
+| `path` | `string` | ⬜ | Output directory for a local destination. Default: the OS temp dir. Must not be combined with `url`. |
+| `url` | `string` | ⬜ | Azure container/prefix URL for an `azure-blob` destination (required for that type). The rendered `filename` is appended to it. |
+| `auth` | `object` | ⬜ | Azure credentials for an `azure-blob` destination; same four shapes and precedence as the source `auth` (see the table in §4.1). |
 | `filename` | `string` | ✅ | Output filename, always rendered through the template layers from the **first pushed row** (supports `{field}` and `[func ...]`, see §5). A plain name contains no tokens and is used as-is. Also accepted for compatibility: the object form `{"template": "..."}` and the legacy `filenameTemplate` key (which keeps its old precedence if both are set). |
 | `separator` | `string` | ⬜ | Output column separator when using the `outputMappings` projection. Default: `"\|"`. |
 | `template` | `string` | ⬜ | Full row template (see §5). When set, it takes precedence over the `outputMappings` projection. |
@@ -418,10 +450,13 @@ the invalid/error paths.
   exception — it keeps one map entry per distinct key value.
 - **Output row endings**: rows are newline-*prefixed* (the header is not), and
   the footer is appended raw. The output has no trailing newline.
+- **Azure Blob output**: the whole rendered output is buffered in memory and
+  uploaded once at the end of the run, so output size is bounded by available
+  memory (unlike the streaming blob *source*). Bounded block streaming is
+  planned hardening.
 - **Not yet supported** (explicit errors, planned per the design doc): S3
-  sources, cloud (S3/Azure) output destinations, JSON/Excel writers,
-  `PushIfExist`/file-index dedup variants, custom JS template functions, and
-  flags-only CLI mode.
+  sources and destinations, JSON/Excel writers, `PushIfExist`/file-index dedup
+  variants, custom JS template functions, and flags-only CLI mode.
 
 ---
 

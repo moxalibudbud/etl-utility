@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"flatfile-go/azureauth"
 	"flatfile-go/line"
 )
 
@@ -23,14 +24,77 @@ type Writer interface {
 	Path() string
 }
 
+// Destination types accepted by DestinationConfig. They mirror the source
+// types in the reader package.
+const (
+	DestinationLocal     = "local"
+	DestinationAzureBlob = "azure-blob"
+)
+
+// DestinationConfig identifies where writer output is stored. It mirrors
+// reader.SourceConfig's flat shape and is embedded in OutputConfig, so the
+// wire form stays flat:
+//
+//	"output": {"filename": "out.csv", "path": "/var/tmp"}
+//	"output": {"type": "azure-blob", "url": "https://acct.blob.core.windows.net/exports/daily",
+//	           "auth": {"accountName": "acct", "accountKey": "..."}, "filename": "out.csv"}
+//
+// Unlike the reader's URL (which names the exact blob to read), URL here is a
+// container/prefix: the rendered Filename is appended to it, the blob-side
+// analog of joining Path + Filename locally.
+type DestinationConfig struct {
+	Type string               `json:"type,omitempty"` // "local" | "azure-blob"; empty = inferred
+	Path string               `json:"path,omitempty"` // local output directory
+	URL  string               `json:"url,omitempty"`  // Azure container/prefix URL
+	Auth *azureauth.AzureAuth `json:"auth,omitempty"` // caller-supplied Azure credentials
+}
+
+// Validate infers an empty Type from which location field is set, then checks
+// that exactly the fields required by the type are present. Unlike the
+// reader's SourceConfig, an entirely empty config is valid: it stays local
+// and DefaultWriter falls back to the OS temp dir.
+func (c *DestinationConfig) Validate() error {
+	if c.Type == "" {
+		switch {
+		case c.URL != "" && c.Path == "":
+			c.Type = DestinationAzureBlob
+		case c.URL == "":
+			c.Type = DestinationLocal
+		default:
+			return fmt.Errorf("output: path and url must not both be set")
+		}
+	}
+
+	switch c.Type {
+	case DestinationLocal:
+		if c.URL != "" {
+			return fmt.Errorf("output: url must not be set when type is %q", DestinationLocal)
+		}
+		if c.Auth != nil {
+			return fmt.Errorf("output: auth is only valid when type is %q", DestinationAzureBlob)
+		}
+	case DestinationAzureBlob:
+		if c.URL == "" {
+			return fmt.Errorf("output: url is required when type is %q", DestinationAzureBlob)
+		}
+		if c.Path != "" {
+			return fmt.Errorf("output: path must not be set when type is %q", DestinationAzureBlob)
+		}
+	default:
+		return fmt.Errorf("output: unsupported type %q", c.Type)
+	}
+	return nil
+}
+
 // OutputConfig configures a Writer. Filename is always rendered through the
 // templating layers ({field} from the first pushed row, then [func ...]); a
 // plain name contains no tokens and passes through unchanged. Template and
 // Separator select mutually exclusive row-building modes: when Template is
 // set, it takes precedence and Separator is ignored.
 type OutputConfig struct {
+	DestinationConfig
+
 	FileGenerator string         `json:"fileGenerator"`
-	Path          string         `json:"path"`
 	Filename      string         `json:"filename"`
 	Separator     string         `json:"separator"`
 	Header        string         `json:"header"`
@@ -84,13 +148,38 @@ func (c *OutputConfig) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-// Factory returns a Writer for the given kind. An empty kind defaults to the
-// delimited/template writer. Unsupported kinds (json/excel/dedup variants) return
-// an explicit error.
+// Factory returns a Writer for the given destination and generator kind. The
+// destination axis (local vs azure-blob) is selected first; the generator axis
+// keeps its previous behavior, with an empty kind defaulting to the
+// delimited/template writer. Unsupported kinds (json/excel/dedup variants)
+// return an explicit error.
 func Factory(opts OutputConfig) (Writer, error) {
+	if err := opts.Validate(); err != nil {
+		return nil, err
+	}
+	switch opts.Type {
+	case DestinationAzureBlob:
+		return newBlobWriter(opts)
+	case DestinationLocal:
+		return newLocalWriter(opts)
+	default:
+		return nil, fmt.Errorf("output: unsupported type %q", opts.Type)
+	}
+}
+
+func newLocalWriter(opts OutputConfig) (Writer, error) {
 	switch opts.FileGenerator {
 	case "default-generator", "":
 		return NewDefaultWriter(opts), nil
+	default:
+		return nil, fmt.Errorf("writer type %q is not supported in the Go core yet", opts.FileGenerator)
+	}
+}
+
+func newBlobWriter(opts OutputConfig) (Writer, error) {
+	switch opts.FileGenerator {
+	case "default-generator", "":
+		return NewAzureBlobWriter(opts), nil
 	default:
 		return nil, fmt.Errorf("writer type %q is not supported in the Go core yet", opts.FileGenerator)
 	}

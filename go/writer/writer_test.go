@@ -6,6 +6,7 @@ import (
 	"regexp"
 	"testing"
 
+	"flatfile-go/azureauth"
 	"flatfile-go/line"
 )
 
@@ -111,7 +112,7 @@ func pushOne(t *testing.T, opts OutputConfig, raw string, lineCfg line.LineConfi
 
 func TestSetFilenameStaticPassthrough(t *testing.T) {
 	w := pushOne(t,
-		OutputConfig{Path: t.TempDir(), Filename: "item_master.csv"},
+		OutputConfig{DestinationConfig: DestinationConfig{Path: t.TempDir()}, Filename: "item_master.csv"},
 		"1005;ABC",
 		line.LineConfig{Columns: []string{"LOC", "ITEM"}},
 	)
@@ -122,7 +123,7 @@ func TestSetFilenameStaticPassthrough(t *testing.T) {
 
 func TestSetFilenameRendersLineDataAndFunctions(t *testing.T) {
 	w := pushOne(t,
-		OutputConfig{Path: t.TempDir(), Filename: "out_{LOC}_[timestamp].csv"},
+		OutputConfig{DestinationConfig: DestinationConfig{Path: t.TempDir()}, Filename: "out_{LOC}_[timestamp].csv"},
 		"1005;ABC",
 		line.LineConfig{Columns: []string{"LOC", "ITEM"}},
 	)
@@ -135,10 +136,10 @@ func TestMetadataAvailableToFilenameHeaderAndRowTemplates(t *testing.T) {
 	dir := t.TempDir()
 	w := pushOne(t,
 		OutputConfig{
-			Path:     dir,
-			Filename: "[removeWhiteSpaces data.metadata.stores.0.code].txt",
-			Header:   "[sanitizeString data.metadata.count]",
-			Template: "[sanitizeString data.metadata.active]",
+			DestinationConfig: DestinationConfig{Path: dir},
+			Filename:          "[removeWhiteSpaces data.metadata.stores.0.code].txt",
+			Header:            "[sanitizeString data.metadata.count]",
+			Template:          "[sanitizeString data.metadata.active]",
 			Metadata: map[string]any{
 				"stores": []any{map[string]any{"code": "DXB 01"}},
 				"count":  42,
@@ -157,5 +158,86 @@ func TestMetadataAvailableToFilenameHeaderAndRowTemplates(t *testing.T) {
 	}
 	if got, want := string(content), "42\ntrue"; got != want {
 		t.Fatalf("output = %q, want %q", got, want)
+	}
+}
+
+func TestDestinationConfigValidate(t *testing.T) {
+	tests := []struct {
+		name     string
+		cfg      DestinationConfig
+		wantType string
+		wantErr  bool
+	}{
+		{name: "empty config stays local", cfg: DestinationConfig{}, wantType: DestinationLocal},
+		{name: "path only infers local", cfg: DestinationConfig{Path: "/var/tmp"}, wantType: DestinationLocal},
+		{name: "url only infers azure-blob", cfg: DestinationConfig{URL: "https://acct.blob.core.windows.net/exports"}, wantType: DestinationAzureBlob},
+		{name: "path and url together rejected", cfg: DestinationConfig{Path: "/var/tmp", URL: "https://x"}, wantErr: true},
+		{name: "auth on local rejected", cfg: DestinationConfig{Path: "/var/tmp", Auth: &azureauth.AzureAuth{SASToken: "sig=x"}}, wantErr: true},
+		{name: "azure-blob without url rejected", cfg: DestinationConfig{Type: DestinationAzureBlob}, wantErr: true},
+		{name: "azure-blob with path rejected", cfg: DestinationConfig{Type: DestinationAzureBlob, URL: "https://x", Path: "/var/tmp"}, wantErr: true},
+		{name: "unknown type rejected", cfg: DestinationConfig{Type: "s3", URL: "https://x"}, wantErr: true},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := tt.cfg.Validate()
+			if tt.wantErr {
+				if err == nil {
+					t.Fatalf("Validate() = nil, want error")
+				}
+				return
+			}
+			if err != nil {
+				t.Fatal(err)
+			}
+			if tt.cfg.Type != tt.wantType {
+				t.Fatalf("Type = %q, want %q", tt.cfg.Type, tt.wantType)
+			}
+		})
+	}
+}
+
+func TestFactoryDispatchesOnDestinationType(t *testing.T) {
+	w, err := Factory(OutputConfig{Filename: "out.csv"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, ok := w.(*DefaultWriter); !ok {
+		t.Fatalf("Factory(local) = %T, want *DefaultWriter", w)
+	}
+
+	w, err = Factory(OutputConfig{
+		DestinationConfig: DestinationConfig{Type: DestinationAzureBlob, URL: "https://acct.blob.core.windows.net/exports"},
+		Filename:          "out.csv",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, ok := w.(*AzureBlobWriter); !ok {
+		t.Fatalf("Factory(azure-blob) = %T, want *AzureBlobWriter", w)
+	}
+
+	if _, err := Factory(OutputConfig{
+		DestinationConfig: DestinationConfig{URL: "https://x"},
+		FileGenerator:     "json",
+	}); err == nil {
+		t.Fatal("expected error for unsupported generator on azure-blob destination")
+	}
+}
+
+func TestOutputConfigUnmarshalDestinationFields(t *testing.T) {
+	in := `{"type": "azure-blob", "url": "https://acct.blob.core.windows.net/exports/daily",
+	        "auth": {"sasToken": "sig=abc"}, "filename": "out.csv"}`
+	var cfg OutputConfig
+	if err := json.Unmarshal([]byte(in), &cfg); err != nil {
+		t.Fatalf("unmarshal: %v", err)
+	}
+	if cfg.Type != DestinationAzureBlob || cfg.URL != "https://acct.blob.core.windows.net/exports/daily" {
+		t.Fatalf("destination fields not decoded: %+v", cfg.DestinationConfig)
+	}
+	if cfg.Auth == nil || cfg.Auth.SASToken != "sig=abc" {
+		t.Fatalf("auth not decoded: %+v", cfg.Auth)
+	}
+	if cfg.Filename != "out.csv" {
+		t.Fatalf("Filename = %q, want out.csv", cfg.Filename)
 	}
 }
