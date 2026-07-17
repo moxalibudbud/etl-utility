@@ -24,12 +24,12 @@ func baseConfig(source, outDir string) Config {
 	return Config{
 		Source: source,
 		Output: writer.OutputConfig{
-			Type:      "",
-			Path:      outDir,
-			Filename:  "out.csv",
-			Separator: ";",
-			Header:    "sku;name",
-			Footer:    "EOF",
+			FileGenerator: "",
+			Path:          outDir,
+			Filename:      "out.csv",
+			Separator:     ";",
+			Header:        "sku;name",
+			Footer:        "EOF",
 		},
 		Options: Options{
 			Line: line.LineConfig{

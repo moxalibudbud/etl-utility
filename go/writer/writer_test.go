@@ -67,7 +67,7 @@ func TestOutputConfigUnmarshalOtherFieldsUntouched(t *testing.T) {
 	if err := json.Unmarshal([]byte(in), &cfg); err != nil {
 		t.Fatalf("unmarshal: %v", err)
 	}
-	if cfg.Type != "default-generator" || cfg.Separator != ";" || cfg.Metadata["region"] != "MEA" {
+	if cfg.FileGenerator != "default-generator" || cfg.Separator != ";" || cfg.Metadata["region"] != "MEA" {
 		t.Fatalf("unexpected config: %+v", cfg)
 	}
 }

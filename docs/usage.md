@@ -97,12 +97,12 @@ func handleUpload(w http.ResponseWriter, r *http.Request) {
 	cfg := etl.Config{
 		Source: tmpPath,
 		Output: writer.OutputConfig{
-			Type:      "default-generator",
-			Path:      "/var/data/out",
-			Filename:  "products.txt",
-			Separator: ";",
-			Header:    "sku;name",
-			Footer:    "EOF",
+			FileGenerator: "default-generator",
+			Path:          "/var/data/out",
+			Filename:      "products.txt",
+			Separator:     ";",
+			Header:        "sku;name",
+			Footer:        "EOF",
 		},
 		Options: etl.Options{
 			Line: line.LineConfig{

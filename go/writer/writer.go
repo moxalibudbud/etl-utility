@@ -29,15 +29,15 @@ type Writer interface {
 // Separator select mutually exclusive row-building modes: when Template is
 // set, it takes precedence and Separator is ignored.
 type OutputConfig struct {
-	Type      string         `json:"fileGenerator"`
-	Path      string         `json:"path"`
-	Filename  string         `json:"filename"`
-	Separator string         `json:"separator"`
-	Header    string         `json:"header"`
-	Footer    string         `json:"footer"`
-	Template  string         `json:"template"`
-	UniqueKey string         `json:"uniqueKey"`
-	Metadata  map[string]any `json:"metadata"`
+	FileGenerator string         `json:"fileGenerator"`
+	Path          string         `json:"path"`
+	Filename      string         `json:"filename"`
+	Separator     string         `json:"separator"`
+	Header        string         `json:"header"`
+	Footer        string         `json:"footer"`
+	Template      string         `json:"template"`
+	UniqueKey     string         `json:"uniqueKey"`
+	Metadata      map[string]any `json:"metadata"`
 }
 
 // UnmarshalJSON accepts the three historical wire shapes for the filename:
@@ -88,10 +88,10 @@ func (c *OutputConfig) UnmarshalJSON(b []byte) error {
 // delimited/template writer. Unsupported kinds (json/excel/dedup variants) return
 // an explicit error.
 func Factory(opts OutputConfig) (Writer, error) {
-	switch opts.Type {
+	switch opts.FileGenerator {
 	case "default-generator", "":
 		return NewDefaultWriter(opts), nil
 	default:
-		return nil, fmt.Errorf("writer type %q is not supported in the Go core yet", opts.Type)
+		return nil, fmt.Errorf("writer type %q is not supported in the Go core yet", opts.FileGenerator)
 	}
 }

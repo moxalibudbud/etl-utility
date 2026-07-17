@@ -21,7 +21,7 @@ TypeScript original in `typescript/src`.
 | `LineConfig` | `OutputMappings` | **Keep** | Feeds `Output()` projection. |
 | `LineConfig` | `Separator` | **Keep** | Input split separator; distinct from the output separator. |
 | `LineConfig` | `WithHeader` | **Keep** | Drives `IsHeader()` / header-row skipping. |
-| `OutputConfig` | `Type` | **Keep** (note naming) | Factory switch; json tag `fileGenerator` diverges from field name. |
+| `OutputConfig` | `FileGenerator` | **Fixed** (renamed) | Go field now matches the `fileGenerator` wire key and factory purpose — see §3.5. |
 | `OutputConfig` | `Path` | **Keep** | Output directory, defaulted to OS temp dir. |
 | `OutputConfig` | `Filename` | **Fixed** (merged) | Now the single, always-templated field — see §3.1. |
 | `OutputConfig` | `FilenameTemplate` | **Fixed** (removed) | Was a strict superset of `Filename`; struct field removed, wire key still accepted — see §3.1. |
@@ -52,6 +52,7 @@ further recommendations from §4 are implemented.
 | §3.2 — `Template`/`Separator` silent mutual exclusion | ✅ Fixed | *(uncommitted)* | The `OutputConfig` doc comment now states that `Template` takes precedence and `Separator` is ignored when both are set. |
 | §3.3 — `uniqueKey` documentation contradiction | ✅ Fixed | *(uncommitted)* | `MIGRATION_PROCESS.md` now defers only the `PushIfExist`/`FileIndexGenerator` variants and `indexFile`, while explicitly noting that the default writer supports in-memory `uniqueKey` deduplication. |
 | §3.4 — metadata typing and dead CLI field | ✅ Fixed | *(uncommitted)* | `OutputConfig.Metadata` now accepts arbitrary JSON values; template paths traverse nested objects and arrays. The unused top-level CLI metadata field was removed; `output.metadata` is canonical. |
+| §3.5 — `Type`/`fileGenerator` naming mismatch | ✅ Fixed | *(uncommitted)* | Renamed the Go field to `FileGenerator` and updated the factory and Go call sites. The `fileGenerator` JSON key is unchanged. |
 
 ---
 
@@ -131,7 +132,7 @@ As originally reviewed (`FilenameTemplate` has since been removed — see §3.1)
 
 ```go
 type OutputConfig struct {
-	Type             string            `json:"fileGenerator"`
+	FileGenerator    string            `json:"fileGenerator"`
 	Path             string            `json:"path"`
 	Filename         string            `json:"filename"`
 	FilenameTemplate string            `json:"filenameTemplate"`
@@ -268,13 +269,18 @@ Go surface without adding a second metadata location or silently merging it
 into `output.metadata`. The broader duplicate run-config shapes described in
 §3.6 remain a separate open recommendation.
 
-### 3.5 `Type` / `fileGenerator` naming mismatch
+### 3.5 `FileGenerator` / `fileGenerator` naming alignment — ✅ FIXED
 
-The Go field is `Type` but the wire key is `fileGenerator`. Acceptable for
-wire parity with TS configs, but the mismatch is invisible at call sites that
-construct `OutputConfig` literals in Go. A doc comment on the field naming the
-wire key (or renaming the field to `Generator`) would remove the surprise. No
-wire change recommended.
+The Go field was named `Type` while its JSON key was `fileGenerator`. That
+generic name obscured the field's purpose at Go call sites and made the struct
+name diverge unnecessarily from the established wire format.
+
+The field is now `FileGenerator`, while retaining the JSON tag
+`json:"fileGenerator"`. The writer factory switches on
+`opts.FileGenerator`, and Go struct literals use the same domain term as JSON
+configurations. This is a source-level breaking change for Go callers that
+used `OutputConfig{Type: ...}`, but it does not change serialized configuration
+or TypeScript compatibility.
 
 ### 3.6 Two JSON shapes for one run config
 
@@ -320,3 +326,7 @@ the FIXES table.
    from supported default-writer `uniqueKey` deduplication.
 7. **Unify the run-config JSON shape**: make `cmd/main.go` unmarshal
    `etl.Config` directly and converge the samples on that shape (§3.6).
+8. ~~**Align the Go generator field with its wire name** by renaming
+   `OutputConfig.Type` to `OutputConfig.FileGenerator` while retaining the
+   `fileGenerator` JSON key (§3.5).~~ ✅ Done. This changes Go struct literals
+   but leaves serialized configurations unchanged.
