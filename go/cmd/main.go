@@ -23,6 +23,7 @@ import (
 	"os"
 
 	"flatfile-go/etl"
+	"flatfile-go/internal/configjson"
 	"flatfile-go/reader"
 )
 
@@ -39,7 +40,7 @@ func main() {
 	}
 }
 
-func run(args []string, _ io.Reader, stdout io.Writer) error {
+func run(args []string, stdin io.Reader, stdout io.Writer) error {
 	fs := flag.NewFlagSet("etl", flag.ContinueOnError)
 
 	configPath := fs.String("config", "", `path to a JSON Config, or "-" to read from stdin`)
@@ -55,7 +56,7 @@ func run(args []string, _ io.Reader, stdout io.Writer) error {
 
 	cfg, err := buildETLConfig(options{
 		configPath:   *configPath,
-		configReader: os.Stdin,
+		configReader: stdin,
 		source:       *source,
 	})
 	if err != nil {
@@ -93,11 +94,9 @@ func buildETLConfig(opts options) (etl.Config, error) {
 		return etl.Config{}, err
 	}
 
-	var cfg etl.Config
-	dec := json.NewDecoder(bytes.NewReader(data))
-	dec.DisallowUnknownFields()
-	if err := dec.Decode(&cfg); err != nil {
-		return etl.Config{}, fmt.Errorf("invalid config JSON: %w", err)
+	cfg, err := configjson.Decode(bytes.NewReader(data))
+	if err != nil {
+		return etl.Config{}, err
 	}
 
 	if opts.source != "" {

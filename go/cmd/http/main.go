@@ -5,13 +5,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
 	"log"
 	"net/http"
 	"os"
 	"time"
 
 	"flatfile-go/etl"
+	"flatfile-go/internal/configjson"
 )
 
 const maxRequestBodySize = 1 << 20 // 1 MiB
@@ -50,7 +50,7 @@ func handleETL(w http.ResponseWriter, r *http.Request) {
 	r.Body = http.MaxBytesReader(w, r.Body, maxRequestBodySize)
 	defer r.Body.Close()
 
-	cfg, err := decodeConfig(r.Body)
+	cfg, err := configjson.Decode(r.Body)
 	if err != nil {
 		writeJSON(w, http.StatusBadRequest, errorResponse{
 			Error: fmt.Sprintf("invalid request body: %v", err),
@@ -69,27 +69,6 @@ func handleETL(w http.ResponseWriter, r *http.Request) {
 	}
 
 	writeJSON(w, http.StatusOK, result)
-}
-
-func decodeConfig(body io.Reader) (etl.Config, error) {
-	var cfg etl.Config
-
-	decoder := json.NewDecoder(body)
-	decoder.DisallowUnknownFields()
-
-	if err := decoder.Decode(&cfg); err != nil {
-		return etl.Config{}, err
-	}
-
-	// Reject multiple JSON values such as "{}{}".
-	if err := decoder.Decode(&struct{}{}); !errors.Is(err, io.EOF) {
-		if err == nil {
-			return etl.Config{}, errors.New("body must contain one JSON object")
-		}
-		return etl.Config{}, err
-	}
-
-	return cfg, nil
 }
 
 func handleHealth(w http.ResponseWriter, _ *http.Request) {
