@@ -285,7 +285,7 @@ configurations. This is a source-level breaking change for Go callers that
 used `OutputConfig{Type: ...}`, but it does not change serialized configuration
 or TypeScript compatibility.
 
-### 3.6 Two JSON shapes for one run config
+### 3.6 Two JSON shapes for one run config — ✅ FIXED
 
 > **Status: fixed.** `cmd/main.go` now unmarshals straight into the canonical
 > `etl.Config` (`source` + `output` + `options{line, rejectOnInvalidRow}`), so
