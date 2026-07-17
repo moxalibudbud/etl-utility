@@ -23,8 +23,8 @@ From the repository root:
 
 ```bash
 cd go
-GOOS=linux GOARCH=arm64 CGO_ENABLED=0 go build -tags lambda.norpc -o ./bin/etl-lambda ./cmd/lambda
-zip ./bin/lambda.zip ./bin/etl-lambda
+GOOS=linux GOARCH=arm64 CGO_ENABLED=0 go build -o ./bin/bootstrap -tags lambda.norpc ./cmd/lambda
+zip ./bin/lambda.zip ./bin/bootstrap
 ```
 
 Use `GOARCH=amd64` instead if your Lambda function is configured for x86_64.
