@@ -103,7 +103,7 @@ exercise identical core logic.
 go/
   template/   {field} + [func] templating, sanitize helpers   (field.go, function.go, sanitize.go)
   line/       SourceLine: parse, validate, map projections    (options.go, sourceline.go, validator.go, mapping.go)
-  reader/     Reader interface + local file streamer          (reader.go, filereader.go)
+  reader/     Reader interface + local/Azure Blob streamers    (reader.go, filereader.go, blobreader.go, sourceconfig.go, azureauth.go)
   writer/     Writer interface + DefaultWriter + ErrorReport + Factory  (writer.go, default.go, errorreport.go)
   etl/        Orchestrator + Config/Run boundary              (etl.go, run.go)
   cmd/etl/    CLI / worker / function entrypoint              (main.go)
@@ -117,7 +117,7 @@ go/
 etl.Run(Config)
   └─ writer.Factory(kind, opts) ─────────────► Writer
   └─ etl.New(source, opts, writer)
-        └─ reader.New(source) ───────────────► Reader  (local; URL => explicit "not supported yet")
+        └─ reader.New(source) ───────────────► Reader  (local file or Azure Blob by SourceConfig.Type; S3 => explicit "not supported" error)
         └─ writer.NewErrorReport(reader.Filename(), writer.Path())
   └─ ETL.Process()
         reader.Open()
@@ -138,6 +138,7 @@ etl.Run(Config)
 | TypeScript                                               | Go                                                                                       |
 | -------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
 | `ReadLineInterface` union + `readLineInterface()`        | `reader.Reader` interface + `reader.New()` factory                                       |
+| `BlobReader` (env-var shared-key auth only)               | `reader.AzureBlobReader` — caller-supplied `AzureAuth` (shared key, connection string, SAS, or the default credential chain) |
 | Node `readline` (event-based)                            | `bufio.Scanner` (`ScanLines` drops trailing `\r` → CRLF tolerant)                        |
 | `LineSourceBaseOptions`                                  | `line.LineConfig` (JSON-tagged)                                                          |
 | `SourceLine` class + getters                             | `line.SourceLine` + methods `Validate/IsValid/Error/IsHeader/Output/AllData/Identifiers` |
@@ -187,13 +188,32 @@ etl.Run(Config)
   contain spaces — same limitation as TS.)
 - **Output dir**: configurable `Path`, default `os.TempDir()` (TS hard-codes `/var/tmp`).
 
+### Implemented since core migration: Azure Blob reader
+
+`reader.AzureBlobReader` (ported from `blob-reader.ts`) streams
+`DownloadStream`'s response body through the same `bufio.Scanner` setup as
+`LocalFileReader` — 64 KiB initial buffer, the package's 10 MiB line cap —
+so line/CRLF behavior is identical across both sources. It implements
+`Reader` directly; no separate `Source`/`LineReader` split was introduced.
+
+Unlike the TS `BlobReader`, credentials are never read from the environment.
+The caller supplies an `AzureAuth` struct (shared key, connection string, SAS
+token, or the zero-value default credential chain), and `AzureAuth.Type()`
+identifies which mode applies. `Config.Source` (`reader.SourceConfig`)
+accepts both the legacy string form (local path or blob URL, inferred by
+shape) and a typed object form (`{"type", "path"/"url", "auth"}`) for callers
+that need to attach credentials. See [usage.md](usage.md), §4.1, and the
+runnable configs under [`samples/`](../samples).
+
 ### Deferred (out of current core scope)
 
-Azure Blob + S3 readers/writers, Excel (`ExcelJS`), `JSONGenerator`, the
-`PushIfExist` / `FileIndexGenerator` dedup variants, the JS-eval `customFunction`
-template fallback, and `indexFile` external dedup. In-memory `uniqueKey`
-deduplication is supported by the default writer. The `Reader` / `Writer`
-interfaces + factory are shaped so these slot in **without touching `etl.go`**.
+S3 reader; Azure Blob + S3 output destinations (writers); Excel (`ExcelJS`);
+`JSONGenerator`; the `PushIfExist` / `FileIndexGenerator` dedup variants; the
+JS-eval `customFunction` template fallback; `indexFile` external dedup; and
+`context.Context` threading through the reader (Azure calls currently use
+`context.Background()`). In-memory `uniqueKey` deduplication is supported by
+the default writer. The `Reader` / `Writer` interfaces + factory are shaped so
+these slot in **without touching `etl.go`**.
 
 ---
 
@@ -223,6 +243,9 @@ echo '{ "source":"in.csv",
 
 **Test coverage**: `template` (substitution, `[timestamp]`/`[dateTime]`, data-path,
 sanitize); `line` (quote stripping, missing columns, mandatory validation, header
-detection, ordered output + defaults, identifiers); `etl` end-to-end (happy path
-with a skipped invalid row, empty file → invalid + no output, `rejectOnInvalidRow`,
-zero-error report deletion).
+detection, ordered output + defaults, identifiers); `reader` (Azure auth-mode
+identification and precedence, source config legacy-string/object decoding and
+validation, blob reader line scanning over an injected fake stream — CRLF,
+>64 KiB lines, close idempotence, not-found translation); `etl` end-to-end
+(happy path with a skipped invalid row, empty file → invalid + no output,
+`rejectOnInvalidRow`, zero-error report deletion).

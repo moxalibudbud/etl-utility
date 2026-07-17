@@ -23,6 +23,29 @@ Source configuration -> Source factory -> byte stream -> line scanner -> ETL
                               `- Azure Blob Storage
 ```
 
+## Implementation Status
+
+An Azure Blob reader has shipped, but as a narrower, more direct change than
+the design below: it extends the existing `reader.Reader` interface instead
+of introducing the `Source`/`LineReader` split. See
+`go/reader/blobreader.go`, `sourceconfig.go`, and `azureauth.go`, and
+[usage.md](usage.md), §4.1, for the resulting configuration shape. Concretely,
+this plan's proposals were **not** followed as written:
+
+- No `Source`/`LineReader` interface separation — `AzureBlobReader`
+  implements `Reader` directly, the same shape as `LocalFileReader`; `etl.New`
+  keeps its existing three-argument signature.
+- `SourceConfig` is flatter than the `Local`/`S3`/`AzureBlob` nested-pointer
+  shape sketched in [Proposed Configuration](#proposed-configuration):
+  `{Type, Path, URL, Auth}`, one local-or-blob source per config.
+- Credentials are caller-supplied through an explicit `AzureAuth` struct
+  (shared key, connection string, SAS token, or the zero-value default
+  credential chain, disambiguated by `AzureAuth.Type()`) rather than assumed
+  from the provider default chain only.
+- S3, `context.Context` threading, configurable max line size, and object
+  versioning remain unimplemented — the phased design below is still the
+  reference for that future work.
+
 ## Current State
 
 The Go `reader.Reader` interface already isolates the ETL orchestrator from the

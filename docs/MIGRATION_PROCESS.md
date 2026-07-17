@@ -3,7 +3,9 @@
 Tracking log for porting the streaming flat-file ETL pipeline from
 [`typescript/`](typescript/) to [`go/`](go/) (module `flatfile-go`, Go 1.26).
 
-**Status:** Core pipeline complete and verified. Cloud/Excel/JSON/dedup writers deferred.
+**Status:** Core pipeline complete and verified. Azure Blob source reader
+implemented. S3 reader, cloud (Azure/S3) output destinations, and
+Excel/JSON/dedup writers deferred.
 
 For the architectural rationale, code-review details, and TS→Go type mapping, see
 [ETL_CODE_REVIEW_AND_GO_DESIGN.md](ETL_CODE_REVIEW_AND_GO_DESIGN.md).
@@ -36,10 +38,18 @@ writer + error report. Module-by-module:
 |---|---|---|
 | `src/utils` templating/mapping | `template/` | `field.go`, `function.go`, `sanitize.go` |
 | `src/line-data` + line utils | `line/` | `options.go`, `sourceline.go`, `validator.go`, `mapping.go` |
-| `src/file-reader` | `reader/` | `reader.go` (interface + factory), `filereader.go` (local) |
+| `src/file-reader` | `reader/` | `reader.go` (interface + factory), `filereader.go` (local), `blobreader.go` (Azure Blob, from `blob-reader.ts`), `sourceconfig.go`, `azureauth.go` |
 | `src/file-generator` | `writer/` | `writer.go` (interface + factory), `default.go`, `errorreport.go` |
 | `src/etl/etl.ts` | `etl/` | `etl.go` (orchestrator), `run.go` (Config + Run) |
 | — (new) entrypoint | `cmd/etl/` | `main.go` |
+
+`reader/` also now covers the Azure Blob source beyond the original TS
+1:1 scope: `SourceConfig` accepts the legacy string `source` (local path or
+blob URL, inferred by shape) or a typed object (`type`, `path`/`url`, `auth`),
+and `reader.New` dispatches to `LocalFileReader` or `AzureBlobReader`
+accordingly. See [usage.md](usage.md), §4.1, for the wire format and
+[`samples/azure-blob`](../samples/azure-blob) / [`samples/local`](../samples/local)
+for runnable configs.
 
 ### Multi-surface entrypoints (roadmap)
 
@@ -48,7 +58,7 @@ is the shared contract.
 
 | Surface | How |
 |---|---|
-| Terminal / worker | `cmd/etl -config <path-or->`; optional `-source` overrides the source in canonical config JSON |
+| Terminal / worker | `cmd/etl -config <path-or->`; optional `-source` (local path or Azure blob URL) overrides the source in canonical config JSON |
 | BullMQ worker | spawn binary, JSON `Config` on stdin (`-config -`) → JSON `Result` on stdout |
 | Lambda / cloud function | import `flatfile-go/etl` (Go runtime) or shell out with JSON |
 | Helper / API | import `etl`, call `Run(cfg)` or `New(source, opts, writer).Process()` |
@@ -76,6 +86,11 @@ is the shared contract.
 - **CRLF tolerance.** `bufio.Scanner`/`ScanLines` drops a trailing `\r`, replacing
   the Node `crlfDelay: Infinity` behavior.
 - **Output dir.** Configurable `Path`, default `os.TempDir()` (TS hard-codes `/var/tmp`).
+- **Caller-supplied cloud auth.** `SourceConfig`/`AzureAuth` accept credentials
+  from the caller (shared key, connection string, SAS token, or the zero-value
+  default Azure credential chain) rather than reading them from process
+  environment variables, unlike the TS `BlobReader`. `AzureAuth.Type()`
+  identifies which mode a populated struct represents.
 
 ---
 
@@ -85,24 +100,32 @@ is the shared contract.
 cd go
 go build ./...   # OK
 go vet ./...     # OK
-go test ./...    # ok: template, line, etl
+go test ./...    # ok: template, line, reader, etl
 ```
 
 - Verified the binary with canonical JSON from a **config file** and **stdin**,
   including the optional source override and strict rejection of retired JSON
   wrapper/envelope shapes.
+- Verified the local-source object form and all four Azure Blob auth modes
+  parse and dispatch correctly using the placeholder configs under
+  [`samples/`](../samples) (each fails only at the expected network/decode
+  step with placeholder credentials — confirming config plumbing without
+  needing a real storage account).
 - Test coverage: `template` (substitution, `[timestamp]`/`[dateTime]`, data-path,
   sanitize); `line` (quote stripping, missing columns, mandatory validation, header
-  detection, ordered output + defaults, identifiers); `etl` end-to-end (happy path
-  with a skipped invalid row, empty file → invalid + no output, `rejectOnInvalidRow`,
-  zero-error report deletion).
+  detection, ordered output + defaults, identifiers); `reader` (Azure auth-mode
+  identification and precedence, source config legacy-string/object decoding
+  and validation, blob reader line scanning over an injected fake stream
+  including CRLF and >64 KiB lines, close idempotence, not-found translation);
+  `etl` end-to-end (happy path with a skipped invalid row, empty file →
+  invalid + no output, `rejectOnInvalidRow`, zero-error report deletion).
 
 ---
 
 ## 5. Deferred (not yet migrated)
 
-- Azure Blob + S3 readers
-- Azure Blob + S3 writers
+- S3 reader
+- Azure Blob + S3 writers (output destinations)
 - Excel writer (`ExcelJS`)
 - `JSONGenerator` (nested JSON output)
 - `PushIfExist` / `FileIndexGenerator` dedup variants and `indexFile`
