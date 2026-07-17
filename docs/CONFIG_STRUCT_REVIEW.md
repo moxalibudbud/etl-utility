@@ -25,7 +25,7 @@ TypeScript original in `typescript/src`.
 | `OutputConfig` | `Path` | **Keep** | Output directory, defaulted to OS temp dir. |
 | `OutputConfig` | `Filename` | **Fixed** (merged) | Now the single, always-templated field — see §3.1. |
 | `OutputConfig` | `FilenameTemplate` | **Fixed** (removed) | Was a strict superset of `Filename`; struct field removed, wire key still accepted — see §3.1. |
-| `OutputConfig` | `Separator` | **Keep** (document) | Silently ignored when `Template` is set — see §3.2. |
+| `OutputConfig` | `Separator` | **Fixed** (documented) | Ignored when `Template` is set; precedence is now documented — see §3.2. |
 | `OutputConfig` | `Header` | **Keep** | Written once on first push; `[func ...]` templated. |
 | `OutputConfig` | `Footer` | **Keep** | Written raw (documented parity quirk). |
 | `OutputConfig` | `Template` | **Keep** (document) | Mutually exclusive with `Separator`-joined projection. |
@@ -49,6 +49,7 @@ further recommendations from §4 are implemented.
 | --- | --- | --- | --- |
 | §2.2 — `SourceLine` duplicated `Separator`/`Columns` from `Opts` | ✅ Fixed | `0658b82` | Both fields removed from the struct; `Output()` now reads `sl.Opts.Columns`. `Opts` is the single source of truth. |
 | §3.1 — `Filename`/`FilenameTemplate` redundant pair | ✅ Fixed | *(uncommitted)* | Merged into one always-templated `Filename`. `OutputConfig.UnmarshalJSON` accepts all three wire shapes (flat string, TS `{"template"}` object, legacy `filenameTemplate` key — legacy key keeps its old precedence when both are set). Covered by `go/writer/writer_test.go`. |
+| §3.2 — `Template`/`Separator` silent mutual exclusion | ✅ Fixed | *(uncommitted)* | The `OutputConfig` doc comment now states that `Template` takes precedence and `Separator` is ignored when both are set. |
 | §3.3 — `uniqueKey` documentation contradiction | ✅ Fixed | *(uncommitted)* | `MIGRATION_PROCESS.md` now defers only the `PushIfExist`/`FileIndexGenerator` variants and `indexFile`, while explicitly noting that the default writer supports in-memory `uniqueKey` deduplication. |
 
 ---
@@ -185,18 +186,21 @@ the TS object form. (That sample also uses `fileGenerator: "json-generator"`,
 which the factory rejects, so the file appears to be an aspirational TS
 carry-over rather than a working Go sample — worth marking it as such.)
 
-### 3.2 `Separator` vs `Template` — silent mutual exclusion
+### 3.2 `Separator` vs `Template` — silent mutual exclusion — ✅ FIXED
+
+> **Status: fixed.** The `OutputConfig` doc comment now documents the existing
+> precedence rule: when `Template` is set, it selects template row-building
+> mode and `Separator` is ignored.
 
 In `buildRow` (`default.go:147-156`), when `Template` is set the row is
 rendered from the template and `Separator` is **silently ignored**; the
 projection + separator path only runs when `Template` is empty. Both samples
 set both keys, which reads as if both apply.
 
-Not a field to omit (each mode needs its option), but the exclusivity should
-be stated on the struct doc comment, and `Factory` could cheaply reject or log
-a config that sets `Template` together with a non-default `Separator`
-expectation. `usage.md` §4.3 documents the precedence; the struct itself does
-not.
+Not a field to omit (each mode needs its option). The exclusivity is now
+stated on the struct doc comment as well as in `usage.md` §4.3. `Factory`
+continues accepting both fields for compatibility; the documented precedence
+removes the ambiguity without rejecting existing configurations.
 
 ### 3.3 `UniqueKey` — keep; fix the doc contradiction — ✅ FIXED
 
@@ -274,8 +278,9 @@ the FIXES table.
    `Opts` (§2.2).~~ ✅ Done in `0658b82` — see FIXES.
 4. **Unify the config JSON shape**: make `cmd/main.go` unmarshal `etl.Config`
    directly; delete the dead top-level `metadata` or wire it through (§3.4, §3.6).
-5. **Document mutual exclusivity** of `Template` vs `Separator` on the struct
-   (§3.2).
+5. ~~**Document mutual exclusivity** of `Template` vs `Separator` on the struct
+   (§3.2).~~ ✅ Done — the `OutputConfig` doc comment states that `Template`
+   takes precedence and `Separator` is ignored.
 6. ~~**Correct `MIGRATION_PROCESS.md:97`** re: `uniqueKey` (§3.3).~~ ✅ Done —
    the deferred list now separates unsupported writer variants and `indexFile`
    from supported default-writer `uniqueKey` deduplication.
