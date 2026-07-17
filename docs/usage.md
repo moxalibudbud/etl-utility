@@ -13,7 +13,8 @@ For the internal design and TS→Go migration rationale, see
 
 You give the pipeline three things:
 
-1. **A source file** — a local path to a delimited text file (CSV, `;`-separated, etc.).
+1. **A source file** — a local path or an Azure blob URL to a delimited text
+   file (CSV, `;`-separated, etc.).
 2. **Line rules** — column names, which fields are mandatory, the separator, whether
    line 1 is a header.
 3. **An output definition** — where to write, the filename, and how each row is
@@ -38,7 +39,7 @@ behavior is identical whether you call it in-process or spawn the binary.
 | Surface | How you pass parameters | Status |
 | --- | --- | --- |
 | **In-process (Go)** | Import `flatfile-go/etl`, build an `etl.Config` struct, call `etl.Run(cfg)` | ✅ Available |
-| **Spawned binary (any language)** | `etl -config <config.json>`; read the JSON result from stdout. `-source <file>` may override `source` from the config. | ✅ Available |
+| **Spawned binary (any language)** | `etl -config <config.json>`; read the JSON result from stdout. `-source <path-or-url>` may override `source` from the config. | ✅ Available |
 | **JSON config via stdin** (`-config -`) | Pipe the same canonical config JSON to the process | ✅ Available |
 | **Flags-only terminal run** (`-columns`, `-mandatory`, …) | Individual CLI flags | 🔜 Planned |
 | **Lambda / Cloud Function** | Import the `etl` package or shell out to the binary | Same as the two available surfaces |
@@ -46,7 +47,10 @@ behavior is identical whether you call it in-process or spawn the binary.
 > **Note for binary integrators:** the CLI reads the same `etl.Config` JSON shape
 > used in-process: `source`, `output`, and `options`. The optional `-source`
 > flag overrides `source` from the JSON for callers that keep the file path
-> outside the config payload.
+> outside the config payload. The flag accepts either a local path or an
+> Azure blob URL — whichever it is set to always replaces `source` **as the
+> legacy string form** (see §4.1); to override with the typed object form
+> (e.g. to pass Azure auth), set `source` in the config JSON instead.
 
 ---
 
@@ -219,7 +223,10 @@ The JSON file passed to `-config` is the canonical `etl.Config` shape:
 ```
 
 `etl -source /override.csv -config job.json` is also allowed; the flag replaces
-the JSON `source` value after the file is parsed.
+the JSON `source` value after the file is parsed. `-source` also accepts an
+Azure blob URL (e.g. `-source https://acct.blob.core.windows.net/c/p.csv`); for
+authenticated blobs, put `source` in the config JSON instead so you can attach
+`auth` (see §4.1).
 
 ---
 
@@ -227,12 +234,52 @@ the JSON `source` value after the file is parsed.
 
 ### 4.1 Source
 
+`Config.Source` (`reader.SourceConfig`) accepts two JSON forms. The legacy
+plain string still works and is inferred as local-vs-Azure by shape:
+
+```json
+"source": "/var/data/in/products.csv"
+"source": "https://acct.blob.core.windows.net/container/products.csv"
+```
+
+The typed object form is required when a cloud source needs credentials:
+
+```json
+"source": {
+  "type": "local",
+  "path": "/var/data/in/products.csv"
+}
+```
+
+```json
+"source": {
+  "type": "azure-blob",
+  "url": "https://acct.blob.core.windows.net/container/daily/products.csv",
+  "auth": { "accountName": "acct", "accountKey": "<key>" }
+}
+```
+
 | Param | CLI | In-process | Notes |
 | --- | --- | --- | --- |
-| Source file | `-source <path>` flag | `Config.Source` | **Local paths only.** Remote/blob URLs are detected and rejected with an explicit error (Azure/S3 readers are deferred). |
+| Source | `-source <path-or-url>` flag | `Config.Source` | Local file path or Azure blob URL. The flag always sets the legacy string form — use the JSON `source` object for Azure auth. **S3 is not yet supported** and is rejected with an explicit error. |
 
-Your application is responsible for getting the file onto local disk first
-(e.g. saving an HTTP upload or downloading from blob storage).
+`auth` is optional and has four mutually exclusive shapes (checked in this
+precedence order — see `reader.AzureAuth.Type()`):
+
+| `auth` shape | Mode |
+| --- | --- |
+| _omitted_ | `DefaultAzureCredential` chain (managed identity, `az login`, environment service principal). If `url` already has a `sig=` query parameter, that embedded SAS is used instead of requesting a token. |
+| `{"connectionString": "..."}` | Storage account connection string. Takes precedence over shared key / SAS if more than one is set. |
+| `{"accountName": "...", "accountKey": "..."}` | Shared key. Both fields are required together — one without the other is a validation error. |
+| `{"sasToken": "..."}` | SAS query string (leading `?` optional), appended to `url`. |
+
+Runnable examples for every mode are under
+[`samples/azure-blob`](../samples/azure-blob) and
+[`samples/local`](../samples/local).
+
+For a local source, your application is responsible for getting the file onto
+local disk first (e.g. saving an HTTP upload). For an Azure blob source, the
+pipeline streams the blob directly — no local download step or `/tmp` usage.
 
 ### 4.2 Line rules — `line` / `line.LineConfig`
 
@@ -349,9 +396,10 @@ Unknown function names are left in place untouched (the TS JS-eval
 
 **Errors vs. invalid results:** validation failures do **not** return a Go
 error / non-zero exit — they are reported through `Result`. A Go error (or a
-non-zero exit with a message on stderr) means the run itself failed: source
-not found, remote URL passed, unsupported writer kind, I/O failure. On that
-path both the output and error-report files are force-deleted.
+non-zero exit with a message on stderr) means the run itself failed: local
+file or blob not found, invalid/incomplete Azure auth, an S3 source (not yet
+supported), unsupported writer kind, I/O failure. On that path both the
+output and error-report files are force-deleted.
 
 Your application is responsible for consuming and then removing the produced
 files (uploading them, moving them, etc.) — the pipeline only deletes files on
@@ -370,9 +418,10 @@ the invalid/error paths.
   exception — it keeps one map entry per distinct key value.
 - **Output row endings**: rows are newline-*prefixed* (the header is not), and
   the footer is appended raw. The output has no trailing newline.
-- **Not yet supported** (explicit errors, planned per the design doc): remote
-  sources (Azure Blob, S3), JSON/Excel writers, `PushIfExist`/file-index dedup
-  variants, custom JS template functions, and flags-only CLI mode.
+- **Not yet supported** (explicit errors, planned per the design doc): S3
+  sources, cloud (S3/Azure) output destinations, JSON/Excel writers,
+  `PushIfExist`/file-index dedup variants, custom JS template functions, and
+  flags-only CLI mode.
 
 ---
 
@@ -388,3 +437,7 @@ go build -o ./bin/etl ./cmd
 printf 'BARCODE,SKU,NAME\n123,A1,Widget\n' > /tmp/in.csv
 ./etl -source /tmp/in.csv -config your-config.json
 ```
+
+Runnable reference configs (local object form and every Azure Blob auth mode)
+are under [`samples/`](../samples) at the repo root — see
+[`samples/README.md`](../samples/README.md).

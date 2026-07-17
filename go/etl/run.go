@@ -1,14 +1,18 @@
 package etl
 
-import "flatfile-go/writer"
+import (
+	"flatfile-go/reader"
+	"flatfile-go/writer"
+)
 
 // Config is the single JSON-serializable request that drives a run. It is the
 // boundary shared by every surface (CLI args, a BullMQ worker spawning the
 // binary with JSON on stdin, a cloud function, or an in-process helper call), so
 // they all exercise the exact same core.
 type Config struct {
-	// Source is the local file path to read.
-	Source string `json:"source"`
+	// Source is where to read from: the legacy JSON string (local path or blob
+	// URL) or the typed object form (see reader.SourceConfig).
+	Source reader.SourceConfig `json:"source"`
 	// Output selects and configures the writer.
 	Output writer.OutputConfig `json:"output"`
 	// Options are the line rules + reject behaviour.

@@ -1,13 +1,9 @@
 // Package reader streams a source line by line. It abstracts the source kind
-// behind a small interface so cloud (Azure/S3) readers can be added later
-// without touching the ETL orchestrator. Core scope: local files only.
+// behind a small interface so the ETL orchestrator is independent of where the
+// bytes come from. Supported sources: local files and Azure Blob Storage.
 package reader
 
-import (
-	"fmt"
-
-	util "flatfile-go/utils"
-)
+import "fmt"
 
 // Reader streams lines from a source. Open must be called before Scan.
 type Reader interface {
@@ -20,12 +16,24 @@ type Reader interface {
 	Filepath() string
 }
 
-// New builds a Reader for source. Remote/blob URLs are recognised but not yet
-// supported in the Go core (deferred), so they return an explicit error rather
-// than silently treating a URL as a local path.
-func New(source string) (Reader, error) {
-	if util.IsValidURL(source) {
-		return nil, fmt.Errorf("remote/blob sources are not supported in the Go core yet: %s", source)
+// New validates cfg and builds the Reader for its source type. Credentials for
+// cloud sources travel inside cfg (see SourceConfig.Auth); nothing is read
+// from the environment here.
+func New(cfg SourceConfig) (Reader, error) {
+	if err := cfg.Validate(); err != nil {
+		return nil, err
 	}
-	return NewLocalFileReader(source), nil
+	switch cfg.Type {
+	case SourceAzureBlob:
+		var auth AzureAuth
+		if cfg.Auth != nil {
+			auth = *cfg.Auth
+		}
+		return NewAzureBlobReader(cfg.URL, auth), nil
+	case SourceLocal:
+		return NewLocalFileReader(cfg.Path), nil
+	default:
+		// Unreachable after Validate, kept for defensive clarity.
+		return nil, fmt.Errorf("source: unsupported type %q", cfg.Type)
+	}
 }

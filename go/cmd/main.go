@@ -23,6 +23,7 @@ import (
 	"os"
 
 	"flatfile-go/etl"
+	"flatfile-go/reader"
 )
 
 type options struct {
@@ -42,7 +43,7 @@ func run(args []string, _ io.Reader, stdout io.Writer) error {
 	fs := flag.NewFlagSet("etl", flag.ContinueOnError)
 
 	configPath := fs.String("config", "", `path to a JSON Config, or "-" to read from stdin`)
-	source := fs.String("source", "", "source file path")
+	source := fs.String("source", "", "source file path or Azure blob URL")
 
 	if err := fs.Parse(args); err != nil {
 		return err
@@ -100,7 +101,7 @@ func buildETLConfig(opts options) (etl.Config, error) {
 	}
 
 	if opts.source != "" {
-		cfg.Source = opts.source
+		cfg.Source = reader.SourceFromString(opts.source)
 	}
 
 	return cfg, nil

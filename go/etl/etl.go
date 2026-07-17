@@ -53,7 +53,7 @@ type ETL struct {
 // New wires a reader for source, an error report alongside the output, and the
 // provided output writer. The output writer is supplied by the caller (as in the
 // TS constructor's second argument) so the writer kind/options are decoupled.
-func New(source string, opts Options, output writer.Writer) (*ETL, error) {
+func New(source reader.SourceConfig, opts Options, output writer.Writer) (*ETL, error) {
 	r, err := reader.New(source)
 	if err != nil {
 		return nil, err

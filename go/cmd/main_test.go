@@ -38,8 +38,8 @@ func TestBuildETLConfigReadsCanonicalShapeFromFile(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if cfg.Source != "from-config.csv" {
-		t.Fatalf("Source = %q, want from-config.csv", cfg.Source)
+	if cfg.Source.Path != "from-config.csv" {
+		t.Fatalf("Source.Path = %q, want from-config.csv", cfg.Source.Path)
 	}
 	if cfg.Output.Filename != "out.csv" {
 		t.Fatalf("Output.Filename = %q, want out.csv", cfg.Output.Filename)
@@ -65,8 +65,8 @@ func TestBuildETLConfigReadsCanonicalShapeFromStdin(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if cfg.Source != "stdin.csv" {
-		t.Fatalf("Source = %q, want stdin.csv", cfg.Source)
+	if cfg.Source.Path != "stdin.csv" {
+		t.Fatalf("Source.Path = %q, want stdin.csv", cfg.Source.Path)
 	}
 	if cfg.Output.Filename != "stdin-out.csv" {
 		t.Fatalf("Output.Filename = %q, want stdin-out.csv", cfg.Output.Filename)
@@ -85,8 +85,8 @@ func TestBuildETLConfigSourceFlagOverridesConfigSource(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if cfg.Source != "from-flag.csv" {
-		t.Fatalf("Source = %q, want from-flag.csv", cfg.Source)
+	if cfg.Source.Path != "from-flag.csv" {
+		t.Fatalf("Source.Path = %q, want from-flag.csv", cfg.Source.Path)
 	}
 }
 

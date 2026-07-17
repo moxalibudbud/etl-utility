@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"flatfile-go/line"
+	"flatfile-go/reader"
 	"flatfile-go/writer"
 )
 
@@ -22,7 +23,7 @@ func writeFixture(t *testing.T, content string) string {
 
 func baseConfig(source, outDir string) Config {
 	return Config{
-		Source: source,
+		Source: reader.SourceFromString(source),
 		Output: writer.OutputConfig{
 			FileGenerator: "",
 			Path:          outDir,

@@ -1,0 +1,44 @@
+{
+  "source": {
+    "type": "azure-blob",
+    "url": "https://<account>.blob.core.windows.net/<container>/daily/products.csv",
+    "auth": {
+      "sasToken": "sv=2024-11-04&ss=b&srt=o&sp=r&se=2026-01-01T00:00:00Z&sig=<signature>"
+    }
+  },
+  "output": {
+    "filename": "item_master.csv",
+    "header": "TYPE_MOUVEMENT;CODE_ARTICLE;MAIN_EAN",
+    "template": "M;{ITEM};{BARCODE}",
+    "separator": ";",
+    "path": "/var/tmp"
+  },
+  "options": {
+    "line": {
+      "columns": [
+        "LOC",
+        "ITEM",
+        "DEPT",
+        "DEPT_NAME",
+        "CLASS",
+        "CLASS_NAME",
+        "SUBCLASS",
+        "SUB_NAME",
+        "ITEM_DESC",
+        "AV_COST",
+        "SELLING_UNIT_RETAIL",
+        "CURRENCY_CODE",
+        "UDA_VALUE",
+        "ITEM_LOC_STATUS",
+        "SIZE",
+        "BARCODE"
+      ],
+      "mandatoryFields": [],
+      "identifierMappings": [],
+      "outputMappings": [],
+      "separator": ",",
+      "withHeader": true
+    },
+    "rejectOnInvalidRow": false
+  }
+}
