@@ -717,10 +717,49 @@ change on the storage account, not something this codebase can do.
 
 ### Deferred features
 
-- Structured typed JSON templates
-- Nested array paths
-- Multiple output arrays
-- Arbitrary JSON aggregation/grouping
+Four capabilities are intentionally left for later. The first three are
+additive shape options — safe to add on because they do not disturb how the
+generator works today. The fourth is different in kind: it collides with the
+streaming model that keeps this generator cheap and reliable in short-lived
+cloud functions, so it needs caution rather than casual scheduling.
+
+**Structured typed JSON templates.** Today you describe each output row by
+writing a snippet of JSON as text, with placeholders the system fills in —
+something like `{"qty":{Quantity},"received":true}` — and the result is checked
+for validity only after the blanks are filled. This works, but it is like
+building a sentence and only checking the grammar at the end: if a source value
+contains an unexpected quote, or a number field comes in empty, the whole row
+can break. A *typed* template would let you spell out what each field is meant
+to be — this one is text, this one is a number, this one is true/false —
+instead of hoping the assembled text happens to come out valid. The payoff is
+fewer surprise failures from messy source data and clearer errors when
+something is wrong. It is deferred because the current string templates already
+cover the common cases, and it is meant to be added alongside them so nothing
+existing breaks.
+
+**Nested array paths.** Right now the list of rows sits at the top level of the
+document. Nested paths would let you place that list deeper inside a structure —
+for example under `data → results → items` rather than at the surface. The
+payoff is matching the exact shape a downstream system expects without a
+separate re-wrapping step. Deferred because it adds document-shape complexity
+that no current consumer needs.
+
+**Multiple output arrays.** One run currently produces one list. This would let
+a single run split rows into several lists within the same file — say, an
+"active" list and an "archived" list side by side. The payoff is one job
+instead of two when the data naturally falls into groups. Deferred because it
+is a meaningful jump in configuration and document-state complexity for a need
+that has not yet come up.
+
+**Arbitrary JSON aggregation / grouping.** Today every row flows straight
+through, one in and one out, and nothing is held onto — that is what keeps
+memory use flat no matter how large the file is. Aggregation would change that:
+grouping rows together (all products by store) or computing summaries (totals,
+counts per category). The catch is that to group or total anything, you have to
+hold data back in memory instead of streaming it through, which works directly
+against the design's core promise of staying memory-light on large files. That
+tension is why it is deferred, and any such feature should live as a separate
+step *before* rows reach the JSON writer, not inside it.
 
 ---
 
