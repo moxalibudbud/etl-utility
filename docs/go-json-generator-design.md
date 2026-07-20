@@ -394,13 +394,41 @@ or writing must retain its original cause via `%w`.
 
 ### Phase 1 — local streaming JSON
 
-- Add `arrayField` to `OutputConfig`.
-- Implement the destination-independent JSON document encoder.
-- Implement the local JSON writer with buffered, atomic output.
-- Register `json-generator` for local destinations in `writer.Factory`.
-- Reject `uniqueKey` when `fileGenerator` is `json-generator`.
-- Add encoder, writer, and ETL tests.
-- Update migration documentation to mark local JSON generation complete.
+**Status: partially complete.** The local streaming path is implemented and
+working. The remaining work is test hardening and compatibility coverage.
+
+Completed:
+
+- [x] Add `arrayField` to `OutputConfig`, defaulting to `lines`.
+- [x] Implement the destination-independent JSON document encoder.
+- [x] Implement the local JSON writer with buffered `.partial` output and
+  atomic promotion on `End()`.
+- [x] Register `json-generator` for local destinations in `writer.Factory`.
+- [x] Reject `uniqueKey` when `fileGenerator` is `json-generator`; duplicate
+  valid rows are serialized unchanged.
+- [x] Reject unsupported JSON footers.
+- [x] Support `{path}` value templates for filenames, root objects, and rows,
+  while retaining `[]` for template functions.
+- [x] Add initial encoder/writer, factory, template, and ETL coverage.
+- [x] Update the migration and usage documentation for local JSON generation.
+- [x] Keep JSON-specific behavior out of `etl.go`.
+
+Pending:
+
+- [ ] Correct the promotion test so its post-`End()` assertion checks the
+  rendered `products_DXB01.json.partial` path instead of the unrelated
+  `products_1005.json.partial` path.
+- [ ] Complete encoder lifecycle and validation coverage: finalize twice,
+  write after finalization, non-object root/row values, invalid root JSON, and
+  escaping of Unicode and control characters.
+- [ ] Complete local-writer coverage: idempotent `End()`, replacement of an
+  existing output document, and cleanup for finalization/flush/rename failures.
+- [ ] Expand ETL coverage for JSON-specific `rejectOnInvalidRow`,
+  empty/all-invalid inputs, value/function templates, and result paths.
+- [ ] Add shared TypeScript compatibility fixtures and compare decoded JSON
+  values.
+- [ ] Run `go test ./...`, `go vet ./...`, and `go build ./...` after the
+  remaining test work.
 
 No `etl.go` changes should be required.
 
