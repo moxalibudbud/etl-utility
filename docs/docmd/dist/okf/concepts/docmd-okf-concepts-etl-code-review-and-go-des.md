@@ -6,7 +6,7 @@ path: /docmd/okf/concepts/etl-code-review-and-go-des/
 updated: 2026-07-20
 okf:
   generated_by: "@docmd/plugin-okf"
-  generated_at: "2026-07-20T13:03:11.499Z"
+  generated_at: "2026-07-20T13:11:38.871Z"
 ---
 ---
 type: concept

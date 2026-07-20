@@ -4,7 +4,7 @@
 
 ## Documentation Files
 
-- [Agent Instructions: Documentation Scope](/AGENTS/)
+- [Agent Instructions: Documentation Scope & Style](/AGENTS/)
 - [Backlog](/backlogs/)
 - [Deployment Guide — ETL Utility](/deployment-guide/)
 - [Untitled](/docmd/)

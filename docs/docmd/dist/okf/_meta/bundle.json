@@ -6,7 +6,7 @@
     "description": "",
     "url": "",
     "generated_by": "@docmd/plugin-okf",
-    "generated_at": "2026-07-20T13:03:11.509Z",
+    "generated_at": "2026-07-20T13:11:38.884Z",
     "default_type": "concept"
   },
   "stats": {
@@ -21,7 +21,7 @@
     {
       "id": "agents",
       "type": "concept",
-      "title": "Agent Instructions: Documentation Scope",
+      "title": "Agent Instructions: Documentation Scope & Style",
       "path": "/AGENTS/",
       "file": "concepts/agents.md",
       "locale": "",

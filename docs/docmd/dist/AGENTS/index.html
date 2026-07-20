@@ -99,30 +99,30 @@
       window.DOCMD_DEFAULT_LOCALE = "";
     </script>
     <title>
-      Agent Instructions: Documentation Scope : Documentation
+      Agent Instructions: Documentation Scope &amp; Style : Documentation
     </title>
     
     
 
-    <link id="site-favicon" rel="icon" href="../assets/favicon.ico?v=mrt8jbbm">
-    <link rel="stylesheet" href="../assets/css/docmd-main.css?v=mrt8jbbm">
+    <link id="site-favicon" rel="icon" href="../assets/favicon.ico?v=mrt8u6s1">
+    <link rel="stylesheet" href="../assets/css/docmd-main.css?v=mrt8u6s1">
     
-    <link rel="stylesheet" href="../assets/css/docmd-highlight-light.css?v=mrt8jbbm" id="hljs-light" >
-    <link rel="stylesheet" href="../assets/css/docmd-highlight-dark.css?v=mrt8jbbm" id="hljs-dark" disabled>
+    <link rel="stylesheet" href="../assets/css/docmd-highlight-light.css?v=mrt8u6s1" id="hljs-light" >
+    <link rel="stylesheet" href="../assets/css/docmd-highlight-dark.css?v=mrt8u6s1" id="hljs-dark" disabled>
     
     
 <meta name="description" content="">
-<meta property="og:title" content="Agent Instructions: Documentation Scope - Documentation">
+<meta property="og:title" content="Agent Instructions: Documentation Scope &amp; Style - Documentation">
 <meta property="og:description" content="">
 <meta property="og:type" content="website">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Agent Instructions: Documentation Scope - Documentation">
+<meta name="twitter:title" content="Agent Instructions: Documentation Scope &amp; Style - Documentation">
 <meta name="twitter:description" content="">
 
 
 
-<link rel="stylesheet" href="../assets/css/docmd-git.css?v=mrt8jbbm" >
-<link rel="stylesheet" href="../assets/css/docmd-openapi.css?v=mrt8jbbm" >
+<link rel="stylesheet" href="../assets/css/docmd-git.css?v=mrt8u6s1" >
+<link rel="stylesheet" href="../assets/css/docmd-openapi.css?v=mrt8u6s1" >
 
     
     <script>/**
@@ -262,7 +262,7 @@
           >
           
           <span class="nav-item-title">
-            Agent Instructions: Documentation Scope
+            Agent Instructions: Documentation Scope &amp; Style
             </span>
           
           
@@ -737,7 +737,7 @@
               
               <div class="header-titles-wrapper">
                 <span class="header-title">
-                  Agent Instructions: Documentation Scope
+                  Agent Instructions: Documentation Scope &amp; Style
                 </span>
               </div>
             </div>
@@ -831,7 +831,7 @@
             <div class="content-layout">
               <div class="main-content">
                 <div class="docmd-breadcrumbs-row">
-                  <div id="docmd-raw-markdown" data-content="%23%20Agent%20Instructions%3A%20Documentation%20Scope%0A%0A%23%23%20Scope%20%26%20Boundaries%0A-%20**Target%20Context%3A**%20Only%20read%20and%20modify%20source%20Markdown%20files%20in%20the%20root%20of%20%60docs%2F%60%20(%60docs%2F*.md%60).%0A-%20**Strict%20Exclusions%3A**%20Do%20**NOT**%20read%20or%20parse%20the%20%60docs%2Fdocmd%2F%60%20directory%20under%20any%20circumstances%20(this%20contains%20the%20built%20webapp%20assets)." style="display: none;"></div>
+                  <div id="docmd-raw-markdown" data-content="%23%20Agent%20Instructions%3A%20Documentation%20Scope%20%26%20Style%0A%0AThis%20file%20defines%20the%20strict%20operational%20boundaries%2C%20folder%20exclusions%2C%20and%20writing%20guidelines%20for%20all%20AI%20operations%20performed%20within%20the%20%60docs%2F%60%20directory.%0A%0A---%0A%0A%23%23%201.%20Scope%20%26%20Directory%20Boundaries%0A%0A%23%23%23%20Target%20Context%0A-%20**Allowed%20Source%3A**%20Only%20read%2C%20analyze%2C%20and%20modify%20source%20Markdown%20files%20located%20directly%20in%20the%20root%20of%20the%20%60docs%2F%60%20directory%20(%60docs%2F*.md%60).%0A%0A%23%23%23%20Strict%20Exclusions%0A-%20**Do%20NOT%20read%20or%20parse%20the%20%60docs%2Fdocmd%2F%60%20directory%20under%20any%20circumstances.**%0A-%20*Reasoning%3A*%20%60docs%2Fdocmd%2F%60%20contains%20configuration%20(%60docmd.config.json%60)%20and%20the%20built%20webapp%2Fstatic%20assets%20(like%20%60docs%2Fdocmd%2Fdist%2F%60).%20Treating%20this%20directory%20as%20context%20will%20cause%20massive%20token%20bloat%2C%20duplicated%20information%2C%20and%20broken%20workspace%20search%20results.%0A%0A---%0A%0A%23%23%202.%20Tone%20%26%20Language%20Style%20(Accessible%20Prose)%0A%0A%23%23%23%20Writing%20Guidelines%0A-%20**Target%20Audience%3A**%20Write%20for%20an%20audience%20that%20includes%20developers%2C%20product%20managers%2C%20and%20business%20stakeholders.%20Avoid%20dense%2C%20purely%20system-level%20infrastructure%20jargon.%0A-%20**The%20%22So%20What%3F%22%20Rule%3A**%20Focus%20on%20the%20operational%20or%20business%20impact%20(e.g.%2C%20costs%2C%20user%20experience%2C%20reliability)%20rather%20than%20writing%20exclusively%20about%20low-level%20backend%20behaviors.%20%0A-%20**Clarity%20Over%20Complexity%3A**%20Explain%20*what*%20happens%20and%20*how*%20to%20fix%20it%20simply.%20If%20a%20technical%20term%20must%20be%20used%2C%20provide%20immediate%2C%20plain-English%20context.%0A%0A%23%23%23%20Tone%20Examples%0A%0A%E2%9D%8C%20**Too%20Technical%20(Do%20NOT%20write%20like%20this)%3A**%0A%3E%20%22Operational%20note%3A%20aborted%20uploads%20leave%20uncommitted%20staged%20blocks.%20They%20are%20invisible%20(no%20blob%20exists%2C%20so%20Delete%20correctly%20finds%20nothing)%20but%20are%20billed%20and%20retained%20~7%20days.%20At%20serverless%20volume%20with%20a%20nonzero%20failure%20rate%20this%20accrues%20silently.%20Mitigation%20is%20a%20container%20lifecycle%20rule%20to%20purge%20uncommitted%20blocks%20%E2%80%94%20infrastructure%2C%20not%20code.%22%0A%0A%3E%20Known%20gap%3A%20errors%20from%20json_encoder.go%20(row%2Froot%20render)%20and%20from%20mid-stream%0Awrites%20into%20the%20sink%E2%80%99s%20io.Writer%20are%20not%20explicitly%20annotated.%20They%20fall%20back%0Ato%20KindOf%E2%80%99s%20unknown%E2%86%92KindPermanent%20default%2C%20which%20is%20right%20for%20the%20common%0Acase%20(bad%20template%20or%20data)%20but%20not%20provably%20right%20for%20a%20destination%20write%0Afailing%20mid-encode.%0A%0A%0A%23%23%203.%20Execution%20Checklist%0ABefore%20finalizing%20any%20edits%20to%20markdown%20files%20in%20this%20directory%2C%20verify%3A%0A1.%20You%20have%20not%20pulled%20text%20or%20context%20from%20%60docs%2Fdocmd%2F%60.%0A2.%20The%20language%20is%20conversational%20yet%20professional%2C%20keeping%20heavy%20technical%20jargon%20to%20an%20absolute%20minimum.%0A3.%20Code%20blocks%20(if%20any)%20are%20properly%20tagged%20with%20their%20respective%20language%20syntax.%0A%0A%0A" style="display: none;"></div>
                   
                     <nav aria-label="breadcrumb" class="docmd-breadcrumbs">
                       <ol>
@@ -839,7 +839,7 @@
                         
                           <li class="breadcrumb-item active" aria-current=&quot;page&quot;>
                             
-                              <span>Agent Instructions: Documentation Scope</span>
+                              <span>Agent Instructions: Documentation Scope &amp; Style</span>
                             
                             
                           </li>
@@ -896,12 +896,46 @@
                   
                 </div>
                 
-                <h1 id="agent-instructions-documentation-scope" class="docmd-heading"><a href="#agent-instructions-documentation-scope" class="heading-anchor" aria-label="Permalink to this section"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-link2-icon lucide-link-2"><path d="M9 17H7A5 5 0 0 1 7 7h2m6 0h2a5 5 0 1 1 0 10h-2m-7-5h8"/></svg></a>Agent Instructions: Documentation Scope</h1>
-<h2 id="agent-instructions-documentation-scope-scope-boundaries" class="docmd-heading"><a href="#agent-instructions-documentation-scope-scope-boundaries" class="heading-anchor" aria-label="Permalink to this section"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-link2-icon lucide-link-2"><path d="M9 17H7A5 5 0 0 1 7 7h2m6 0h2a5 5 0 1 1 0 10h-2m-7-5h8"/></svg></a>Scope &amp; Boundaries</h2>
+                <h1 id="agent-instructions-documentation-scope-style" class="docmd-heading"><a href="#agent-instructions-documentation-scope-style" class="heading-anchor" aria-label="Permalink to this section"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-link2-icon lucide-link-2"><path d="M9 17H7A5 5 0 0 1 7 7h2m6 0h2a5 5 0 1 1 0 10h-2m-7-5h8"/></svg></a>Agent Instructions: Documentation Scope &amp; Style</h1>
+<p>This file defines the strict operational boundaries, folder exclusions, and writing guidelines for all AI operations performed within the <code>docs/</code> directory.</p>
+<hr>
+<h2 id="agent-instructions-documentation-scope-style-1-scope-directory-boundaries" class="docmd-heading"><a href="#agent-instructions-documentation-scope-style-1-scope-directory-boundaries" class="heading-anchor" aria-label="Permalink to this section"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-link2-icon lucide-link-2"><path d="M9 17H7A5 5 0 0 1 7 7h2m6 0h2a5 5 0 1 1 0 10h-2m-7-5h8"/></svg></a>1. Scope &amp; Directory Boundaries</h2>
+<h3 id="agent-instructions-documentation-scope-style-1-scope-directory-boundaries-target-context" class="docmd-heading"><a href="#agent-instructions-documentation-scope-style-1-scope-directory-boundaries-target-context" class="heading-anchor" aria-label="Permalink to this section"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-link2-icon lucide-link-2"><path d="M9 17H7A5 5 0 0 1 7 7h2m6 0h2a5 5 0 1 1 0 10h-2m-7-5h8"/></svg></a>Target Context</h3>
 <ul>
-<li><strong>Target Context:</strong> Only read and modify source Markdown files in the root of <code>docs/</code> (<code>docs/*.md</code>).</li>
-<li><strong>Strict Exclusions:</strong> Do <strong>NOT</strong> read or parse the <code>docs/docmd/</code> directory under any circumstances (this contains the built webapp assets).</li>
+<li><strong>Allowed Source:</strong> Only read, analyze, and modify source Markdown files located directly in the root of the <code>docs/</code> directory (<code>docs/*.md</code>).</li>
 </ul>
+<h3 id="agent-instructions-documentation-scope-style-1-scope-directory-boundaries-strict-exclusions" class="docmd-heading"><a href="#agent-instructions-documentation-scope-style-1-scope-directory-boundaries-strict-exclusions" class="heading-anchor" aria-label="Permalink to this section"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-link2-icon lucide-link-2"><path d="M9 17H7A5 5 0 0 1 7 7h2m6 0h2a5 5 0 1 1 0 10h-2m-7-5h8"/></svg></a>Strict Exclusions</h3>
+<ul>
+<li><strong>Do NOT read or parse the <code>docs/docmd/</code> directory under any circumstances.</strong></li>
+<li><em>Reasoning:</em> <code>docs/docmd/</code> contains configuration (<code>docmd.config.json</code>) and the built webapp/static assets (like <code>docs/docmd/dist/</code>). Treating this directory as context will cause massive token bloat, duplicated information, and broken workspace search results.</li>
+</ul>
+<hr>
+<h2 id="agent-instructions-documentation-scope-style-2-tone-language-style-accessible-prose" class="docmd-heading"><a href="#agent-instructions-documentation-scope-style-2-tone-language-style-accessible-prose" class="heading-anchor" aria-label="Permalink to this section"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-link2-icon lucide-link-2"><path d="M9 17H7A5 5 0 0 1 7 7h2m6 0h2a5 5 0 1 1 0 10h-2m-7-5h8"/></svg></a>2. Tone &amp; Language Style (Accessible Prose)</h2>
+<h3 id="agent-instructions-documentation-scope-style-2-tone-language-style-accessible-prose-writing-guidelines" class="docmd-heading"><a href="#agent-instructions-documentation-scope-style-2-tone-language-style-accessible-prose-writing-guidelines" class="heading-anchor" aria-label="Permalink to this section"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-link2-icon lucide-link-2"><path d="M9 17H7A5 5 0 0 1 7 7h2m6 0h2a5 5 0 1 1 0 10h-2m-7-5h8"/></svg></a>Writing Guidelines</h3>
+<ul>
+<li><strong>Target Audience:</strong> Write for an audience that includes developers, product managers, and business stakeholders. Avoid dense, purely system-level infrastructure jargon.</li>
+<li><strong>The “So What?” Rule:</strong> Focus on the operational or business impact (e.g., costs, user experience, reliability) rather than writing exclusively about low-level backend behaviors.</li>
+<li><strong>Clarity Over Complexity:</strong> Explain <em>what</em> happens and <em>how</em> to fix it simply. If a technical term must be used, provide immediate, plain-English context.</li>
+</ul>
+<h3 id="agent-instructions-documentation-scope-style-2-tone-language-style-accessible-prose-tone-examples" class="docmd-heading"><a href="#agent-instructions-documentation-scope-style-2-tone-language-style-accessible-prose-tone-examples" class="heading-anchor" aria-label="Permalink to this section"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-link2-icon lucide-link-2"><path d="M9 17H7A5 5 0 0 1 7 7h2m6 0h2a5 5 0 1 1 0 10h-2m-7-5h8"/></svg></a>Tone Examples</h3>
+<p>❌ <strong>Too Technical (Do NOT write like this):</strong></p>
+<blockquote>
+<p>“Operational note: aborted uploads leave uncommitted staged blocks. They are invisible (no blob exists, so Delete correctly finds nothing) but are billed and retained ~7 days. At serverless volume with a nonzero failure rate this accrues silently. Mitigation is a container lifecycle rule to purge uncommitted blocks — infrastructure, not code.”</p>
+</blockquote>
+<blockquote>
+<p>Known gap: errors from json_encoder.go (row/root render) and from mid-stream<br>
+writes into the sink’s io.Writer are not explicitly annotated. They fall back<br>
+to KindOf’s unknown→KindPermanent default, which is right for the common<br>
+case (bad template or data) but not provably right for a destination write<br>
+failing mid-encode.</p>
+</blockquote>
+<h2 id="agent-instructions-documentation-scope-style-3-execution-checklist" class="docmd-heading"><a href="#agent-instructions-documentation-scope-style-3-execution-checklist" class="heading-anchor" aria-label="Permalink to this section"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-link2-icon lucide-link-2"><path d="M9 17H7A5 5 0 0 1 7 7h2m6 0h2a5 5 0 1 1 0 10h-2m-7-5h8"/></svg></a>3. Execution Checklist</h2>
+<p>Before finalizing any edits to markdown files in this directory, verify:</p>
+<ol>
+<li>You have not pulled text or context from <code>docs/docmd/</code>.</li>
+<li>The language is conversational yet professional, keeping heavy technical jargon to an absolute minimum.</li>
+<li>Code blocks (if any) are properly tagged with their respective language syntax.</li>
+</ol>
 
                 
                   <div class="page-navigation">
@@ -981,11 +1015,35 @@
     <ul class="toc-list">
       
         <li class="toc-item toc-level-1">
-          <a href="#agent-instructions-documentation-scope" class="toc-link">Agent Instructions: Documentation Scope</a>
+          <a href="#agent-instructions-documentation-scope-style" class="toc-link">Agent Instructions: Documentation Scope &amp; Style</a>
         </li>
       
         <li class="toc-item toc-level-2">
-          <a href="#agent-instructions-documentation-scope-scope-boundaries" class="toc-link">Scope &amp; Boundaries</a>
+          <a href="#agent-instructions-documentation-scope-style-1-scope-directory-boundaries" class="toc-link">1. Scope &amp; Directory Boundaries</a>
+        </li>
+      
+        <li class="toc-item toc-level-3">
+          <a href="#agent-instructions-documentation-scope-style-1-scope-directory-boundaries-target-context" class="toc-link">Target Context</a>
+        </li>
+      
+        <li class="toc-item toc-level-3">
+          <a href="#agent-instructions-documentation-scope-style-1-scope-directory-boundaries-strict-exclusions" class="toc-link">Strict Exclusions</a>
+        </li>
+      
+        <li class="toc-item toc-level-2">
+          <a href="#agent-instructions-documentation-scope-style-2-tone-language-style-accessible-prose" class="toc-link">2. Tone &amp; Language Style (Accessible Prose)</a>
+        </li>
+      
+        <li class="toc-item toc-level-3">
+          <a href="#agent-instructions-documentation-scope-style-2-tone-language-style-accessible-prose-writing-guidelines" class="toc-link">Writing Guidelines</a>
+        </li>
+      
+        <li class="toc-item toc-level-3">
+          <a href="#agent-instructions-documentation-scope-style-2-tone-language-style-accessible-prose-tone-examples" class="toc-link">Tone Examples</a>
+        </li>
+      
+        <li class="toc-item toc-level-2">
+          <a href="#agent-instructions-documentation-scope-style-3-execution-checklist" class="toc-link">3. Execution Checklist</a>
         </li>
       
     </ul>
@@ -996,17 +1054,32 @@
             <div class="page-footer-actions">
               
               
-                <span class="git-last-updated" data-timestamp="1784552300000">
+                <span class="git-last-updated" data-timestamp="1784552668000">
                   <svg class="git-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <circle cx="12" cy="12" r="10"></circle>
                     <polyline points="12 6 12 12 16 14"></polyline>
                   </svg>
                   <span class="git-label">Last updated:</span>
-                  <span class="git-time" data-timestamp="1784552300000"></span>
+                  <span class="git-time" data-timestamp="1784552668000"></span>
                   
                   <div class="git-commit-tooltip" role="tooltip">
                     <div class="git-tooltip-title">Recent commits</div>
                     <ul class="git-commit-list">
+                      
+                        <li class="git-commit-item">
+                          <div class="git-commit-avatar" title="moxalibudbud">
+                            
+                              <img src="https://www.gravatar.com/avatar/b24434cde1d9f733fde069a686a1e09f?d=mp&amp;s=64" alt="moxalibudbud">
+                            
+                          </div>
+                          <div class="git-commit-details">
+                            <div class="git-commit-message" title="update docmd">update docmd</div>
+                            <div class="git-commit-meta">
+                              <span class="git-commit-author">moxalibudbud</span>
+                              <span class="git-commit-date" data-timestamp="1784552668000"></span>
+                            </div>
+                          </div>
+                        </li>
                       
                         <li class="git-commit-item">
                           <div class="git-commit-avatar" title="moxalibudbud">
@@ -1049,13 +1122,13 @@
         </div>
       </div>
       
-      <script src="../assets/js/docmd-main.js?v=mrt8jbbm"></script>
+      <script src="../assets/js/docmd-main.js?v=mrt8u6s1"></script>
       
-      <script src="../assets/js/docmd-git.js?v=mrt8jbbm"></script>
-      <script src="../assets/js/docmd-image-lightbox.js?v=mrt8jbbm" ></script>
-<script src="../assets/js/vendor/minisearch.js?v=mrt8jbbm" ></script>
-<script src="../assets/js/docmd-search.js?v=mrt8jbbm" ></script>
-<script src="../assets/js/docmd-git.js?v=mrt8jbbm" type="module"></script>
+      <script src="../assets/js/docmd-git.js?v=mrt8u6s1"></script>
+      <script src="../assets/js/docmd-image-lightbox.js?v=mrt8u6s1" ></script>
+<script src="../assets/js/vendor/minisearch.js?v=mrt8u6s1" ></script>
+<script src="../assets/js/docmd-search.js?v=mrt8u6s1" ></script>
+<script src="../assets/js/docmd-git.js?v=mrt8u6s1" type="module"></script>
 
   <!-- Search Modal (Injected by @docmd/plugin-search) -->
   <div id="docmd-search-modal" class="docmd-search-modal" style="display: none;" data-show-confidence="false" data-show-filters="true"

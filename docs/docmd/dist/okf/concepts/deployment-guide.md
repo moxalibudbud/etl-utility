@@ -6,7 +6,7 @@ path: /deployment-guide/
 updated: 2026-07-20
 okf:
   generated_by: "@docmd/plugin-okf"
-  generated_at: "2026-07-20T13:03:11.496Z"
+  generated_at: "2026-07-20T13:11:38.867Z"
 ---
 # Deployment Guide — ETL Utility
 
