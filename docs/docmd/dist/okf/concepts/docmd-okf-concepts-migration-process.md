@@ -6,7 +6,7 @@ path: /docmd/okf/concepts/migration-process/
 updated: 2026-07-20
 okf:
   generated_by: "@docmd/plugin-okf"
-  generated_at: "2026-07-20T13:11:38.873Z"
+  generated_at: "2026-07-20T13:18:22.922Z"
 ---
 ---
 type: concept

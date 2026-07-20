@@ -6,7 +6,7 @@ path: /etl-code-review-and-go-des/
 updated: 2026-07-20
 okf:
   generated_by: "@docmd/plugin-okf"
-  generated_at: "2026-07-20T13:11:38.878Z"
+  generated_at: "2026-07-20T13:18:22.927Z"
 ---
 # ETL Utility — Code Review & Go Implementation Design
 

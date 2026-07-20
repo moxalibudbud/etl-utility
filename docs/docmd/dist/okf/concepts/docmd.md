@@ -5,7 +5,7 @@ path: /docmd/
 updated: 2026-07-20
 okf:
   generated_by: "@docmd/plugin-okf"
-  generated_at: "2026-07-20T13:11:38.867Z"
+  generated_at: "2026-07-20T13:18:22.916Z"
 ---
 ## Start the app
 

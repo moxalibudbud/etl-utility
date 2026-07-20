@@ -3994,39 +3994,49 @@ For wire compatibility:
   rather than silently ignored.
 - `output.separator` is unused by the JSON generator.
 
-### `output.options` — writer behavior toggles
+### `output.options` — optional writer behavior
 
-Behavior toggles that are not part of the document format live in a separate
-map so new ones can be added without another wire-shape migration:
+Some settings change *how the writer behaves* rather than *what the output file
+looks like*. Those live together in one `options` object, so we can add new
+switches later without asking every existing integration to change its
+configuration.
 
 ```go
 Options map[string]any `json:"options,omitempty"`
 ```
 
-Read them with `OutputConfig.BoolOption(name, default)`. A missing key — or a
-value of the wrong type — falls back to the default rather than failing the
-run, so an unrecognized wire value cannot break an otherwise valid config.
+Settings are read with `OutputConfig.BoolOption(name, default)`. If a setting is
+missing, or someone sends the wrong kind of value for it, the writer quietly
+uses the default instead of failing. A typo in an optional setting should never
+take down an otherwise valid job.
 
-Note this is `output.options`, distinct from the top-level `options` carrying
-the line rules:
+| Option | Default | What it does |
+|---|---|---|
+| `errorReport` | `false` | Writes a `<source>.error.txt` file listing the rows that failed validation. |
+
+Note that `output.options` is a different thing from the top-level `options`
+that holds the line-parsing rules. Both can appear in the same configuration:
 
 ```json
 {"output": {"options": {"errorReport": true}}, "options": {"line": {}}}
 ```
 
-| Option | Default | Meaning |
-|---|---|---|
-| `errorReport` | `false` | Write the `<source>.error.txt` report file. |
+#### Why the error report is off by default
 
-`errorReport` defaults to **off**. The pipeline targets serverless workers,
-where the writable filesystem is a small ephemeral scratch space reused across
-warm invocations; a side file nobody collects is a leak, not a feature.
+This utility is built to run in short-lived cloud functions. Each run gets a
+small scratch folder for temporary files, and that folder is often reused by
+the next job on the same machine. Files left behind pile up until unrelated
+jobs start failing for no obvious reason.
 
-Disabling it suppresses only the *file*. Invalid rows are still counted, so
-`Result.TotalErrors`, `Result.WithErrors`, and `rejectOnInvalidRow` behave
-identically either way. When disabled, `Result.LocalErrorReportFile` and
-`LocalErrorReportFilename` are empty rather than naming a file that was never
-written.
+So the report is only written when someone asks for it. If a team collects and
+reads the report, they turn it on. If nobody collects it, no file is created
+and there is nothing to clean up.
+
+Turning the report off only suppresses the *file*. Failed rows are still
+counted, so the error count in the result and the `rejectOnInvalidRow` behavior
+are exactly the same either way. When the report is off, the result reports an
+empty path rather than pointing at a file that was never written — so callers
+can simply check for an empty path before trying to read it.
 
 Validate static configuration in the factory or constructor:
 
@@ -4192,67 +4202,84 @@ The writer must define cleanup for each failure stage:
 `End()` and `Delete()` should be idempotent. An error returned during rendering
 or writing must retain its original cause via `%w`.
 
-### Error taxonomy
+### Telling the caller what to do about a failure
 
-The pipeline runs as a serverless worker invocation: the process is frozen or
-destroyed shortly after `Process` returns, so the handler gets exactly one
-chance to route a failure and cannot string-match an opaque error to do it.
-`writer.ErrorKind` (`errors.go`) classifies failures by the action the caller
-should take — the only three decisions a handler actually makes:
+When a job fails, the system that started it has to make one decision: try
+again, give up, or ask a human to look. Getting that decision wrong is
+expensive. Retrying something that can never succeed wastes time and money on
+every attempt. Giving up on a temporary network hiccup fails a job that would
+have worked seconds later.
 
-| Kind | Meaning | Handler action |
+The utility runs in short-lived cloud functions, which makes this harder: the
+job is shut down almost immediately after it reports back, so there is exactly
+one chance to make the call, and no opportunity to investigate afterwards.
+
+To support that, every failure is labeled with one of three kinds
+(`writer.ErrorKind` in `errors.go`):
+
+| Label | What happened | What the caller should do |
 |---|---|---|
-| `KindPermanent` | Retrying the same input fails the same way: invalid config, unrenderable template, malformed row, rejected request. | Dead-letter; do not spend retries. |
-| `KindTransient` | Could plausibly succeed on retry: throttling, 5xx, reset connection, deadline. Nothing was committed, so a retry is safe. | Retry with backoff. |
-| `KindUnresolved` | The run failed *and* the writer could not guarantee it left the destination clean. | Reconcile/alert — **do not retry unattended**. |
+| **Permanent** | Something about the request is wrong — bad configuration, a broken template, a malformed row. Trying again changes nothing. | Stop and report it. Don't retry. |
+| **Temporary** | Something temporary got in the way — the service was busy, a connection dropped, a time limit was hit. No output was produced. | Retry, after a short wait. |
+| **Needs attention** | The job failed, **and** the utility could not confirm it cleaned up after itself. | Have someone check the destination before retrying. |
 
-`KindUnresolved` exists because cleanup itself can fail. It is deliberately
-distinct from `KindTransient`: both are "not permanent", but only one is safe
-to retry. A blind retry after an unresolved failure risks a duplicate or
-half-replaced document.
+*(In the code these are `KindPermanent`, `KindTransient` and `KindUnresolved`.)*
 
-Read the kind back with `writer.KindOf(err)`, or `writer.IsRetryable(err)` for
-the common case. `KindOf` walks joined errors and returns the worst kind
-present (`Unresolved` > `Transient` > `Permanent`), so a run that both failed
-and could not clean up escalates correctly regardless of why it failed. An
-error carrying no explicit kind is classified from its cause; anything
-unrecognized reports `KindPermanent`, because an unknown failure is not proven
-safe to retry and silently retrying it is the worse mistake.
+That third kind is the important one, and it exists because cleanup can fail
+too. It is deliberately kept separate from "temporary": both mean "not
+hopeless", but only one is safe to retry automatically. If a job wrote a file
+and then failed to remove it, retrying blindly can leave a second copy
+alongside the first — so a person, or a reconciliation job, should look before
+anything runs again.
 
-Two rules govern where each kind is applied:
+Callers read the label with `writer.KindOf(err)`, or `writer.IsRetryable(err)`
+for the common yes/no case. When several things go wrong at once, the most
+serious label wins, so a job that both failed *and* could not clean up is
+always reported as needing attention.
 
-- **`Start` failures classify by cause.** Nothing exists yet, so the only
-  question is whether a retry could help.
-- **`Close`/`Delete` failures classify by what was left behind**, not by cause.
-  That is the fact a handler needs. `LocalSink`'s atomic mode reports
-  `KindTransient` when the partial file was successfully removed (back to
-  "nothing committed") and escalates to `KindUnresolved` when it was not.
-  Append mode is always `KindUnresolved` on failure, since it writes in place
-  and cannot roll back. A failed `Delete` of a confirmed-existing artifact is
-  always `KindUnresolved`.
+Anything the utility does not recognize is reported as permanent. That is the
+deliberately cautious choice: an unfamiliar failure has not been shown to be
+safe to retry, and quietly retrying it is the more damaging mistake.
 
-Static configuration errors (`DestinationConfig.Validate`, the `Factory`
-dispatch, the JSON writer's `uniqueKey`/`footer`/`filename` rejections) are
-always `KindPermanent`: they fire before any I/O, purely from the shape of the
-request.
+Two rules decide which label a failure gets:
 
-### Cleanup must not short-circuit
+- **When opening the destination fails**, the label depends on the cause.
+  Nothing has been written yet, so the only question is whether trying again
+  could help.
+- **When finishing or removing the destination fails**, the label depends on
+  *what was left behind*, not on what went wrong. This is what the caller
+  actually needs to know. If the half-written file was successfully removed,
+  the job is back to a clean slate and can be retried. If it could not be
+  removed, the job needs attention. Writers that append directly to the final
+  file cannot undo their work, so a failure there always needs attention.
 
-`etl.cleanUp` runs every step — `output.End`, `errorReport.End`,
-`reader.Close`, and both deletes — even when an earlier step failed, joining
-the failures with `errors.Join`. Returning early on the first failure skipped
-the deletes entirely, so a failed `End()` left its artifact behind: exactly the
-case cleanup exists for. On a serverless worker there is no later pass to catch
-it, so anything not deleted during the invocation is leaked permanently — a
-committed blob, or a file occupying the shared ephemeral scratch space.
+Configuration problems — an unsupported destination, an unusable combination of
+settings, a missing filename — are always permanent. They are caught before
+anything is written, purely from the shape of the request.
 
-For the same reason, a failed `output.End()` now forces `output.Delete()`
-regardless of how the run was otherwise judged: output that could not be
-finalized cleanly must not survive, even on a `force=false`, `valid=true` path.
+### Cleanup always runs to the end
 
-`Process` joins the cleanup error with the original failure rather than
-discarding it, so a cleanup that could not remove the artifact escalates the
-whole result to `KindUnresolved`.
+When a job fails, the utility closes its files, closes the source, and removes
+anything it created. Every one of those steps now runs even if an earlier one
+failed, and all the problems are reported together.
+
+This used to stop at the first problem, which meant a failure while closing the
+output skipped the removal entirely — leaving the file behind in exactly the
+situation cleanup exists to handle. In a cloud function there is no second
+chance: the machine is shut down moments later, so whatever was not removed
+during the run is left behind for good. That means a stray file in shared
+temporary storage, or an unwanted document sitting in cloud storage where
+another system may pick it up.
+
+For the same reason, if closing the output fails, the output is now always
+removed — even when the job otherwise looked successful. Output that could not
+be finished properly should never be left where something else might treat it
+as complete.
+
+Cleanup problems are reported alongside the original failure instead of being
+thrown away. So if a job fails *and* cannot tidy up after itself, the caller is
+told the run needs attention rather than being handed a failure that looks
+routinely retryable.
 
 ---
 
@@ -4334,78 +4361,83 @@ No `etl.go` changes were required.
 - [x] `go build ./...`, `go vet ./...`, `go test ./...`, and
   `go test ./writer/... -race` all pass.
 
-### Phase 2.5 — serverless failure routing
+### Phase 2.5 — making failures actionable
 
-**Status: complete.** Prerequisites for Phase 3, driven by the serverless
-deployment target.
+**Status: complete.** Groundwork for Phase 3, prompted by the decision to run
+this in short-lived cloud functions.
 
-- [x] Add the `writer.ErrorKind` taxonomy (`errors.go`) with `KindPermanent` /
-  `KindTransient` / `KindUnresolved`, `KindOf`, `IsRetryable`, and
-  cause-classification for Azure `ResponseError` status codes, `bloberror`
-  codes, context deadline/cancellation, and network timeouts (§8).
-- [x] Fix `etl.cleanUp` to run every step and join failures instead of
-  short-circuiting before the deletes; force `output.Delete()` when
-  `output.End()` failed; join cleanup errors into the returned error in
-  `Process` (§8).
-- [x] Classify existing error sites: sink `Start`/`Close`/`Delete`, error
-  report I/O, static config validation, `Factory` dispatch, and the writers'
-  filename/lifecycle rejections.
-- [x] Add `output.options` with `errorReport` defaulting to off (§4).
-- [x] Fix `AzureBlobSink.Delete` marking the blob un-uploaded *before* the
-  removal succeeded, which silently made a retried `Delete()` a no-op.
+- [x] Label every failure as permanent, temporary, or needing attention, so the
+  system that started the job knows whether to retry (§8). Includes recognising
+  the common cloud-storage responses — service busy, server errors, permission
+  refused, timeouts — and mapping them to the right label.
+- [x] Make cleanup run every step instead of stopping at the first problem, and
+  always remove output that could not be finished properly (§8).
+- [x] Apply the labels across the existing code: opening, finishing and
+  removing destinations, error-report writing, configuration checks, and
+  filename problems.
+- [x] Add `output.options`, with the error report turned off by default (§4).
+- [x] Fix a bug where a failed attempt to remove an uploaded file was recorded
+  as if it had succeeded, so a retry silently did nothing and the unwanted file
+  stayed in cloud storage.
 
-Known gap: errors from `json_encoder.go` (row/root render) and from mid-stream
-writes into the sink's `io.Writer` are not explicitly annotated. They fall back
-to `KindOf`'s unknown→`KindPermanent` default, which is right for the common
-case (bad template or data) but not provably right for a destination write
-failing mid-encode.
+**Known gap.** A few failures are not labeled individually yet: problems while
+building a row's JSON, and problems writing to the destination partway through.
+These currently fall back to the cautious "permanent" default. For the usual
+cause — a bad template or bad data — that is the right answer. For the rarer
+case of the destination failing mid-write, a retry might actually have worked,
+so those jobs will be reported as unretryable when they did not have to be.
+Worth closing, but it errs on the safe side.
 
-### Phase 3 — JSON cloud output
+### Phase 3 — writing JSON to cloud storage
 
-**Blob atomicity model: rely on block-commit (decided).** `UploadStream`
-stages blocks and commits them with a single Put Block List. Staged-but-
-uncommitted blocks are invisible to readers: if the upload dies partway the
-blob never appears, and if it already existed it keeps its previous content
-until the commit swaps it atomically.
+The key question for cloud output is: **can anyone see a half-written file?**
+If a job uploads 40,000 rows and fails at row 30,000, a system reading that
+folder must never pick up the incomplete document and treat it as real data.
 
-The rejected alternative was a staging blob (`name.json.partial`) copied to the
-final name on success, mirroring `LocalSink`. It buys nothing and costs more:
-copy-then-delete is *itself* not atomic, so a crash between the two leaves an
-orphan staging blob — a failure mode that does not otherwise exist — plus async
-copy for large blobs, doubled transient storage, and extra API calls.
-`LocalSink` needs the rename because `os.OpenFile` genuinely exposes bytes as
-they are written; blob upload does not have that problem.
+**Decision: rely on how cloud uploads already work.** Azure sends the file in
+chunks and only makes it visible once the last chunk arrives and the upload is
+confirmed. Until that moment the file simply does not exist for anyone reading
+the folder — and if a file of the same name was already there, readers keep
+seeing the old one until the new version is complete. A failed upload leaves
+nothing visible behind.
 
-Choosing this model is mostly a documentation and test obligation — converting
-an accident of the SDK into a stated contract:
+We considered mirroring what the local writer does: upload to a temporary name,
+then rename it once finished. We rejected it. Copying and then deleting are two
+separate steps, so a crash between them leaves an abandoned temporary file in
+cloud storage — a new problem that does not exist today. It would also mean
+storing the data twice during the run and paying for extra operations, all to
+protect against something the upload already handles. The local writer needs
+its temporary file because writing to disk genuinely exposes data as it goes;
+uploads do not have that problem.
 
-- Enable JSON generation through `AzureBlobSink` (`newBlobWriter` accepting
-  `json-generator`).
-- Document on `AzureBlobSink` that atomicity comes from Put Block List, so a
-  future change (swapping the upload call, adding an S3 sink) knows it is
-  load-bearing.
-- Assert nothing is readable at the destination URL until `Close()` — the blob
-  analog of the existing "final file should not exist before End" assertion in
-  `TestJSONWriterStreamsAndPromotesLocalFile`.
-- Add upload-abort, finalization, and deletion tests.
-- Add S3 composition when the S3 destination is implemented.
+Since the protection already exists, the work is mostly about making it
+official and proving it stays that way:
 
-Remaining prerequisite — **context threading**, not yet done:
+- Allow JSON output to cloud destinations.
+- Write down that this guarantee comes from how the upload is finalized, so
+  anyone changing that code later knows it is load-bearing.
+- Add a test proving nothing is readable at the destination until the job
+  finishes — the cloud equivalent of a check the local writer already has.
+- Add tests for cancelled uploads, successful completion, and deletion.
+- Add support for S3 when that destination is built.
 
-- `AzureBlobSink` still uses `context.Background()` for both upload and delete.
-  Uploads need the invocation deadline, or a hung upload runs until the
-  platform kills the invocation mid-flight with no error routed and no cleanup
-  run.
-- `Delete` must *not* inherit that context. Threading the request context
-  through naively means cleanup is cancelled exactly when it is most needed.
-  It needs `context.WithoutCancel(parent)` plus its own short timeout, funded
-  from a reserve carved out of the invocation budget up front.
+**Still to do first: time limits.** Cloud functions are stopped after a fixed
+time. Today an upload has no time limit of its own, so a stalled upload can run
+until the platform kills the whole job — producing no error anyone can act on
+and skipping cleanup entirely. Uploads need to respect the job's deadline.
 
-Operational note: aborted uploads leave **uncommitted staged blocks**. They are
-invisible (no blob exists, so `Delete` correctly finds nothing) but are billed
-and retained ~7 days. At serverless volume with a nonzero failure rate this
-accrues silently. Mitigation is a container lifecycle rule to purge uncommitted
-blocks — infrastructure, not code.
+Cleanup, though, must deliberately *not* share that deadline. If it did, then
+the moment a job runs out of time, its cleanup would be cancelled too — failing
+exactly when it is needed most. Cleanup needs its own small, separate time
+budget, reserved up front.
+
+**A cost note for whoever owns the storage account.** When an upload is
+abandoned partway, the chunks already sent are not visible as a file, but Azure
+keeps them for about a week and bills for them. One failed job is negligible.
+Thousands of failed jobs a month is a line item nobody can see, because nothing
+appears in the folder to explain the charge. This is fixed with a storage
+retention rule that clears abandoned uploads automatically — a configuration
+change on the storage account, not something this codebase can do.
 
 ### Deferred features
 
@@ -4452,48 +4484,52 @@ Covered in `json_writer_test.go`:
 - No rows produces no file
 - Existing output is replaced with one complete JSON document, never appended
 
-### Sink tests
+### Destination tests
 
-Covered in `local_sink_test.go` and `blobwriter_test.go`:
+Covered in `local_sink_test.go` and `blobwriter_test.go`. These check that a
+failure is reported with the label that matches what was actually left behind:
 
-- Atomic-mode `Close` failure is `KindTransient` when the partial file was
-  successfully removed
-- Atomic-mode `Close` failure escalates to `KindUnresolved` when the partial
-  file could not be removed
-- Append-mode `Close` failure is always `KindUnresolved` (writes in place,
-  cannot roll back)
-- `Delete` failure on a confirmed-existing artifact is `KindUnresolved`
-- `Start` failures classify by cause; an empty filename is `KindPermanent`
-- Blob upload failure is classified from Azure's response (503 transient,
-  403 permanent)
-- A failed blob `Delete` leaves the blob marked uploaded, so a retry retries
-  rather than silently no-opping
+- A failure while finishing a file is reported as retryable when the
+  half-written file was successfully removed
+- The same failure is escalated to "needs attention" when that file could
+  *not* be removed
+- Writers that append directly to the final file always report "needs
+  attention", since their work cannot be undone
+- Failing to remove a file that is confirmed to exist always reports "needs
+  attention"
+- Failures while opening a destination are labeled by cause; a missing
+  filename is permanent
+- Upload failures are labeled from what cloud storage returned — service busy
+  is retryable, permission refused is permanent
+- A failed attempt to remove an uploaded file leaves it marked as still
+  present, so a retry genuinely tries again
 
-Failure paths are simulated portably — closing the file descriptor early, or
-occupying a path with a non-empty directory — rather than with permission
-tricks, which behave inconsistently under a root test runner.
+Failures are simulated in ways that behave the same on every machine, rather
+than by manipulating file permissions, which behave differently depending on
+which user runs the tests.
 
-### Error taxonomy tests
+### Failure-labeling tests
 
-Covered in `errors_test.go`: kind round-tripping, worst-kind escalation across
-joined errors, unannotated errors defaulting to `KindPermanent`,
-`IsRetryable` excluding `KindUnresolved`, `Tag` preserving self-describing
-messages, nil-in/nil-out for every constructor, and cause classification for
-Azure status codes, `bloberror` codes, and context deadline/cancellation.
+Covered in `errors_test.go`: labels survive a round trip; when several failures
+happen together the most serious label wins; unlabeled failures fall back to
+permanent; the "needs attention" label is correctly excluded from automatic
+retries; and the common cloud-storage and timeout responses map to the labels
+described in §8.
 
 ### Error report tests
 
-Covered in `errorreport_test.go` and `etl_test.go`: disabled reports count
-invalid rows without writing a file or naming a path; enabled reports write
-and are deleted when there are zero errors; a failed delete is
-`KindUnresolved`; `BoolOption` falls back to the default on a missing key or
-wrong-typed value.
+Covered in `errorreport_test.go` and `etl_test.go`: with the report turned off,
+failed rows are still counted but no file is written and no path is reported;
+with it on, the file is written and then removed when there were no errors; a
+failed removal is reported as needing attention; and an unknown or wrongly
+typed setting falls back to its default instead of failing the run.
 
 ### Cleanup tests
 
-Covered in `etl_test.go`: every cleanup step runs despite earlier failures and
-all causes are reachable from the joined error; a failed `End()` forces
-`output.Delete()` even when `force=false` and the result is valid.
+Covered in `etl_test.go`: every cleanup step still runs when an earlier one has
+already failed, and all the problems are reported rather than just the first;
+output that could not be finished properly is removed even when the run
+otherwise looked successful.
 
 ### ETL end-to-end tests
 
@@ -4536,18 +4572,17 @@ The local Go JSON generator is complete when:
 - Empty/all-invalid input produces no output file.
 - `go test ./...`, `go vet ./...`, and `go build ./...` pass.
 
-### Serverless operability
+### Running reliably in the cloud
 
-Because the target deployment is a serverless worker, a run is also only
+Because this runs in short-lived cloud functions, a release is also only
 acceptable when:
 
-- Every failure returned from `Process` carries a `writer.ErrorKind`, so a
-  handler can route it without string-matching.
-- Cleanup runs to completion on every failure path — no early return skips a
-  delete — and a cleanup that could not remove its artifact is reported as
-  `KindUnresolved` rather than silently succeeding.
-- No output file is written unless explicitly requested, so nothing
-  accumulates in the shared ephemeral scratch space across warm invocations.
+- Every failure tells the caller whether to retry, give up, or get someone to
+  look — without anyone having to read the error text to work it out.
+- Cleanup finishes on every failure path, and a cleanup that could not remove
+  what it created says so instead of reporting success.
+- No file is written unless someone asked for it, so nothing quietly builds up
+  in temporary storage from one run to the next.
 
 
 ---

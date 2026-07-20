@@ -6,7 +6,7 @@ path: /AGENTS/
 updated: 2026-07-20
 okf:
   generated_by: "@docmd/plugin-okf"
-  generated_at: "2026-07-20T13:11:38.861Z"
+  generated_at: "2026-07-20T13:18:22.911Z"
 ---
 # Agent Instructions: Documentation Scope & Style
 

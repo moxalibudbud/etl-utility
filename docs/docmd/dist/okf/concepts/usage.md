@@ -6,7 +6,7 @@ path: /usage/
 updated: 2026-07-20
 okf:
   generated_by: "@docmd/plugin-okf"
-  generated_at: "2026-07-20T13:11:38.883Z"
+  generated_at: "2026-07-20T13:18:22.932Z"
 ---
 # Usage Guide — Integrating the ETL Utility (Go)
 
