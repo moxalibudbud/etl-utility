@@ -75,9 +75,17 @@ Concretely, this plan's proposals were **not** followed as written:
 - JSON output to cloud destinations (`json-generator` + `azure-blob`) has
   shipped — see [`go-json-generator-design.md`](go-json-generator-design.md)
   Phase 3 for the atomicity model and test coverage.
-- S3, `context.Context` threading, the `Result` `outputLocation` fields, and
-  upload tuning remain unimplemented — the phased design below is still the
-  reference for that future work.
+- `context.Context` threading has shipped: `etl.RunContext` carves a work
+  deadline and a cleanup deadline out of the host's execution ceiling
+  (`etl.Budget`, configured via `ETL_JOB_CEILING` / `ETL_JOB_NO_LIMIT`) and
+  threads them through both the reader and the writer. Writers that perform
+  network I/O implement `writer.DeadlineAware` (`AzureBlobWriter`,
+  `JSONWriter`) and receive the contexts via `SetDeadlineContexts`; local
+  writers and test doubles ignore the probe. See `go/etl/budget.go`,
+  `go/etl/run.go`, and `docs/usage.md` §7.1.
+- S3, the `Result` `outputLocation` fields, and upload tuning remain
+  unimplemented — the phased design below is still the reference for that
+  future work.
 
 ## Motivation
 

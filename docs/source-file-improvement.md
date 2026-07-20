@@ -42,9 +42,13 @@ this plan's proposals were **not** followed as written:
   (shared key, connection string, SAS token, or the zero-value default
   credential chain, disambiguated by `AzureAuth.Type()`) rather than assumed
   from the provider default chain only.
-- S3, `context.Context` threading, configurable max line size, and object
-  versioning remain unimplemented — the phased design below is still the
-  reference for that future work.
+- `context.Context` threading has shipped: `reader.New` now accepts a
+  `context.Context` that is stored on `AzureBlobReader` and forwarded to the
+  streaming download call — the job's work deadline (from `etl.RunContext` /
+  `etl.Budget`) cancels an in-flight download when time runs out. See
+  `go/reader/blobreader.go` and `go/etl/run.go`.
+- S3, configurable max line size, and object versioning remain unimplemented —
+  the phased design below is still the reference for that future work.
 
 ## Current State
 
