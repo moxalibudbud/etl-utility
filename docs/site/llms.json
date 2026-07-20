@@ -1,0 +1,54 @@
+{
+  "title": ".",
+  "description": "",
+  "pages": [
+    {
+      "title": "Backlog",
+      "url": "/backlogs/",
+      "description": "",
+      "priority": "medium"
+    },
+    {
+      "title": "Deployment Guide — ETL Utility",
+      "url": "/deployment-guide/",
+      "description": "",
+      "priority": "medium"
+    },
+    {
+      "title": "ETL Utility — Code Review & Go Implementation Design",
+      "url": "/ETL_CODE_REVIEW_AND_GO_DESIGN/",
+      "description": "",
+      "priority": "medium"
+    },
+    {
+      "title": "Go JSON Generator — Recommended Design",
+      "url": "/GO_JSON_GENERATOR_DESIGN/",
+      "description": "",
+      "priority": "medium"
+    },
+    {
+      "title": "Migration Process — TypeScript ETL → Go",
+      "url": "/MIGRATION_PROCESS/",
+      "description": "",
+      "priority": "medium"
+    },
+    {
+      "title": "Output File Improvement Plan",
+      "url": "/output-file-improvement/",
+      "description": "",
+      "priority": "medium"
+    },
+    {
+      "title": "Source File Improvement Plan",
+      "url": "/source-file-improvement/",
+      "description": "",
+      "priority": "medium"
+    },
+    {
+      "title": "Usage Guide — Integrating the ETL Utility (Go)",
+      "url": "/usage/",
+      "description": "",
+      "priority": "medium"
+    }
+  ]
+}

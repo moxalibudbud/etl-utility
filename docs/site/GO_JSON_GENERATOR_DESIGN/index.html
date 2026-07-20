@@ -1,0 +1,1314 @@
+<!--
+  ---------------------------------------------------------------
+  docmd : the zero-config documentation engine.
+  @website https://docmd.io
+  [docmd-source] - Please do not remove this header.
+  ---------------------------------------------------------------
+-->
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="generator" content="docmd v0.8.16">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script>/**
+ * --------------------------------------------------------------------
+ * docmd : the zero-config documentation engine.
+ *
+ * @package     @docmd/core (and ecosystem)
+ * @website     https://docmd.io
+ * @repository  https://github.com/docmd-io/docmd
+ * @license     MIT
+ * @copyright   Copyright (c) 2025-present docmd.io
+ *
+ * [docmd-source] - Please do not remove this header.
+ * --------------------------------------------------------------------
+ */
+
+(function () {
+  try {
+    // 1. Determine Theme
+    //
+    // Resolve from three sources, in priority order:
+    //   1. localStorage explicit user choice (light / dark)
+    //   2. window.DOCMD_APPEARANCE  (current canonical name, set by EJS templates)
+    //   3. window.DOCMD_DEFAULT_MODE (legacy alias kept for pre-0.8.7 outputs)
+    //   4. 'light' as the final fallback
+    //
+    // Note: localStorage is only honoured when it holds an explicit
+    // 'light' or 'dark' value. A stored 'system' value (from a prior
+    // session where the user picked "follow system") must NOT win over
+    // a freshly resolved config value — the resolved value will itself
+    // be 'system' in that case and the OS preference check below takes
+    // over, so this is a no-op for the in-session behaviour but keeps
+    // any future storage migration simple.
+    var localValue = localStorage.getItem('docmd-theme');
+    var configValue = window.DOCMD_APPEARANCE
+      || window.DOCMD_DEFAULT_MODE
+      || 'light';
+    var theme = (localValue === 'light' || localValue === 'dark')
+      ? localValue
+      : configValue;
+
+    if (theme === 'system') {
+      theme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    }
+
+    // 2. Apply to Root
+    document.documentElement.setAttribute('data-theme', theme);
+
+    // 3. Highlight.js Toggle Strategy
+    var lightLink = document.getElementById('hljs-light');
+    var darkLink = document.getElementById('hljs-dark');
+
+    if (lightLink && darkLink) {
+      if (theme === 'dark') {
+        lightLink.disabled = true;
+        darkLink.disabled = false;
+      } else {
+        lightLink.disabled = false;
+        darkLink.disabled = true;
+      }
+    }
+
+    document.documentElement.style.visibility = "visible";
+  } catch (e) {
+    document.documentElement.style.visibility = "visible";
+    console.error('Theme init failed', e);
+  }
+})();</script>
+    <style>
+      html {
+        visibility: hidden;
+      }
+    </style>
+    
+    <script>
+      var root = "../";
+      if (root && !root.endsWith('/')) root += '/';
+      if (root === '') root = './';
+      window.DOCMD_ROOT = root;
+
+      window.DOCMD_SITE_ROOT = "/";
+
+      window.DOCMD_APPEARANCE = "system";
+      window.DOCMD_VERSION_ROOT = "/";
+      window.DOCMD_BASE = "/";
+      window.DOCMD_LOCALE = "";
+      window.DOCMD_DEFAULT_LOCALE = "";
+    </script>
+    <title>
+      Go JSON Generator — Recommended Design : .
+    </title>
+    
+    
+
+    <link id="site-favicon" rel="icon" href="../assets/favicon.ico?v=mrsvyjpx">
+    <link rel="stylesheet" href="../assets/css/docmd-main.css?v=mrsvyjpx">
+    
+    <link rel="stylesheet" href="../assets/css/docmd-highlight-light.css?v=mrsvyjpx" id="hljs-light" >
+    <link rel="stylesheet" href="../assets/css/docmd-highlight-dark.css?v=mrsvyjpx" id="hljs-dark" disabled>
+    
+    
+<meta name="description" content="">
+<meta property="og:title" content="Go JSON Generator — Recommended Design - .">
+<meta property="og:description" content="">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Go JSON Generator — Recommended Design - .">
+<meta name="twitter:description" content="">
+
+
+
+<link rel="stylesheet" href="../assets/css/docmd-git.css?v=mrsvyjpx" >
+<link rel="stylesheet" href="../assets/css/docmd-openapi.css?v=mrsvyjpx" >
+
+    
+    <script>/**
+ * --------------------------------------------------------------------
+ * docmd : the zero-config documentation engine.
+ *
+ * @package     @docmd/core (and ecosystem)
+ * @website     https://docmd.io
+ * @repository  https://github.com/docmd-io/docmd
+ * @license     MIT
+ * @copyright   Copyright (c) 2025-present docmd.io
+ *
+ * [docmd-source] - Please do not remove this header.
+ * --------------------------------------------------------------------
+ */
+
+(function () {
+  try {
+    // 1. Determine Theme
+    //
+    // Resolve from three sources, in priority order:
+    //   1. localStorage explicit user choice (light / dark)
+    //   2. window.DOCMD_APPEARANCE  (current canonical name, set by EJS templates)
+    //   3. window.DOCMD_DEFAULT_MODE (legacy alias kept for pre-0.8.7 outputs)
+    //   4. 'light' as the final fallback
+    //
+    // Note: localStorage is only honoured when it holds an explicit
+    // 'light' or 'dark' value. A stored 'system' value (from a prior
+    // session where the user picked "follow system") must NOT win over
+    // a freshly resolved config value — the resolved value will itself
+    // be 'system' in that case and the OS preference check below takes
+    // over, so this is a no-op for the in-session behaviour but keeps
+    // any future storage migration simple.
+    var localValue = localStorage.getItem('docmd-theme');
+    var configValue = window.DOCMD_APPEARANCE
+      || window.DOCMD_DEFAULT_MODE
+      || 'light';
+    var theme = (localValue === 'light' || localValue === 'dark')
+      ? localValue
+      : configValue;
+
+    if (theme === 'system') {
+      theme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    }
+
+    // 2. Apply to Root
+    document.documentElement.setAttribute('data-theme', theme);
+
+    // 3. Highlight.js Toggle Strategy
+    var lightLink = document.getElementById('hljs-light');
+    var darkLink = document.getElementById('hljs-dark');
+
+    if (lightLink && darkLink) {
+      if (theme === 'dark') {
+        lightLink.disabled = true;
+        darkLink.disabled = false;
+      } else {
+        lightLink.disabled = false;
+        darkLink.disabled = true;
+      }
+    }
+
+    document.documentElement.style.visibility = "visible";
+  } catch (e) {
+    document.documentElement.style.visibility = "visible";
+    console.error('Theme init failed', e);
+  }
+})();</script>
+  </head>
+  <body
+    class="sidebar-collapsible"
+    data-default-collapsed="false"
+    data-copy-code-enabled="true" data-spa-enabled="true" data-source-file="GO_JSON_GENERATOR_DESIGN.md">
+
+    <a href="#main-content" class="skip-link">Skip to main content</a>
+
+    
+    
+      <aside class="sidebar">
+        <div class="sidebar-header">
+          
+<h1><a href="../">
+                .
+              </a></h1>
+          
+          <span class="mobile-view sidebar-menu-button float-right">
+            
+<svg class="lucide-icon icon-menu " width="1em" height="1em" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"
+  class="lucide lucide-menu"
+  xmlns="http://www.w3.org/2000/svg"
+  width="24"
+  height="24"
+  viewBox="0 0 24 24"
+  fill="none"
+  stroke="currentColor"
+  stroke-width="2"
+  stroke-linecap="round"
+  stroke-linejoin="round"
+>
+  <path d="M4 5h16" />
+  <path d="M4 12h16" />
+  <path d="M4 19h16" />
+</svg>
+
+          </span>
+        </div>
+        <div class="sidebar-top-group">
+          
+          
+          
+          
+        </div>
+        
+
+<nav class="sidebar-nav" aria-label="Main Navigation">
+  <ul>
+    
+      <li class="" >
+      
+        <a href="../backlogs/" class=" "
+          >
+          
+          <span class="nav-item-title">
+            Backlog
+            </span>
+          
+          
+        </a>
+        
+
+        
+      </li>
+    
+      <li class="" >
+      
+        <a href="../deployment-guide/" class=" "
+          >
+          
+          <span class="nav-item-title">
+            Deployment Guide — ETL Utility
+            </span>
+          
+          
+        </a>
+        
+
+        
+      </li>
+    
+      <li class="" >
+      
+        <a href="../ETL_CODE_REVIEW_AND_GO_DESIGN/" class=" "
+          >
+          
+          <span class="nav-item-title">
+            ETL Utility — Code Review &amp; Go Implementation Design
+            </span>
+          
+          
+        </a>
+        
+
+        
+      </li>
+    
+      <li class="active" >
+      
+        <a href="../GO_JSON_GENERATOR_DESIGN/" class="active "
+          >
+          
+          <span class="nav-item-title">
+            Go JSON Generator — Recommended Design
+            </span>
+          
+          
+        </a>
+        
+
+        
+      </li>
+    
+      <li class="" >
+      
+        <a href="../MIGRATION_PROCESS/" class=" "
+          >
+          
+          <span class="nav-item-title">
+            Migration Process — TypeScript ETL → Go
+            </span>
+          
+          
+        </a>
+        
+
+        
+      </li>
+    
+      <li class="" >
+      
+        <a href="../output-file-improvement/" class=" "
+          >
+          
+          <span class="nav-item-title">
+            Output File Improvement Plan
+            </span>
+          
+          
+        </a>
+        
+
+        
+      </li>
+    
+      <li class="" >
+      
+        <a href="../source-file-improvement/" class=" "
+          >
+          
+          <span class="nav-item-title">
+            Source File Improvement Plan
+            </span>
+          
+          
+        </a>
+        
+
+        
+      </li>
+    
+      <li class="" >
+      
+        <a href="../usage/" class=" "
+          >
+          
+          <span class="nav-item-title">
+            Usage Guide — Integrating the ETL Utility (Go)
+            </span>
+          
+          
+        </a>
+        
+
+        
+      </li>
+    
+  </ul>
+</nav>
+        <div class="sidebar-bottom-group mt-auto">
+          
+          
+          
+          
+        </div>
+      </aside>
+      
+      
+      
+      <div class="main-content-wrapper">
+        
+        
+          <header class="page-header">
+            <div class="header-left">
+              
+                <button id="sidebar-toggle-button" class="sidebar-toggle-button"
+                  aria-label="Toggle Sidebar">
+                  
+<svg class="lucide-icon icon-chevron-left " width="1em" height="1em" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"
+  class="lucide lucide-chevron-left"
+  xmlns="http://www.w3.org/2000/svg"
+  width="24"
+  height="24"
+  viewBox="0 0 24 24"
+  fill="none"
+  stroke="currentColor"
+  stroke-width="2"
+  stroke-linecap="round"
+  stroke-linejoin="round"
+>
+  <path d="m15 18-6-6 6-6" />
+</svg>
+
+                </button>
+              
+              <div class="header-titles-wrapper">
+                <span class="header-title">
+                  Go JSON Generator — Recommended Design
+                </span>
+              </div>
+            </div>
+            <div class="header-right">
+              
+                
+
+
+<div class="docmd-options-menu">
+    
+    <button class="docmd-search-trigger" aria-label="Search">
+        
+<svg class="lucide-icon icon-search " width="1em" height="1em" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"
+  class="lucide lucide-search"
+  xmlns="http://www.w3.org/2000/svg"
+  width="24"
+  height="24"
+  viewBox="0 0 24 24"
+  fill="none"
+  stroke="currentColor"
+  stroke-width="2"
+  stroke-linecap="round"
+  stroke-linejoin="round"
+>
+  <path d="m21 21-4.34-4.34" />
+  <circle cx="11" cy="11" r="8" />
+</svg>
+
+        <span class="search-label">Search</span>
+        <span class="search-keys"><kbd class="docmd-kbd">⌘</kbd><kbd class="docmd-kbd">K</kbd></span>
+    </button>
+    
+
+    
+
+    
+
+    
+    <button class="theme-toggle-button" aria-label="Toggle theme">
+        
+<svg class="lucide-icon icon-sun icon-sun" width="1em" height="1em" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"
+  class="lucide lucide-sun"
+  xmlns="http://www.w3.org/2000/svg"
+  width="24"
+  height="24"
+  viewBox="0 0 24 24"
+  fill="none"
+  stroke="currentColor"
+  stroke-width="2"
+  stroke-linecap="round"
+  stroke-linejoin="round"
+>
+  <circle cx="12" cy="12" r="4" />
+  <path d="M12 2v2" />
+  <path d="M12 20v2" />
+  <path d="m4.93 4.93 1.41 1.41" />
+  <path d="m17.66 17.66 1.41 1.41" />
+  <path d="M2 12h2" />
+  <path d="M20 12h2" />
+  <path d="m6.34 17.66-1.41 1.41" />
+  <path d="m19.07 4.93-1.41 1.41" />
+</svg>
+ 
+<svg class="lucide-icon icon-moon icon-moon" width="1em" height="1em" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"
+  class="lucide lucide-moon"
+  xmlns="http://www.w3.org/2000/svg"
+  width="24"
+  height="24"
+  viewBox="0 0 24 24"
+  fill="none"
+  stroke="currentColor"
+  stroke-width="2"
+  stroke-linecap="round"
+  stroke-linejoin="round"
+>
+  <path d="M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401" />
+</svg>
+
+    </button>
+    
+
+    
+</div>
+
+              
+            </div>
+          </header>
+        
+        <div class="content-theme-cover">
+          <main class="content-area" id="main-content">
+            <div class="content-layout">
+              <div class="main-content">
+                <div class="docmd-breadcrumbs-row">
+                  <div id="docmd-raw-markdown" data-content="%23%20Go%20JSON%20Generator%20%E2%80%94%20Recommended%20Design%0A%0A%23%23%201.%20Goals%0A%0AThe%20Go%20JSON%20generator%20should%20preserve%20the%20useful%20behavior%20of%20the%20TypeScript%0A%60JSONGenerator%60%20while%20improving%20its%20performance%2C%20correctness%2C%20and%0Amaintainability.%0A%0AThe%20primary%20goals%20are%3A%0A%0A-%20Keep%20memory%20usage%20bounded%20by%20streaming%20rows%20instead%20of%20storing%20the%20complete%0A%20%20output%20document.%0A-%20Keep%20JSON%20document%20construction%20independent%20from%20the%20output%20destination.%0A-%20Continue%20using%20the%20existing%20%60writer.Writer%60%20contract%20so%20%60etl.go%60%20does%20not%0A%20%20need%20JSON-specific%20branches.%0A-%20Use%20Go&#039;s%20%60encoding%2Fjson%60%20package%20for%20JSON%20validation%20and%20encoding%20instead%20of%0A%20%20manually%20repairing%20complete%20JSON%20strings.%0A-%20Preserve%20the%20canonical%20configuration%20contract%20and%20common%20TypeScript%20JSON%0A%20%20templates.%0A-%20Retain%20lazy%20output%20creation%3A%20no%20valid%20source%20rows%20means%20no%20output%20file.%0A%0AThe%20first%20implementation%20should%20support%20local%20JSON%20output.%20Azure%20Blob%20JSON%0Aoutput%20and%20a%20general%20destination%20refactor%20should%20follow%20after%20the%20local%0Aimplementation%20is%20stable.%0A%0A---%0A%0A%23%23%202.%20Problems%20in%20the%20TypeScript%20implementation%0A%0AThe%20TypeScript%20generator%20should%20be%20treated%20as%20a%20behavior%20reference%2C%20not%20copied%0Adirectly.%0A%0A%23%23%23%20Entire%20document%20retained%20in%20memory%0A%0AEvery%20row%20is%20parsed%20and%20stored%20in%20%60arrayBuckets%60%20until%20processing%20completes.%0AMemory%20therefore%20grows%20with%20the%20complete%20output%20size.%0A%0AThe%20Go%20implementation%20should%20stream%20this%20structure%3A%0A%0A%60%60%60text%0APush(first%20row)%3A%0A%20%20write%20%7B%0A%20%20write%20root%20fields%0A%20%20write%20%22Lines%22%3A%5B%0A%20%20write%20first%20row%0A%0APush(next%20row)%3A%0A%20%20write%20%2C%0A%20%20write%20next%20row%0A%0AEnd()%3A%0A%20%20write%20%5D%7D%0A%20%20flush%20and%20close%0A%60%60%60%0A%0AThis%20changes%20normal%20memory%20usage%20from%20%60O(total%20output)%60%20to%20approximately%0A%60O(current%20row%20%2B%20buffers)%60.%20Exact%20%60uniqueKey%60%20deduplication%20remains%20an%0Aexception%20because%20it%20must%20retain%20distinct%20keys.%0A%0A%23%23%23%20Fragile%20sanitization%0A%0AThe%20TypeScript%20implementation%20combines%20value%20sanitization%2C%20string%0Asubstitution%2C%20whole-document%20sanitization%2C%20and%20%60JSON.parse%60.%20These%20operations%0Ahave%20different%20responsibilities%20and%20can%20corrupt%20valid%20input%20or%20fail%20to%20escape%0Avalues%20correctly.%0A%0AGo%20should%20render%20a%20row%2C%20validate%20it%20with%20%60encoding%2Fjson%60%2C%20and%20only%20then%20write%0Athe%20validated%20JSON%20value.%0A%0A%23%23%23%20Broken%20deduplication%0A%0AThe%20TypeScript%20%60push()%60%20method%20checks%20%60rowReferences%60%20but%20does%20not%20call%0A%60trackReference()%60%20after%20accepting%20a%20row.%20The%20Go%20implementation%20must%20record%20a%0Akey%20only%20after%20its%20row%20is%20written%20successfully.%0A%0A%23%23%23%20Confusing%20lifecycle%0A%0ATypeScript%20needs%20a%20separate%20%60pushFinalJSON()%60%20step%20because%20it%20builds%20the%0Adocument%20in%20memory.%20Go%20already%20has%20%60Writer.End()%60%2C%20which%20is%20the%20correct%20place%0Ato%20close%20the%20JSON%20array%2Fobject%20and%20finalize%20the%20destination.%0A%0A%23%23%23%20Unused%20path%20parsing%0A%0A%60parseRootPath()%60%20and%20%60parseArrayPath()%60%20are%20unused.%20Version%20one%20should%20not%0Ainvent%20nested-path%20or%20multiple-array%20semantics%20that%20the%20running%20TypeScript%0Aimplementation%20does%20not%20provide.%0A%0A---%0A%0A%23%23%203.%20Recommended%20architecture%0A%0ASeparate%20JSON%20formatting%20from%20destination%20I%2FO%3A%0A%0A%60%60%60text%0AETL%0A%20%E2%94%94%E2%94%80%20Writer%0A%20%20%20%20%20%E2%94%9C%E2%94%80%20JSON%20document%20encoder%0A%20%20%20%20%20%E2%94%82%20%20%20%E2%94%9C%E2%94%80%20render%20root%2Fheader%0A%20%20%20%20%20%E2%94%82%20%20%20%E2%94%9C%E2%94%80%20render%20and%20validate%20rows%0A%20%20%20%20%20%E2%94%82%20%20%20%E2%94%9C%E2%94%80%20manage%20document%20state%20and%20commas%0A%20%20%20%20%20%E2%94%82%20%20%20%E2%94%94%E2%94%80%20deduplicate%20rows%0A%20%20%20%20%20%E2%94%82%0A%20%20%20%20%20%E2%94%94%E2%94%80%20Destination%0A%20%20%20%20%20%20%20%20%20%E2%94%9C%E2%94%80%20local%20file%0A%20%20%20%20%20%20%20%20%20%E2%94%94%E2%94%80%20Azure%20Blob%20stream%20(later)%0A%60%60%60%0A%0A%23%23%23%20JSON%20document%20encoder%0A%0AThe%20internal%20encoder%20should%20own%20JSON-specific%20state%20but%20no%20filesystem%20or%20cloud%0Alogic%3A%0A%0A%60%60%60go%0Atype%20JSONDocumentEncoder%20struct%20%7B%0A%20%20%20%20opts%20%20%20%20%20%20%20%20JSONConfig%0A%20%20%20%20out%20%20%20%20%20%20%20%20%20io.Writer%0A%20%20%20%20filename%20%20%20%20string%0A%20%20%20%20started%20%20%20%20%20bool%0A%20%20%20%20finalized%20%20%20bool%0A%20%20%20%20rowsWritten%20int%0A%20%20%20%20rowRefs%20%20%20%20%20map%5Bstring%5Dstruct%7B%7D%0A%7D%0A%60%60%60%0A%0ASuggested%20responsibilities%3A%0A%0A%60%60%60go%0Afunc%20NewJSONDocumentEncoder(opts%20JSONConfig)%20*JSONDocumentEncoder%0Afunc%20(e%20*JSONDocumentEncoder)%20SetOutput(w%20io.Writer)%0Afunc%20(e%20*JSONDocumentEncoder)%20Start(sl%20*line.SourceLine)%20error%0Afunc%20(e%20*JSONDocumentEncoder)%20WriteRow(sl%20*line.SourceLine)%20error%0Afunc%20(e%20*JSONDocumentEncoder)%20Finalize()%20error%0Afunc%20(e%20*JSONDocumentEncoder)%20Filename()%20string%0A%60%60%60%0A%0AIts%20explicit%20lifecycle%20is%3A%0A%0A%60%60%60text%0Anew%20%E2%86%92%20started%20%E2%86%92%20finalized%0A%60%60%60%0A%0A%60Finalize()%60%20should%20be%20idempotent.%20Writing%20after%20finalization%20should%20return%20an%0Aerror.%0A%0A%23%23%23%20Existing%20Writer%20contract%0A%0ADo%20not%20add%20the%20TypeScript-specific%20%60PushFinalJSON()%60%20operation.%20Implement%20the%0Aexisting%20contract%20as%20follows%3A%0A%0A-%20%60Push()%60%20lazily%20resolves%20the%20filename%2C%20creates%20the%20destination%2C%20starts%20the%0A%20%20JSON%20document%2C%20and%20writes%20one%20row.%0A-%20%60PushFooter()%60%20is%20a%20no-op%20because%20a%20JSON%20document%20has%20structural%0A%20%20finalization%20rather%20than%20a%20raw%20footer.%0A-%20%60End()%60%20finalizes%20the%20JSON%20document%2C%20flushes%20buffers%2C%20and%20closes%2Fpromotes%20the%0A%20%20destination.%0A-%20%60Delete()%60%20closes%20and%20removes%20any%20partial%20or%20completed%20output.%0A%0AThis%20allows%20the%20existing%20ETL%20orchestrator%20to%20use%20the%20JSON%20writer%20without%0Achanges.%0A%0A%23%23%23%20Destination%20abstraction%0A%0AThe%20repository%20currently%20has%20separate%20local%20and%20Azure%20writers%20that%20share%20a%0Atext%20renderer.%20Adding%20every%20format%20as%20another%20full%20destination-specific%20writer%0Awould%20eventually%20create%20a%20format-by-destination%20matrix.%0A%0AA%20later%20refactor%20should%20introduce%20an%20internal%20destination%20contract%3A%0A%0A%60%60%60go%0Atype%20Sink%20interface%20%7B%0A%20%20%20%20Start(filename%20string)%20(io.Writer%2C%20error)%0A%20%20%20%20Close()%20error%0A%20%20%20%20Delete()%20error%0A%20%20%20%20Location(filename%20string)%20string%0A%7D%0A%60%60%60%0A%0ALikely%20implementations%20are%20%60LocalSink%60%20and%20%60AzureBlobSink%60.%20Delimited%20and%20JSON%0Awriters%20can%20then%20compose%20a%20format%20encoder%20with%20a%20sink.%0A%0AThis%20refactor%20should%20follow%20the%20first%20local%20JSON%20implementation%20instead%20of%0Abeing%20performed%20at%20the%20same%20time%2C%20reducing%20regression%20risk.%0A%0A---%0A%0A%23%23%204.%20Configuration%20and%20validation%0A%0AAdd%20the%20existing%20TypeScript%20wire%20option%20to%20%60writer.OutputConfig%60%3A%0A%0A%60%60%60go%0AArrayField%20string%20%60json%3A%22arrayField%22%60%0A%60%60%60%0A%0AUse%20%60lines%60%20as%20the%20default%3A%0A%0A%60%60%60go%0Aconst%20DefaultJSONArrayField%20%3D%20%22lines%22%0A%60%60%60%0A%0AInternally%20normalize%20the%20generic%20writer%20options%20into%20a%20JSON-specific%0Aconfiguration%3A%0A%0A%60%60%60go%0Atype%20JSONConfig%20struct%20%7B%0A%20%20%20%20Filename%20%20%20string%0A%20%20%20%20Root%20%20%20%20%20%20%20string%0A%20%20%20%20Row%20%20%20%20%20%20%20%20string%0A%20%20%20%20ArrayField%20string%0A%20%20%20%20UniqueKey%20%20string%0A%20%20%20%20Metadata%20%20%20map%5Bstring%5Dany%0A%7D%0A%60%60%60%0A%0AFor%20wire%20compatibility%3A%0A%0A-%20%60output.header%60%20is%20the%20root-object%20template.%0A-%20%60output.template%60%20is%20the%20row%20template.%0A-%20%60output.arrayField%60%20identifies%20the%20root%20array%20property.%0A-%20%60output.uniqueKey%60%20enables%20in-memory%20deduplication.%0A-%20%60output.footer%60%20has%20no%20meaning%20for%20JSON%20and%20should%20be%20rejected%20when%20non-empty%0A%20%20rather%20than%20silently%20ignored.%0A-%20%60output.separator%60%20is%20unused%20by%20the%20JSON%20generator.%0A%0AValidate%20static%20configuration%20in%20the%20factory%20or%20constructor%3A%0A%0A-%20%60filename%60%20must%20not%20be%20empty.%0A-%20%60template%60%20must%20not%20be%20empty.%0A-%20Empty%20%60arrayField%60%20is%20normalized%20to%20%60lines%60.%0A-%20%60arrayField%60%20must%20be%20a%20valid%20non-empty%20JSON%20property%20name%20after%0A%20%20normalization.%0A%0AValidation%20that%20depends%20on%20source%20data%20occurs%20on%20the%20first%20row%3A%0A%0A-%20The%20rendered%20root%20must%20be%20a%20JSON%20object.%0A-%20A%20missing%20root%20template%20means%20an%20empty%20root%20object%2C%20not%20an%20error.%0A-%20A%20root%20object%20that%20already%20contains%20%60arrayField%60%20should%20be%20rejected%20to%20avoid%0A%20%20silently%20overwriting%20configured%20data.%0A-%20Every%20rendered%20row%20must%20be%20one%20JSON%20object.%20Arrays%2C%20scalars%2C%20and%20%60null%60%0A%20%20should%20be%20rejected%20for%20parity%20with%20the%20intended%20line-object%20model.%0A-%20A%20configured%20%60uniqueKey%60%20must%20exist%20in%20the%20source%20row.%20A%20missing%20key%20should%0A%20%20return%20an%20error%20instead%20of%20treating%20all%20missing%20keys%20as%20the%20empty-string%0A%20%20duplicate.%0A%0A---%0A%0A%23%23%205.%20JSON%20rendering%20and%20encoding%0A%0A%23%23%23%20Root%20rendering%0A%0AOn%20the%20first%20accepted%20row%3A%0A%0A1.%20Resolve%20the%20filename%20through%20field%20and%20function%20templates.%0A2.%20Render%20%60header%60%20using%20both%20field%20replacement%20and%20function%20replacement.%0A3.%20Treat%20an%20empty%20header%20as%20%60%7B%7D%60.%0A4.%20Decode%20the%20root%20into%20%60map%5Bstring%5Djson.RawMessage%60.%0A5.%20Reject%20an%20existing%20%60arrayField%60.%0A6.%20Write%20root%20keys%20in%20sorted%20order%20for%20deterministic%20output.%0A7.%20Marshal%20property%20names%20with%20%60json.Marshal%60.%0A8.%20Open%20the%20configured%20array.%0A%0ASorting%20root%20keys%20makes%20golden%20tests%2C%20diffs%2C%20hashes%2C%20and%20troubleshooting%0Areproducible.%20JSON%20object%20property%20order%20remains%20semantically%20irrelevant.%0A%0A%23%23%23%20Row%20rendering%0A%0AFor%20every%20accepted%20row%3A%0A%0A1.%20Check%20the%20deduplication%20key.%0A2.%20Render%20the%20configured%20row%20template.%0A3.%20Validate%20that%20it%20is%20exactly%20one%20JSON%20object.%0A4.%20Compact%20it%20with%20%60json.Compact%60.%0A5.%20Write%20a%20comma%20only%20when%20at%20least%20one%20previous%20row%20was%20written.%0A6.%20Write%20the%20compact%20object.%0A7.%20Record%20the%20deduplication%20key%20after%20the%20write%20succeeds.%0A%0AErrors%20should%20contain%20the%20source%20line%20number%2C%20operation%2C%20underlying%20JSON%0Aerror%2C%20and%20a%20bounded%20preview%20of%20the%20rendered%20value%3A%0A%0A%60%60%60text%0Arender%20JSON%20row%20at%20source%20line%2042%3A%20invalid%20character%20&#039;%7D&#039;%20after%20object%20key%3B%0Arendered%20value%3A%20%7B%22SKU%22%3A%22ABC%22%2C%7D%0A%60%60%60%0A%0AThe%20preview%20must%20be%20truncated%20to%20avoid%20logging%20very%20large%20or%20sensitive%20input.%0A%0A%23%23%23%20Field%20escaping%0A%0AThe%20ordinary%20text%20%60ReplaceWithMap()%60%20is%20insufficient%20for%20JSON%20templates.%20For%0Aexample%2C%20a%20source%20value%20containing%20a%20quote%20breaks%3A%0A%0A%60%60%60json%0A%7B%22SKU%22%3A%22%7BSKU%7D%22%7D%0A%60%60%60%0A%0AThe%20JSON%20writer%20should%20use%20a%20dedicated%20JSON-aware%20field%20renderer%3A%0A%0A-%20Placeholders%20inside%20JSON%20strings%20receive%20JSON-escaped%20string%20contents.%0A-%20Raw%20placeholders%20outside%20JSON%20strings%20are%20inserted%20as%20raw%20text%20and%20must%0A%20%20produce%20valid%20JSON%20after%20rendering.%0A-%20The%20complete%20row%20is%20always%20validated%20by%20%60encoding%2Fjson%60.%0A%0AThis%20preserves%20common%20TypeScript%20templates%20such%20as%3A%0A%0A%60%60%60json%0A%7B%22SKU%22%3A%22%7BSKU%7D%22%2C%22Quantity%22%3A%7BQuantity%7D%2C%22Received%22%3Atrue%7D%0A%60%60%60%0A%0AA%20future%20structured%20template%20format%20may%20provide%20explicit%20string%2C%20number%2C%0Aboolean%2C%20literal%2C%20and%20function%20nodes.%20It%20should%20be%20additive%20so%20existing%20string%0Atemplates%20continue%20to%20work.%0A%0A%23%23%23%20No%20whole-document%20sanitization%0A%0ADo%20not%20port%20%60sanitizeJsonValue()%60%20or%20whole-document%20%60sanitizeString()%60%20into%20the%0Awriter%20pipeline.%20JSON%20escaping%20belongs%20in%20the%20field%20renderer%20and%20structural%0Avalidation%20belongs%20to%20%60encoding%2Fjson%60.%0A%0AConfigured%20template%20functions%20such%20as%20%60%5BsanitizeString%20...%5D%60%20remain%20available%0Awhen%20explicitly%20requested.%0A%0A---%0A%0A%23%23%206.%20Local%20output%20and%20atomic%20completion%0A%0AThe%20local%20writer%20should%20create%20output%20lazily%20on%20the%20first%20valid%20row.%0A%0AWrite%20to%20a%20temporary%20sibling%20file%3A%0A%0A%60%60%60text%0A%3Cfinal%20filename%3E.partial%0A%60%60%60%0A%0AOn%20successful%20%60End()%60%3A%0A%0A1.%20Finalize%20the%20JSON%20structure.%0A2.%20Flush%20the%20buffered%20writer.%0A3.%20Sync%20and%20close%20the%20file.%0A4.%20Rename%20the%20partial%20file%20to%20the%20final%20filename.%0A%0AThis%20prevents%20consumers%20from%20observing%20a%20syntactically%20incomplete%20JSON%0Adocument.%20The%20rename%20remains%20atomic%20when%20the%20temporary%20and%20final%20files%20are%20on%0Athe%20same%20filesystem.%0A%0A%60Delete()%60%20should%20be%20idempotent%20and%20remove%20both%20the%20partial%20and%20final%20path%20when%0Apresent.%20%60End()%60%20should%20also%20be%20safe%20when%20no%20row%20was%20ever%20pushed%20and%20must%20not%0Acreate%20an%20output%20file.%0A%0AIf%20a%20destination%20already%20exists%2C%20version%20one%20should%20preserve%20the%20repository&#039;s%0Acurrent%20overwrite%2Fappend%20policy%20only%20where%20it%20produces%20a%20valid%20complete%20JSON%0Adocument.%20JSON%20must%20never%20append%20a%20second%20document%20to%20an%20existing%20file%3B%20the%0Apartial%20file%20should%20be%20newly%20truncated%20and%20the%20final%20rename%20should%20replace%20the%0Aprevious%20result%20according%20to%20the%20platform-supported%20atomic%20replacement%0Abehavior.%0A%0A---%0A%0A%23%23%207.%20Deduplication%20and%20performance%0A%0AUse%3A%0A%0A%60%60%60go%0Amap%5Bstring%5Dstruct%7B%7D%0A%60%60%60%0A%0Afor%20exact%20in-memory%20deduplication.%20The%20sequence%20must%20be%3A%0A%0A%60%60%60text%0Aresolve%20key%0Acheck%20key%0Arender%20and%20write%20row%0Arecord%20key%0A%60%60%60%0A%0ADo%20not%20introduce%20row-rendering%20goroutines%20in%20version%20one.%20The%20output%20order%20is%0Asignificant%2C%20deduplication%20is%20stateful%2C%20and%20buffered%20sequential%20output%20already%0Aprovides%20backpressure%20with%20substantially%20less%20synchronization%20and%20error%0Acomplexity.%0A%0AAzure&#039;s%20background%20upload%20goroutine%20remains%20appropriate%20because%20%60io.Pipe%60%0Arequires%20a%20concurrent%20reader%20and%20writer.%0A%0AFor%20very%20large%20exact-dedup%20workloads%2C%20a%20later%20design%20may%20introduce%20a%20disk-backed%0Aindex%20or%20external%20key%20store.%20A%20Bloom%20filter%20must%20only%20be%20considered%20when%20false%0Apositive%20row%20loss%20is%20explicitly%20acceptable.%0A%0A---%0A%0A%23%23%208.%20Failure%20behavior%0A%0AThe%20writer%20must%20define%20cleanup%20for%20each%20failure%20stage%3A%0A%0A%7C%20Failure%20%7C%20Required%20behavior%20%7C%0A%7C---%7C---%7C%0A%7C%20Filename%20rendering%20%7C%20Do%20not%20create%20a%20destination%20%7C%0A%7C%20Root%20rendering%20or%20validation%20%7C%20Close%20and%20delete%20partial%20output%20%7C%0A%7C%20Row%20rendering%20or%20validation%20%7C%20Abort%20processing%20and%20delete%20partial%20output%20%7C%0A%7C%20Local%20write%20or%20flush%20%7C%20Close%20and%20delete%20partial%20output%20%7C%0A%7C%20Finalization%20%7C%20Delete%20partial%20output%20%7C%0A%7C%20ETL%20invalid%20after%20processing%20%7C%20Close%20safely%2C%20then%20delete%20output%20%7C%0A%7C%20Future%20Azure%20upload%20%7C%20Abort%20the%20pipe%20and%20return%20the%20original%20upload%20error%20%7C%0A%0A%60End()%60%20and%20%60Delete()%60%20should%20be%20idempotent.%20An%20error%20returned%20during%20rendering%0Aor%20writing%20must%20retain%20its%20original%20cause%20via%20%60%25w%60.%0A%0A---%0A%0A%23%23%209.%20Implementation%20phases%0A%0A%23%23%23%20Phase%201%20%E2%80%94%20local%20streaming%20JSON%0A%0A-%20Add%20%60arrayField%60%20to%20%60OutputConfig%60.%0A-%20Implement%20the%20destination-independent%20JSON%20document%20encoder.%0A-%20Implement%20the%20local%20JSON%20writer%20with%20buffered%2C%20atomic%20output.%0A-%20Register%20%60json-generator%60%20for%20local%20destinations%20in%20%60writer.Factory%60.%0A-%20Add%20encoder%2C%20writer%2C%20and%20ETL%20tests.%0A-%20Update%20migration%20documentation%20to%20mark%20local%20JSON%20generation%20complete.%0A%0ANo%20%60etl.go%60%20changes%20should%20be%20required.%0A%0A%23%23%23%20Phase%202%20%E2%80%94%20destination%20refactor%0A%0A-%20Extract%20local%20destination%20behavior%20from%20%60DefaultWriter%60.%0A-%20Extract%20Azure%20destination%20behavior%20from%20%60AzureBlobWriter%60.%0A-%20Convert%20delimited%20and%20JSON%20writers%20to%20compose%20format%20encoders%20with%20sinks.%0A-%20Preserve%20current%20default-writer%20bytes%20using%20parity%20tests.%0A%0A%23%23%23%20Phase%203%20%E2%80%94%20JSON%20cloud%20output%0A%0A-%20Enable%20JSON%20generation%20through%20%60AzureBlobSink%60.%0A-%20Add%20upload-abort%2C%20finalization%2C%20and%20deletion%20tests.%0A-%20Add%20S3%20composition%20when%20the%20S3%20destination%20is%20implemented.%0A%0A%23%23%23%20Deferred%20features%0A%0A-%20Structured%20typed%20JSON%20templates%0A-%20Disk-backed%20or%20external%20deduplication%0A-%20Nested%20array%20paths%0A-%20Multiple%20output%20arrays%0A-%20Arbitrary%20JSON%20aggregation%2Fgrouping%0A%0A---%0A%0A%23%23%2010.%20Test%20plan%0A%0A%23%23%23%20Encoder%20unit%20tests%0A%0A-%20Empty%20root%20and%20default%20%60lines%60%20array%0A-%20Rendered%20root%20metadata%0A-%20Custom%20%60arrayField%60%0A-%20One%20and%20multiple%20rows%0A-%20Correct%20comma%20placement%0A-%20Deterministic%20root-key%20order%0A-%20Quotes%2C%20backslashes%2C%20Unicode%2C%20and%20control%20characters%0A-%20Invalid%20root%20and%20invalid%20row%20JSON%0A-%20Non-object%20root%20and%20row%20values%0A-%20Root%2Farray-field%20collision%0A-%20Finalize%20twice%0A-%20Write%20after%20finalization%0A-%20Duplicate%20keys%0A-%20Missing%20configured%20unique%20key%0A%0A%23%23%23%20Local%20writer%20tests%0A%0A-%20File%20is%20created%20only%20on%20the%20first%20accepted%20row%0A-%20Filename%20field%2Ffunction%20rendering%0A-%20Complete%20valid%20document%0A-%20Partial%20file%20promoted%20only%20after%20successful%20finalization%0A-%20Partial%20file%20removed%20on%20failure%0A-%20%60End()%60%20and%20%60Delete()%60%20idempotence%0A-%20No%20rows%20produces%20no%20file%0A-%20Existing%20output%20is%20replaced%20with%20one%20complete%20JSON%20document%2C%20never%20appended%0A%0A%23%23%23%20ETL%20end-to-end%20tests%0A%0A-%20CSV%20to%20JSON%0A-%20Source%20header%20row%20skipped%0A-%20Invalid%20source%20row%20skipped%20while%20valid%20rows%20are%20emitted%0A-%20%60rejectOnInvalidRow%60%0A-%20Empty%20and%20all-invalid%20input%0A-%20%60uniqueKey%60%20deduplication%0A-%20Root%20and%20row%20metadata%20functions%0A-%20Result%20output%20paths%20and%20filenames%0A%0A%23%23%23%20TypeScript%20compatibility%20fixtures%0A%0ACreate%20shared%20fixtures%20containing%20an%20input%20file%2C%20configuration%2C%20and%20expected%0Asemantic%20JSON.%20Compare%20decoded%20JSON%20values%20rather%20than%20raw%20bytes%20because%0Aformatting%20and%20object-property%20order%20may%20differ.%0A%0A---%0A%0A%23%23%2011.%20Acceptance%20criteria%0A%0AThe%20local%20Go%20JSON%20generator%20is%20complete%20when%3A%0A%0A-%20%60fileGenerator%3A%20%22json-generator%22%60%20is%20accepted%20for%20local%20output.%0A-%20Existing%20common%20TypeScript%20header%2C%20row-template%2C%20filename%2C%20metadata%2C%0A%20%20%60arrayField%60%2C%20and%20%60uniqueKey%60%20behavior%20is%20supported.%0A-%20Output%20is%20streamed%20and%20the%20complete%20row%20collection%20is%20never%20retained%20in%0A%20%20memory.%0A-%20No%20JSON-specific%20logic%20is%20added%20to%20the%20ETL%20orchestrator.%0A-%20Special%20characters%20in%20source%20values%20cannot%20create%20malformed%20JSON.%0A-%20Failed%20or%20invalid%20processing%20does%20not%20leave%20a%20final-looking%20partial%20document.%0A-%20Empty%2Fall-invalid%20input%20produces%20no%20output%20file.%0A-%20Exact%20deduplication%20works%20and%20tracks%20keys%20only%20after%20successful%20writes.%0A-%20%60go%20test%20.%2F...%60%2C%20%60go%20vet%20.%2F...%60%2C%20and%20%60go%20build%20.%2F...%60%20pass.%0A%0A" style="display: none;"></div>
+                  
+                    <nav aria-label="breadcrumb" class="docmd-breadcrumbs">
+                      <ol>
+                        
+                        
+                          <li class="breadcrumb-item active" aria-current=&quot;page&quot;>
+                            
+                              <span>Go JSON Generator — Recommended Design</span>
+                            
+                            
+                          </li>
+                        
+                      </ol>
+                    </nav>
+                  
+
+                  
+                    <div class="docmd-copy-widgets">
+                      
+                        <button class="docmd-copy-btn docmd-copy-raw-btn" data-copied="Copied!" title="Copy Markdown" aria-label="Copy Markdown">
+                          <span class="docmd-btn-icon">
+<svg class="lucide-icon icon-copy " width="1em" height="1em" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"
+  class="lucide lucide-copy"
+  xmlns="http://www.w3.org/2000/svg"
+  width="24"
+  height="24"
+  viewBox="0 0 24 24"
+  fill="none"
+  stroke="currentColor"
+  stroke-width="2"
+  stroke-linecap="round"
+  stroke-linejoin="round"
+>
+  <rect width="14" height="14" x="8" y="8" rx="2" ry="2" />
+  <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" />
+</svg>
+</span>
+                        </button>
+                      
+                      
+                        <button class="docmd-copy-btn docmd-copy-context-btn" data-copied="Copied!" title="Copy Context">
+                          <span class="docmd-btn-icon">
+<svg class="lucide-icon icon-message-square " width="1em" height="1em" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"
+  class="lucide lucide-message-square"
+  xmlns="http://www.w3.org/2000/svg"
+  width="24"
+  height="24"
+  viewBox="0 0 24 24"
+  fill="none"
+  stroke="currentColor"
+  stroke-width="2"
+  stroke-linecap="round"
+  stroke-linejoin="round"
+>
+  <path d="M22 17a2 2 0 0 1-2 2H6.828a2 2 0 0 0-1.414.586l-2.202 2.202A.71.71 0 0 1 2 21.286V5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2z" />
+</svg>
+</span>
+                          <span class="docmd-btn-text">Copy Context</span>
+                        </button>
+                      
+                    </div>
+                  
+                </div>
+                
+                <h1 id="go-json-generator-recommended-design" class="docmd-heading"><a href="#go-json-generator-recommended-design" class="heading-anchor" aria-label="Permalink to this section"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-link2-icon lucide-link-2"><path d="M9 17H7A5 5 0 0 1 7 7h2m6 0h2a5 5 0 1 1 0 10h-2m-7-5h8"/></svg></a>Go JSON Generator — Recommended Design</h1>
+<h2 id="go-json-generator-recommended-design-1-goals" class="docmd-heading"><a href="#go-json-generator-recommended-design-1-goals" class="heading-anchor" aria-label="Permalink to this section"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-link2-icon lucide-link-2"><path d="M9 17H7A5 5 0 0 1 7 7h2m6 0h2a5 5 0 1 1 0 10h-2m-7-5h8"/></svg></a>1. Goals</h2>
+<p>The Go JSON generator should preserve the useful behavior of the TypeScript<br>
+<code>JSONGenerator</code> while improving its performance, correctness, and<br>
+maintainability.</p>
+<p>The primary goals are:</p>
+<ul>
+<li>Keep memory usage bounded by streaming rows instead of storing the complete<br>
+output document.</li>
+<li>Keep JSON document construction independent from the output destination.</li>
+<li>Continue using the existing <code>writer.Writer</code> contract so <code>etl.go</code> does not<br>
+need JSON-specific branches.</li>
+<li>Use Go’s <code>encoding/json</code> package for JSON validation and encoding instead of<br>
+manually repairing complete JSON strings.</li>
+<li>Preserve the canonical configuration contract and common TypeScript JSON<br>
+templates.</li>
+<li>Retain lazy output creation: no valid source rows means no output file.</li>
+</ul>
+<p>The first implementation should support local JSON output. Azure Blob JSON<br>
+output and a general destination refactor should follow after the local<br>
+implementation is stable.</p>
+<hr>
+<h2 id="go-json-generator-recommended-design-2-problems-in-the-typescript-implementation" class="docmd-heading"><a href="#go-json-generator-recommended-design-2-problems-in-the-typescript-implementation" class="heading-anchor" aria-label="Permalink to this section"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-link2-icon lucide-link-2"><path d="M9 17H7A5 5 0 0 1 7 7h2m6 0h2a5 5 0 1 1 0 10h-2m-7-5h8"/></svg></a>2. Problems in the TypeScript implementation</h2>
+<p>The TypeScript generator should be treated as a behavior reference, not copied<br>
+directly.</p>
+<h3 id="go-json-generator-recommended-design-2-problems-in-the-typescript-implementation-entire-document-retained-in-memory" class="docmd-heading"><a href="#go-json-generator-recommended-design-2-problems-in-the-typescript-implementation-entire-document-retained-in-memory" class="heading-anchor" aria-label="Permalink to this section"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-link2-icon lucide-link-2"><path d="M9 17H7A5 5 0 0 1 7 7h2m6 0h2a5 5 0 1 1 0 10h-2m-7-5h8"/></svg></a>Entire document retained in memory</h3>
+<p>Every row is parsed and stored in <code>arrayBuckets</code> until processing completes.<br>
+Memory therefore grows with the complete output size.</p>
+<p>The Go implementation should stream this structure:</p>
+<pre class="hljs"><code class="language-text"><span class="hljs-title function_">Push</span>(first row)<span class="hljs-punctuation">:</span>
+  write {
+  write root fields
+  write <span class="hljs-string">&quot;Lines&quot;</span><span class="hljs-punctuation">:</span>[
+  write first row
+
+<span class="hljs-title function_">Push</span>(next row)<span class="hljs-punctuation">:</span>
+  write ,
+  write next row
+
+<span class="hljs-title function_">End</span>()<span class="hljs-punctuation">:</span>
+  write ]}
+  flush and close
+</code></pre>
+<p>This changes normal memory usage from <code>O(total output)</code> to approximately<br>
+<code>O(current row + buffers)</code>. Exact <code>uniqueKey</code> deduplication remains an<br>
+exception because it must retain distinct keys.</p>
+<h3 id="go-json-generator-recommended-design-2-problems-in-the-typescript-implementation-fragile-sanitization" class="docmd-heading"><a href="#go-json-generator-recommended-design-2-problems-in-the-typescript-implementation-fragile-sanitization" class="heading-anchor" aria-label="Permalink to this section"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-link2-icon lucide-link-2"><path d="M9 17H7A5 5 0 0 1 7 7h2m6 0h2a5 5 0 1 1 0 10h-2m-7-5h8"/></svg></a>Fragile sanitization</h3>
+<p>The TypeScript implementation combines value sanitization, string<br>
+substitution, whole-document sanitization, and <code>JSON.parse</code>. These operations<br>
+have different responsibilities and can corrupt valid input or fail to escape<br>
+values correctly.</p>
+<p>Go should render a row, validate it with <code>encoding/json</code>, and only then write<br>
+the validated JSON value.</p>
+<h3 id="go-json-generator-recommended-design-2-problems-in-the-typescript-implementation-broken-deduplication" class="docmd-heading"><a href="#go-json-generator-recommended-design-2-problems-in-the-typescript-implementation-broken-deduplication" class="heading-anchor" aria-label="Permalink to this section"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-link2-icon lucide-link-2"><path d="M9 17H7A5 5 0 0 1 7 7h2m6 0h2a5 5 0 1 1 0 10h-2m-7-5h8"/></svg></a>Broken deduplication</h3>
+<p>The TypeScript <code>push()</code> method checks <code>rowReferences</code> but does not call<br>
+<code>trackReference()</code> after accepting a row. The Go implementation must record a<br>
+key only after its row is written successfully.</p>
+<h3 id="go-json-generator-recommended-design-2-problems-in-the-typescript-implementation-confusing-lifecycle" class="docmd-heading"><a href="#go-json-generator-recommended-design-2-problems-in-the-typescript-implementation-confusing-lifecycle" class="heading-anchor" aria-label="Permalink to this section"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-link2-icon lucide-link-2"><path d="M9 17H7A5 5 0 0 1 7 7h2m6 0h2a5 5 0 1 1 0 10h-2m-7-5h8"/></svg></a>Confusing lifecycle</h3>
+<p>TypeScript needs a separate <code>pushFinalJSON()</code> step because it builds the<br>
+document in memory. Go already has <code>Writer.End()</code>, which is the correct place<br>
+to close the JSON array/object and finalize the destination.</p>
+<h3 id="go-json-generator-recommended-design-2-problems-in-the-typescript-implementation-unused-path-parsing" class="docmd-heading"><a href="#go-json-generator-recommended-design-2-problems-in-the-typescript-implementation-unused-path-parsing" class="heading-anchor" aria-label="Permalink to this section"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-link2-icon lucide-link-2"><path d="M9 17H7A5 5 0 0 1 7 7h2m6 0h2a5 5 0 1 1 0 10h-2m-7-5h8"/></svg></a>Unused path parsing</h3>
+<p><code>parseRootPath()</code> and <code>parseArrayPath()</code> are unused. Version one should not<br>
+invent nested-path or multiple-array semantics that the running TypeScript<br>
+implementation does not provide.</p>
+<hr>
+<h2 id="go-json-generator-recommended-design-3-recommended-architecture" class="docmd-heading"><a href="#go-json-generator-recommended-design-3-recommended-architecture" class="heading-anchor" aria-label="Permalink to this section"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-link2-icon lucide-link-2"><path d="M9 17H7A5 5 0 0 1 7 7h2m6 0h2a5 5 0 1 1 0 10h-2m-7-5h8"/></svg></a>3. Recommended architecture</h2>
+<p>Separate JSON formatting from destination I/O:</p>
+<pre class="hljs"><code class="language-text">ETL
+ └─ Writer
+     ├─ JSON document encoder
+     │   ├─ render root<span class="hljs-punctuation">/</span>header
+     │   ├─ render and validate rows
+     │   ├─ manage document state and commas
+     │   └─ deduplicate rows
+     │
+     └─ Destination
+         ├─ local file
+         └─ Azure Blob <span class="hljs-title function_">stream</span> (later)
+</code></pre>
+<h3 id="go-json-generator-recommended-design-3-recommended-architecture-json-document-encoder" class="docmd-heading"><a href="#go-json-generator-recommended-design-3-recommended-architecture-json-document-encoder" class="heading-anchor" aria-label="Permalink to this section"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-link2-icon lucide-link-2"><path d="M9 17H7A5 5 0 0 1 7 7h2m6 0h2a5 5 0 1 1 0 10h-2m-7-5h8"/></svg></a>JSON document encoder</h3>
+<p>The internal encoder should own JSON-specific state but no filesystem or cloud<br>
+logic:</p>
+<pre class="hljs"><code class="language-go"><span class="hljs-keyword">type</span> JSONDocumentEncoder <span class="hljs-keyword">struct</span> {
+    opts        JSONConfig
+    out         io.<span class="hljs-attr">Writer</span>
+    filename    string
+    started     <span class="hljs-keyword">bool</span>
+    finalized   <span class="hljs-keyword">bool</span>
+    rowsWritten <span class="hljs-keyword">int</span>
+    rowRefs     map[string]<span class="hljs-keyword">struct</span>{}
+}
+</code></pre>
+<p>Suggested responsibilities:</p>
+<pre class="hljs"><code class="language-go"><span class="hljs-keyword">func</span> <span class="hljs-title function_">NewJSONDocumentEncoder</span>(opts JSONConfig) <span class="hljs-punctuation">*</span>JSONDocumentEncoder
+<span class="hljs-keyword">func</span> (e <span class="hljs-punctuation">*</span>JSONDocumentEncoder) <span class="hljs-title function_">SetOutput</span>(w io.<span class="hljs-attr">Writer</span>)
+<span class="hljs-keyword">func</span> (e <span class="hljs-punctuation">*</span>JSONDocumentEncoder) <span class="hljs-title function_">Start</span>(sl <span class="hljs-punctuation">*</span>line.<span class="hljs-attr">SourceLine</span>) error
+<span class="hljs-keyword">func</span> (e <span class="hljs-punctuation">*</span>JSONDocumentEncoder) <span class="hljs-title function_">WriteRow</span>(sl <span class="hljs-punctuation">*</span>line.<span class="hljs-attr">SourceLine</span>) error
+<span class="hljs-keyword">func</span> (e <span class="hljs-punctuation">*</span>JSONDocumentEncoder) <span class="hljs-title function_">Finalize</span>() error
+<span class="hljs-keyword">func</span> (e <span class="hljs-punctuation">*</span>JSONDocumentEncoder) <span class="hljs-title function_">Filename</span>() string
+</code></pre>
+<p>Its explicit lifecycle is:</p>
+<pre class="hljs"><code class="language-text"><span class="hljs-keyword">new</span> → started → finalized
+</code></pre>
+<p><code>Finalize()</code> should be idempotent. Writing after finalization should return an<br>
+error.</p>
+<h3 id="go-json-generator-recommended-design-3-recommended-architecture-existing-writer-contract" class="docmd-heading"><a href="#go-json-generator-recommended-design-3-recommended-architecture-existing-writer-contract" class="heading-anchor" aria-label="Permalink to this section"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-link2-icon lucide-link-2"><path d="M9 17H7A5 5 0 0 1 7 7h2m6 0h2a5 5 0 1 1 0 10h-2m-7-5h8"/></svg></a>Existing Writer contract</h3>
+<p>Do not add the TypeScript-specific <code>PushFinalJSON()</code> operation. Implement the<br>
+existing contract as follows:</p>
+<ul>
+<li><code>Push()</code> lazily resolves the filename, creates the destination, starts the<br>
+JSON document, and writes one row.</li>
+<li><code>PushFooter()</code> is a no-op because a JSON document has structural<br>
+finalization rather than a raw footer.</li>
+<li><code>End()</code> finalizes the JSON document, flushes buffers, and closes/promotes the<br>
+destination.</li>
+<li><code>Delete()</code> closes and removes any partial or completed output.</li>
+</ul>
+<p>This allows the existing ETL orchestrator to use the JSON writer without<br>
+changes.</p>
+<h3 id="go-json-generator-recommended-design-3-recommended-architecture-destination-abstraction" class="docmd-heading"><a href="#go-json-generator-recommended-design-3-recommended-architecture-destination-abstraction" class="heading-anchor" aria-label="Permalink to this section"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-link2-icon lucide-link-2"><path d="M9 17H7A5 5 0 0 1 7 7h2m6 0h2a5 5 0 1 1 0 10h-2m-7-5h8"/></svg></a>Destination abstraction</h3>
+<p>The repository currently has separate local and Azure writers that share a<br>
+text renderer. Adding every format as another full destination-specific writer<br>
+would eventually create a format-by-destination matrix.</p>
+<p>A later refactor should introduce an internal destination contract:</p>
+<pre class="hljs"><code class="language-go"><span class="hljs-keyword">type</span> Sink <span class="hljs-keyword">interface</span> {
+    <span class="hljs-title function_">Start</span>(filename string) (io.<span class="hljs-attr">Writer</span>, error)
+    <span class="hljs-title function_">Close</span>() error
+    <span class="hljs-title function_">Delete</span>() error
+    <span class="hljs-title function_">Location</span>(filename string) string
+}
+</code></pre>
+<p>Likely implementations are <code>LocalSink</code> and <code>AzureBlobSink</code>. Delimited and JSON<br>
+writers can then compose a format encoder with a sink.</p>
+<p>This refactor should follow the first local JSON implementation instead of<br>
+being performed at the same time, reducing regression risk.</p>
+<hr>
+<h2 id="go-json-generator-recommended-design-4-configuration-and-validation" class="docmd-heading"><a href="#go-json-generator-recommended-design-4-configuration-and-validation" class="heading-anchor" aria-label="Permalink to this section"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-link2-icon lucide-link-2"><path d="M9 17H7A5 5 0 0 1 7 7h2m6 0h2a5 5 0 1 1 0 10h-2m-7-5h8"/></svg></a>4. Configuration and validation</h2>
+<p>Add the existing TypeScript wire option to <code>writer.OutputConfig</code>:</p>
+<pre class="hljs"><code class="language-go">ArrayField string <span class="hljs-string">`json:&quot;arrayField&quot;`</span>
+</code></pre>
+<p>Use <code>lines</code> as the default:</p>
+<pre class="hljs"><code class="language-go"><span class="hljs-keyword">const</span> DefaultJSONArrayField <span class="hljs-punctuation">=</span> <span class="hljs-string">&quot;lines&quot;</span>
+</code></pre>
+<p>Internally normalize the generic writer options into a JSON-specific<br>
+configuration:</p>
+<pre class="hljs"><code class="language-go"><span class="hljs-keyword">type</span> JSONConfig <span class="hljs-keyword">struct</span> {
+    Filename   string
+    Root       string
+    Row        string
+    ArrayField string
+    UniqueKey  string
+    Metadata   map[string]any
+}
+</code></pre>
+<p>For wire compatibility:</p>
+<ul>
+<li><code>output.header</code> is the root-object template.</li>
+<li><code>output.template</code> is the row template.</li>
+<li><code>output.arrayField</code> identifies the root array property.</li>
+<li><code>output.uniqueKey</code> enables in-memory deduplication.</li>
+<li><code>output.footer</code> has no meaning for JSON and should be rejected when non-empty<br>
+rather than silently ignored.</li>
+<li><code>output.separator</code> is unused by the JSON generator.</li>
+</ul>
+<p>Validate static configuration in the factory or constructor:</p>
+<ul>
+<li><code>filename</code> must not be empty.</li>
+<li><code>template</code> must not be empty.</li>
+<li>Empty <code>arrayField</code> is normalized to <code>lines</code>.</li>
+<li><code>arrayField</code> must be a valid non-empty JSON property name after<br>
+normalization.</li>
+</ul>
+<p>Validation that depends on source data occurs on the first row:</p>
+<ul>
+<li>The rendered root must be a JSON object.</li>
+<li>A missing root template means an empty root object, not an error.</li>
+<li>A root object that already contains <code>arrayField</code> should be rejected to avoid<br>
+silently overwriting configured data.</li>
+<li>Every rendered row must be one JSON object. Arrays, scalars, and <code>null</code><br>
+should be rejected for parity with the intended line-object model.</li>
+<li>A configured <code>uniqueKey</code> must exist in the source row. A missing key should<br>
+return an error instead of treating all missing keys as the empty-string<br>
+duplicate.</li>
+</ul>
+<hr>
+<h2 id="go-json-generator-recommended-design-5-json-rendering-and-encoding" class="docmd-heading"><a href="#go-json-generator-recommended-design-5-json-rendering-and-encoding" class="heading-anchor" aria-label="Permalink to this section"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-link2-icon lucide-link-2"><path d="M9 17H7A5 5 0 0 1 7 7h2m6 0h2a5 5 0 1 1 0 10h-2m-7-5h8"/></svg></a>5. JSON rendering and encoding</h2>
+<h3 id="go-json-generator-recommended-design-5-json-rendering-and-encoding-root-rendering" class="docmd-heading"><a href="#go-json-generator-recommended-design-5-json-rendering-and-encoding-root-rendering" class="heading-anchor" aria-label="Permalink to this section"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-link2-icon lucide-link-2"><path d="M9 17H7A5 5 0 0 1 7 7h2m6 0h2a5 5 0 1 1 0 10h-2m-7-5h8"/></svg></a>Root rendering</h3>
+<p>On the first accepted row:</p>
+<ol>
+<li>Resolve the filename through field and function templates.</li>
+<li>Render <code>header</code> using both field replacement and function replacement.</li>
+<li>Treat an empty header as <code>{}</code>.</li>
+<li>Decode the root into <code>map[string]json.RawMessage</code>.</li>
+<li>Reject an existing <code>arrayField</code>.</li>
+<li>Write root keys in sorted order for deterministic output.</li>
+<li>Marshal property names with <code>json.Marshal</code>.</li>
+<li>Open the configured array.</li>
+</ol>
+<p>Sorting root keys makes golden tests, diffs, hashes, and troubleshooting<br>
+reproducible. JSON object property order remains semantically irrelevant.</p>
+<h3 id="go-json-generator-recommended-design-5-json-rendering-and-encoding-row-rendering" class="docmd-heading"><a href="#go-json-generator-recommended-design-5-json-rendering-and-encoding-row-rendering" class="heading-anchor" aria-label="Permalink to this section"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-link2-icon lucide-link-2"><path d="M9 17H7A5 5 0 0 1 7 7h2m6 0h2a5 5 0 1 1 0 10h-2m-7-5h8"/></svg></a>Row rendering</h3>
+<p>For every accepted row:</p>
+<ol>
+<li>Check the deduplication key.</li>
+<li>Render the configured row template.</li>
+<li>Validate that it is exactly one JSON object.</li>
+<li>Compact it with <code>json.Compact</code>.</li>
+<li>Write a comma only when at least one previous row was written.</li>
+<li>Write the compact object.</li>
+<li>Record the deduplication key after the write succeeds.</li>
+</ol>
+<p>Errors should contain the source line number, operation, underlying JSON<br>
+error, and a bounded preview of the rendered value:</p>
+<pre class="hljs"><code class="language-text">render JSON row at <span class="hljs-keyword">source</span> line <span class="hljs-number">42</span><span class="hljs-punctuation">:</span> invalid character <span class="hljs-string">&#039;}&#039;</span> after object key;
+rendered value<span class="hljs-punctuation">:</span> {<span class="hljs-string">&quot;SKU&quot;</span><span class="hljs-punctuation">:</span><span class="hljs-string">&quot;ABC&quot;</span>,}
+</code></pre>
+<p>The preview must be truncated to avoid logging very large or sensitive input.</p>
+<h3 id="go-json-generator-recommended-design-5-json-rendering-and-encoding-field-escaping" class="docmd-heading"><a href="#go-json-generator-recommended-design-5-json-rendering-and-encoding-field-escaping" class="heading-anchor" aria-label="Permalink to this section"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-link2-icon lucide-link-2"><path d="M9 17H7A5 5 0 0 1 7 7h2m6 0h2a5 5 0 1 1 0 10h-2m-7-5h8"/></svg></a>Field escaping</h3>
+<p>The ordinary text <code>ReplaceWithMap()</code> is insufficient for JSON templates. For<br>
+example, a source value containing a quote breaks:</p>
+<pre class="hljs"><code class="language-json">{<span class="hljs-string">&quot;SKU&quot;</span><span class="hljs-punctuation">:</span><span class="hljs-string">&quot;{SKU}&quot;</span>}
+</code></pre>
+<p>The JSON writer should use a dedicated JSON-aware field renderer:</p>
+<ul>
+<li>Placeholders inside JSON strings receive JSON-escaped string contents.</li>
+<li>Raw placeholders outside JSON strings are inserted as raw text and must<br>
+produce valid JSON after rendering.</li>
+<li>The complete row is always validated by <code>encoding/json</code>.</li>
+</ul>
+<p>This preserves common TypeScript templates such as:</p>
+<pre class="hljs"><code class="language-json">{<span class="hljs-string">&quot;SKU&quot;</span><span class="hljs-punctuation">:</span><span class="hljs-string">&quot;{SKU}&quot;</span>,<span class="hljs-string">&quot;Quantity&quot;</span><span class="hljs-punctuation">:</span>{Quantity},<span class="hljs-string">&quot;Received&quot;</span><span class="hljs-punctuation">:</span><span class="hljs-keyword">true</span>}
+</code></pre>
+<p>A future structured template format may provide explicit string, number,<br>
+boolean, literal, and function nodes. It should be additive so existing string<br>
+templates continue to work.</p>
+<h3 id="go-json-generator-recommended-design-5-json-rendering-and-encoding-no-whole-document-sanitization" class="docmd-heading"><a href="#go-json-generator-recommended-design-5-json-rendering-and-encoding-no-whole-document-sanitization" class="heading-anchor" aria-label="Permalink to this section"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-link2-icon lucide-link-2"><path d="M9 17H7A5 5 0 0 1 7 7h2m6 0h2a5 5 0 1 1 0 10h-2m-7-5h8"/></svg></a>No whole-document sanitization</h3>
+<p>Do not port <code>sanitizeJsonValue()</code> or whole-document <code>sanitizeString()</code> into the<br>
+writer pipeline. JSON escaping belongs in the field renderer and structural<br>
+validation belongs to <code>encoding/json</code>.</p>
+<p>Configured template functions such as <code>[sanitizeString ...]</code> remain available<br>
+when explicitly requested.</p>
+<hr>
+<h2 id="go-json-generator-recommended-design-6-local-output-and-atomic-completion" class="docmd-heading"><a href="#go-json-generator-recommended-design-6-local-output-and-atomic-completion" class="heading-anchor" aria-label="Permalink to this section"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-link2-icon lucide-link-2"><path d="M9 17H7A5 5 0 0 1 7 7h2m6 0h2a5 5 0 1 1 0 10h-2m-7-5h8"/></svg></a>6. Local output and atomic completion</h2>
+<p>The local writer should create output lazily on the first valid row.</p>
+<p>Write to a temporary sibling file:</p>
+<pre class="hljs"><code class="language-text"><span class="hljs-punctuation">&lt;</span>final filename<span class="hljs-punctuation">&gt;</span>.<span class="hljs-attr">partial</span>
+</code></pre>
+<p>On successful <code>End()</code>:</p>
+<ol>
+<li>Finalize the JSON structure.</li>
+<li>Flush the buffered writer.</li>
+<li>Sync and close the file.</li>
+<li>Rename the partial file to the final filename.</li>
+</ol>
+<p>This prevents consumers from observing a syntactically incomplete JSON<br>
+document. The rename remains atomic when the temporary and final files are on<br>
+the same filesystem.</p>
+<p><code>Delete()</code> should be idempotent and remove both the partial and final path when<br>
+present. <code>End()</code> should also be safe when no row was ever pushed and must not<br>
+create an output file.</p>
+<p>If a destination already exists, version one should preserve the repository’s<br>
+current overwrite/append policy only where it produces a valid complete JSON<br>
+document. JSON must never append a second document to an existing file; the<br>
+partial file should be newly truncated and the final rename should replace the<br>
+previous result according to the platform-supported atomic replacement<br>
+behavior.</p>
+<hr>
+<h2 id="go-json-generator-recommended-design-7-deduplication-and-performance" class="docmd-heading"><a href="#go-json-generator-recommended-design-7-deduplication-and-performance" class="heading-anchor" aria-label="Permalink to this section"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-link2-icon lucide-link-2"><path d="M9 17H7A5 5 0 0 1 7 7h2m6 0h2a5 5 0 1 1 0 10h-2m-7-5h8"/></svg></a>7. Deduplication and performance</h2>
+<p>Use:</p>
+<pre class="hljs"><code class="language-go">map[string]<span class="hljs-keyword">struct</span>{}
+</code></pre>
+<p>for exact in-memory deduplication. The sequence must be:</p>
+<pre class="hljs"><code class="language-text">resolve key
+check key
+render and write row
+record key
+</code></pre>
+<p>Do not introduce row-rendering goroutines in version one. The output order is<br>
+significant, deduplication is stateful, and buffered sequential output already<br>
+provides backpressure with substantially less synchronization and error<br>
+complexity.</p>
+<p>Azure’s background upload goroutine remains appropriate because <code>io.Pipe</code><br>
+requires a concurrent reader and writer.</p>
+<p>For very large exact-dedup workloads, a later design may introduce a disk-backed<br>
+index or external key store. A Bloom filter must only be considered when false<br>
+positive row loss is explicitly acceptable.</p>
+<hr>
+<h2 id="go-json-generator-recommended-design-8-failure-behavior" class="docmd-heading"><a href="#go-json-generator-recommended-design-8-failure-behavior" class="heading-anchor" aria-label="Permalink to this section"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-link2-icon lucide-link-2"><path d="M9 17H7A5 5 0 0 1 7 7h2m6 0h2a5 5 0 1 1 0 10h-2m-7-5h8"/></svg></a>8. Failure behavior</h2>
+<p>The writer must define cleanup for each failure stage:</p>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>Failure</th>
+<th>Required behavior</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Filename rendering</td>
+<td>Do not create a destination</td>
+</tr>
+<tr>
+<td>Root rendering or validation</td>
+<td>Close and delete partial output</td>
+</tr>
+<tr>
+<td>Row rendering or validation</td>
+<td>Abort processing and delete partial output</td>
+</tr>
+<tr>
+<td>Local write or flush</td>
+<td>Close and delete partial output</td>
+</tr>
+<tr>
+<td>Finalization</td>
+<td>Delete partial output</td>
+</tr>
+<tr>
+<td>ETL invalid after processing</td>
+<td>Close safely, then delete output</td>
+</tr>
+<tr>
+<td>Future Azure upload</td>
+<td>Abort the pipe and return the original upload error</td>
+</tr>
+</tbody>
+</table>
+</div><p><code>End()</code> and <code>Delete()</code> should be idempotent. An error returned during rendering<br>
+or writing must retain its original cause via <code>%w</code>.</p>
+<hr>
+<h2 id="go-json-generator-recommended-design-9-implementation-phases" class="docmd-heading"><a href="#go-json-generator-recommended-design-9-implementation-phases" class="heading-anchor" aria-label="Permalink to this section"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-link2-icon lucide-link-2"><path d="M9 17H7A5 5 0 0 1 7 7h2m6 0h2a5 5 0 1 1 0 10h-2m-7-5h8"/></svg></a>9. Implementation phases</h2>
+<h3 id="go-json-generator-recommended-design-9-implementation-phases-phase-1-local-streaming-json" class="docmd-heading"><a href="#go-json-generator-recommended-design-9-implementation-phases-phase-1-local-streaming-json" class="heading-anchor" aria-label="Permalink to this section"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-link2-icon lucide-link-2"><path d="M9 17H7A5 5 0 0 1 7 7h2m6 0h2a5 5 0 1 1 0 10h-2m-7-5h8"/></svg></a>Phase 1 — local streaming JSON</h3>
+<ul>
+<li>Add <code>arrayField</code> to <code>OutputConfig</code>.</li>
+<li>Implement the destination-independent JSON document encoder.</li>
+<li>Implement the local JSON writer with buffered, atomic output.</li>
+<li>Register <code>json-generator</code> for local destinations in <code>writer.Factory</code>.</li>
+<li>Add encoder, writer, and ETL tests.</li>
+<li>Update migration documentation to mark local JSON generation complete.</li>
+</ul>
+<p>No <code>etl.go</code> changes should be required.</p>
+<h3 id="go-json-generator-recommended-design-9-implementation-phases-phase-2-destination-refactor" class="docmd-heading"><a href="#go-json-generator-recommended-design-9-implementation-phases-phase-2-destination-refactor" class="heading-anchor" aria-label="Permalink to this section"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-link2-icon lucide-link-2"><path d="M9 17H7A5 5 0 0 1 7 7h2m6 0h2a5 5 0 1 1 0 10h-2m-7-5h8"/></svg></a>Phase 2 — destination refactor</h3>
+<ul>
+<li>Extract local destination behavior from <code>DefaultWriter</code>.</li>
+<li>Extract Azure destination behavior from <code>AzureBlobWriter</code>.</li>
+<li>Convert delimited and JSON writers to compose format encoders with sinks.</li>
+<li>Preserve current default-writer bytes using parity tests.</li>
+</ul>
+<h3 id="go-json-generator-recommended-design-9-implementation-phases-phase-3-json-cloud-output" class="docmd-heading"><a href="#go-json-generator-recommended-design-9-implementation-phases-phase-3-json-cloud-output" class="heading-anchor" aria-label="Permalink to this section"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-link2-icon lucide-link-2"><path d="M9 17H7A5 5 0 0 1 7 7h2m6 0h2a5 5 0 1 1 0 10h-2m-7-5h8"/></svg></a>Phase 3 — JSON cloud output</h3>
+<ul>
+<li>Enable JSON generation through <code>AzureBlobSink</code>.</li>
+<li>Add upload-abort, finalization, and deletion tests.</li>
+<li>Add S3 composition when the S3 destination is implemented.</li>
+</ul>
+<h3 id="go-json-generator-recommended-design-9-implementation-phases-deferred-features" class="docmd-heading"><a href="#go-json-generator-recommended-design-9-implementation-phases-deferred-features" class="heading-anchor" aria-label="Permalink to this section"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-link2-icon lucide-link-2"><path d="M9 17H7A5 5 0 0 1 7 7h2m6 0h2a5 5 0 1 1 0 10h-2m-7-5h8"/></svg></a>Deferred features</h3>
+<ul>
+<li>Structured typed JSON templates</li>
+<li>Disk-backed or external deduplication</li>
+<li>Nested array paths</li>
+<li>Multiple output arrays</li>
+<li>Arbitrary JSON aggregation/grouping</li>
+</ul>
+<hr>
+<h2 id="go-json-generator-recommended-design-10-test-plan" class="docmd-heading"><a href="#go-json-generator-recommended-design-10-test-plan" class="heading-anchor" aria-label="Permalink to this section"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-link2-icon lucide-link-2"><path d="M9 17H7A5 5 0 0 1 7 7h2m6 0h2a5 5 0 1 1 0 10h-2m-7-5h8"/></svg></a>10. Test plan</h2>
+<h3 id="go-json-generator-recommended-design-10-test-plan-encoder-unit-tests" class="docmd-heading"><a href="#go-json-generator-recommended-design-10-test-plan-encoder-unit-tests" class="heading-anchor" aria-label="Permalink to this section"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-link2-icon lucide-link-2"><path d="M9 17H7A5 5 0 0 1 7 7h2m6 0h2a5 5 0 1 1 0 10h-2m-7-5h8"/></svg></a>Encoder unit tests</h3>
+<ul>
+<li>Empty root and default <code>lines</code> array</li>
+<li>Rendered root metadata</li>
+<li>Custom <code>arrayField</code></li>
+<li>One and multiple rows</li>
+<li>Correct comma placement</li>
+<li>Deterministic root-key order</li>
+<li>Quotes, backslashes, Unicode, and control characters</li>
+<li>Invalid root and invalid row JSON</li>
+<li>Non-object root and row values</li>
+<li>Root/array-field collision</li>
+<li>Finalize twice</li>
+<li>Write after finalization</li>
+<li>Duplicate keys</li>
+<li>Missing configured unique key</li>
+</ul>
+<h3 id="go-json-generator-recommended-design-10-test-plan-local-writer-tests" class="docmd-heading"><a href="#go-json-generator-recommended-design-10-test-plan-local-writer-tests" class="heading-anchor" aria-label="Permalink to this section"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-link2-icon lucide-link-2"><path d="M9 17H7A5 5 0 0 1 7 7h2m6 0h2a5 5 0 1 1 0 10h-2m-7-5h8"/></svg></a>Local writer tests</h3>
+<ul>
+<li>File is created only on the first accepted row</li>
+<li>Filename field/function rendering</li>
+<li>Complete valid document</li>
+<li>Partial file promoted only after successful finalization</li>
+<li>Partial file removed on failure</li>
+<li><code>End()</code> and <code>Delete()</code> idempotence</li>
+<li>No rows produces no file</li>
+<li>Existing output is replaced with one complete JSON document, never appended</li>
+</ul>
+<h3 id="go-json-generator-recommended-design-10-test-plan-etl-end-to-end-tests" class="docmd-heading"><a href="#go-json-generator-recommended-design-10-test-plan-etl-end-to-end-tests" class="heading-anchor" aria-label="Permalink to this section"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-link2-icon lucide-link-2"><path d="M9 17H7A5 5 0 0 1 7 7h2m6 0h2a5 5 0 1 1 0 10h-2m-7-5h8"/></svg></a>ETL end-to-end tests</h3>
+<ul>
+<li>CSV to JSON</li>
+<li>Source header row skipped</li>
+<li>Invalid source row skipped while valid rows are emitted</li>
+<li><code>rejectOnInvalidRow</code></li>
+<li>Empty and all-invalid input</li>
+<li><code>uniqueKey</code> deduplication</li>
+<li>Root and row metadata functions</li>
+<li>Result output paths and filenames</li>
+</ul>
+<h3 id="go-json-generator-recommended-design-10-test-plan-typescript-compatibility-fixtures" class="docmd-heading"><a href="#go-json-generator-recommended-design-10-test-plan-typescript-compatibility-fixtures" class="heading-anchor" aria-label="Permalink to this section"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-link2-icon lucide-link-2"><path d="M9 17H7A5 5 0 0 1 7 7h2m6 0h2a5 5 0 1 1 0 10h-2m-7-5h8"/></svg></a>TypeScript compatibility fixtures</h3>
+<p>Create shared fixtures containing an input file, configuration, and expected<br>
+semantic JSON. Compare decoded JSON values rather than raw bytes because<br>
+formatting and object-property order may differ.</p>
+<hr>
+<h2 id="go-json-generator-recommended-design-11-acceptance-criteria" class="docmd-heading"><a href="#go-json-generator-recommended-design-11-acceptance-criteria" class="heading-anchor" aria-label="Permalink to this section"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-link2-icon lucide-link-2"><path d="M9 17H7A5 5 0 0 1 7 7h2m6 0h2a5 5 0 1 1 0 10h-2m-7-5h8"/></svg></a>11. Acceptance criteria</h2>
+<p>The local Go JSON generator is complete when:</p>
+<ul>
+<li><code>fileGenerator: &quot;json-generator&quot;</code> is accepted for local output.</li>
+<li>Existing common TypeScript header, row-template, filename, metadata,<br>
+<code>arrayField</code>, and <code>uniqueKey</code> behavior is supported.</li>
+<li>Output is streamed and the complete row collection is never retained in<br>
+memory.</li>
+<li>No JSON-specific logic is added to the ETL orchestrator.</li>
+<li>Special characters in source values cannot create malformed JSON.</li>
+<li>Failed or invalid processing does not leave a final-looking partial document.</li>
+<li>Empty/all-invalid input produces no output file.</li>
+<li>Exact deduplication works and tracks keys only after successful writes.</li>
+<li><code>go test ./...</code>, <code>go vet ./...</code>, and <code>go build ./...</code> pass.</li>
+</ul>
+
+                
+                  <div class="page-navigation">
+                    
+                      <a href="../ETL_CODE_REVIEW_AND_GO_DESIGN/" class="prev-page">
+                        
+<svg class="lucide-icon icon-arrow-left page-nav-icon" width="1em" height="1em" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"
+  class="lucide lucide-arrow-left"
+  xmlns="http://www.w3.org/2000/svg"
+  width="24"
+  height="24"
+  viewBox="0 0 24 24"
+  fill="none"
+  stroke="currentColor"
+  stroke-width="2"
+  stroke-linecap="round"
+  stroke-linejoin="round"
+>
+  <path d="m12 19-7-7 7-7" />
+  <path d="M19 12H5" />
+</svg>
+
+                        <span><small>Previous</small><strong>
+                            ETL Utility — Code Review &amp; Go Implementation Design
+                          </strong></span>
+                      </a>
+                    
+                    
+                      <a href="../MIGRATION_PROCESS/" class="next-page">
+                        <span><small>Next</small>
+                          <strong>
+                            Migration Process — TypeScript ETL → Go
+                          </strong></span>
+                        
+<svg class="lucide-icon icon-arrow-right page-nav-icon" width="1em" height="1em" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"
+  class="lucide lucide-arrow-right"
+  xmlns="http://www.w3.org/2000/svg"
+  width="24"
+  height="24"
+  viewBox="0 0 24 24"
+  fill="none"
+  stroke="currentColor"
+  stroke-width="2"
+  stroke-linecap="round"
+  stroke-linejoin="round"
+>
+  <path d="M5 12h14" />
+  <path d="m12 5 7 7-7 7" />
+</svg>
+
+                      </a>
+                    
+                  </div>
+                
+              </div>
+              <div class="toc-sidebar">
+                
+
+
+  <div class="toc-container">
+    <h2 class="toc-title">On This Page<span class="mobile-view toc-menu-button float-right">
+<svg class="lucide-icon icon-chevron-down " width="1em" height="1em" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"
+  class="lucide lucide-chevron-down"
+  xmlns="http://www.w3.org/2000/svg"
+  width="24"
+  height="24"
+  viewBox="0 0 24 24"
+  fill="none"
+  stroke="currentColor"
+  stroke-width="2"
+  stroke-linecap="round"
+  stroke-linejoin="round"
+>
+  <path d="m6 9 6 6 6-6" />
+</svg>
+</span></h2>
+    <ul class="toc-list">
+      
+        <li class="toc-item toc-level-1">
+          <a href="#go-json-generator-recommended-design" class="toc-link">Go JSON Generator — Recommended Design</a>
+        </li>
+      
+        <li class="toc-item toc-level-2">
+          <a href="#go-json-generator-recommended-design-1-goals" class="toc-link">1. Goals</a>
+        </li>
+      
+        <li class="toc-item toc-level-2">
+          <a href="#go-json-generator-recommended-design-2-problems-in-the-typescript-implementation" class="toc-link">2. Problems in the TypeScript implementation</a>
+        </li>
+      
+        <li class="toc-item toc-level-3">
+          <a href="#go-json-generator-recommended-design-2-problems-in-the-typescript-implementation-entire-document-retained-in-memory" class="toc-link">Entire document retained in memory</a>
+        </li>
+      
+        <li class="toc-item toc-level-3">
+          <a href="#go-json-generator-recommended-design-2-problems-in-the-typescript-implementation-fragile-sanitization" class="toc-link">Fragile sanitization</a>
+        </li>
+      
+        <li class="toc-item toc-level-3">
+          <a href="#go-json-generator-recommended-design-2-problems-in-the-typescript-implementation-broken-deduplication" class="toc-link">Broken deduplication</a>
+        </li>
+      
+        <li class="toc-item toc-level-3">
+          <a href="#go-json-generator-recommended-design-2-problems-in-the-typescript-implementation-confusing-lifecycle" class="toc-link">Confusing lifecycle</a>
+        </li>
+      
+        <li class="toc-item toc-level-3">
+          <a href="#go-json-generator-recommended-design-2-problems-in-the-typescript-implementation-unused-path-parsing" class="toc-link">Unused path parsing</a>
+        </li>
+      
+        <li class="toc-item toc-level-2">
+          <a href="#go-json-generator-recommended-design-3-recommended-architecture" class="toc-link">3. Recommended architecture</a>
+        </li>
+      
+        <li class="toc-item toc-level-3">
+          <a href="#go-json-generator-recommended-design-3-recommended-architecture-json-document-encoder" class="toc-link">JSON document encoder</a>
+        </li>
+      
+        <li class="toc-item toc-level-3">
+          <a href="#go-json-generator-recommended-design-3-recommended-architecture-existing-writer-contract" class="toc-link">Existing Writer contract</a>
+        </li>
+      
+        <li class="toc-item toc-level-3">
+          <a href="#go-json-generator-recommended-design-3-recommended-architecture-destination-abstraction" class="toc-link">Destination abstraction</a>
+        </li>
+      
+        <li class="toc-item toc-level-2">
+          <a href="#go-json-generator-recommended-design-4-configuration-and-validation" class="toc-link">4. Configuration and validation</a>
+        </li>
+      
+        <li class="toc-item toc-level-2">
+          <a href="#go-json-generator-recommended-design-5-json-rendering-and-encoding" class="toc-link">5. JSON rendering and encoding</a>
+        </li>
+      
+        <li class="toc-item toc-level-3">
+          <a href="#go-json-generator-recommended-design-5-json-rendering-and-encoding-root-rendering" class="toc-link">Root rendering</a>
+        </li>
+      
+        <li class="toc-item toc-level-3">
+          <a href="#go-json-generator-recommended-design-5-json-rendering-and-encoding-row-rendering" class="toc-link">Row rendering</a>
+        </li>
+      
+        <li class="toc-item toc-level-3">
+          <a href="#go-json-generator-recommended-design-5-json-rendering-and-encoding-field-escaping" class="toc-link">Field escaping</a>
+        </li>
+      
+        <li class="toc-item toc-level-3">
+          <a href="#go-json-generator-recommended-design-5-json-rendering-and-encoding-no-whole-document-sanitization" class="toc-link">No whole-document sanitization</a>
+        </li>
+      
+        <li class="toc-item toc-level-2">
+          <a href="#go-json-generator-recommended-design-6-local-output-and-atomic-completion" class="toc-link">6. Local output and atomic completion</a>
+        </li>
+      
+        <li class="toc-item toc-level-2">
+          <a href="#go-json-generator-recommended-design-7-deduplication-and-performance" class="toc-link">7. Deduplication and performance</a>
+        </li>
+      
+        <li class="toc-item toc-level-2">
+          <a href="#go-json-generator-recommended-design-8-failure-behavior" class="toc-link">8. Failure behavior</a>
+        </li>
+      
+        <li class="toc-item toc-level-2">
+          <a href="#go-json-generator-recommended-design-9-implementation-phases" class="toc-link">9. Implementation phases</a>
+        </li>
+      
+        <li class="toc-item toc-level-3">
+          <a href="#go-json-generator-recommended-design-9-implementation-phases-phase-1-local-streaming-json" class="toc-link">Phase 1 — local streaming JSON</a>
+        </li>
+      
+        <li class="toc-item toc-level-3">
+          <a href="#go-json-generator-recommended-design-9-implementation-phases-phase-2-destination-refactor" class="toc-link">Phase 2 — destination refactor</a>
+        </li>
+      
+        <li class="toc-item toc-level-3">
+          <a href="#go-json-generator-recommended-design-9-implementation-phases-phase-3-json-cloud-output" class="toc-link">Phase 3 — JSON cloud output</a>
+        </li>
+      
+        <li class="toc-item toc-level-3">
+          <a href="#go-json-generator-recommended-design-9-implementation-phases-deferred-features" class="toc-link">Deferred features</a>
+        </li>
+      
+        <li class="toc-item toc-level-2">
+          <a href="#go-json-generator-recommended-design-10-test-plan" class="toc-link">10. Test plan</a>
+        </li>
+      
+        <li class="toc-item toc-level-3">
+          <a href="#go-json-generator-recommended-design-10-test-plan-encoder-unit-tests" class="toc-link">Encoder unit tests</a>
+        </li>
+      
+        <li class="toc-item toc-level-3">
+          <a href="#go-json-generator-recommended-design-10-test-plan-local-writer-tests" class="toc-link">Local writer tests</a>
+        </li>
+      
+        <li class="toc-item toc-level-3">
+          <a href="#go-json-generator-recommended-design-10-test-plan-etl-end-to-end-tests" class="toc-link">ETL end-to-end tests</a>
+        </li>
+      
+        <li class="toc-item toc-level-3">
+          <a href="#go-json-generator-recommended-design-10-test-plan-typescript-compatibility-fixtures" class="toc-link">TypeScript compatibility fixtures</a>
+        </li>
+      
+        <li class="toc-item toc-level-2">
+          <a href="#go-json-generator-recommended-design-11-acceptance-criteria" class="toc-link">11. Acceptance criteria</a>
+        </li>
+      
+    </ul>
+  </div>
+
+              </div>
+            </div>
+            <div class="page-footer-actions">
+              
+              
+              <span class="git-spacer"></span>
+              
+            </div>
+          </main>
+          
+
+
+<footer class="page-footer">
+  <div class="footer-content">
+    <div class="user-footer">© 2026</div>
+    
+      <div class="branding-footer">
+        Built with <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"></path><path d="M12 5 9.04 7.96a2.17 2.17 0 0 0 0 3.08c.82.82 2.13.85 3 .07l2.07-1.9a2.82 2.82 0 0 1 3.79 0l2.96 2.66"></path><path d="m18 15-2-2"></path><path d="m15 18-2-2"></path></svg> <a href="https://docmd.io" target="_blank" rel="noopener">docmd.</a>
+      </div>
+    
+  </div>
+</footer>
+
+        </div>
+      </div>
+      
+      <script src="../assets/js/docmd-main.js?v=mrsvyjpx"></script>
+      
+      <script src="../assets/js/docmd-git.js?v=mrsvyjpx"></script>
+      <script src="../assets/js/docmd-image-lightbox.js?v=mrsvyjpx" ></script>
+<script src="../assets/js/vendor/minisearch.js?v=mrsvyjpx" ></script>
+<script src="../assets/js/docmd-search.js?v=mrsvyjpx" ></script>
+<script src="../assets/js/docmd-git.js?v=mrsvyjpx" type="module"></script>
+
+  <!-- Search Modal (Injected by @docmd/plugin-search) -->
+  <div id="docmd-search-modal" class="docmd-search-modal" style="display: none;" data-show-confidence="false" data-show-filters="true"
+       data-search-placeholder="Search documentation..."
+       data-search-no-results="No results found."
+       data-search-error="Failed to load search index."
+       data-search-offline="Search requires a web server. Open this site via http://localhost instead of file:// to enable search."
+       data-search-initial="Type to start searching..."
+       data-search-navigate="to navigate"
+       data-search-escape="to close">
+      <div class="docmd-search-box">
+          <div class="docmd-search-header">
+              <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide-icon icon-search"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg>
+              <input type="text" id="docmd-search-input" placeholder="Search documentation..." autocomplete="off" spellcheck="false">
+              <button onclick="window.closeDocmdSearch()" class="docmd-search-close" aria-label="Close search">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide-icon icon-x"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg>
+              </button>
+          </div>
+          <div id="docmd-search-results" class="docmd-search-results"></div>
+          <div class="docmd-search-footer">
+              <span><kbd class="docmd-kbd">↑</kbd> <kbd class="docmd-kbd">↓</kbd> to navigate</span>
+              <span><kbd class="docmd-kbd">ESC</kbd> to close</span>
+          </div>
+      </div>
+  </div>
+
+    <script>
+      (function() {
+        var searchDebounceTimer;
+
+        document.addEventListener('click', function(e) {
+          var link = e.target.closest('a');
+          if (!link || !window.gtag) return;
+          
+          var url = link.href;
+          var hostname = window.location.hostname;
+          var isExternal = link.hostname && link.hostname !== hostname;
+          var isDownload = link.hasAttribute('download') || url.match(/\.(pdf|zip|tar|gz|exe|pkg)$/i);
+          
+          if (isExternal) {
+            gtag('event', 'click_external', { 'url': url, 'link_text': link.innerText.trim() });
+          } else if (isDownload) {
+            gtag('event', 'download', { 'file_name': url.split('/').pop(), 'url': url });
+          }
+
+          // TOC tracking
+          if (link.classList.contains('toc-link')) {
+            gtag('event', 'toc_click', { 'target_id': link.getAttribute('href'), 'title': link.innerText.trim() });
+          }
+
+          // Permalink tracking
+          if (link.classList.contains('heading-anchor')) {
+            gtag('event', 'permalink_click', { 'url': url });
+          }
+        });
+
+        
+        // Search Keyword Tracking
+        document.addEventListener('input', function(e) {
+          if (e.target.id === 'docmd-search-input' && window.gtag) {
+            var query = e.target.value.trim();
+            if (query.length < 3) return;
+            
+            clearTimeout(searchDebounceTimer);
+            searchDebounceTimer = setTimeout(function() {
+              gtag('event', 'search', { 'search_term': query });
+            }, 1000);
+          }
+        });
+        
+      })();
+    </script>
+
+<script>window.__git_config={"repo":null,"branch":"main","editLink":false,"lastUpdated":true,"commitHistory":true,"maxCommits":5,"dateFormat":"relative"};window.__git_i18n={"lastUpdated":"Last updated","recentCommits":"Recent commits","viewCommitHistory":"View commit history","editOnGitHub":"Edit on GitHub","editOnGitLab":"Edit on GitLab","editOnBitbucket":"Edit on Bitbucket","editThisPage":"Edit this page","justNow":"just now","minutesAgo":"{n}m ago","hoursAgo":"{n}h ago","daysAgo":"{n}d ago"}</script>
+      
+      
+      
+  </body>
+</html>

@@ -1,0 +1,517 @@
+---
+type: concept
+title: "Go JSON Generator — Recommended Design"
+source: /GO_JSON_GENERATOR_DESIGN/
+path: /GO_JSON_GENERATOR_DESIGN/
+updated: 2026-07-20
+okf:
+  generated_by: "@docmd/plugin-okf"
+  generated_at: "2026-07-20T07:11:07.548Z"
+---
+# Go JSON Generator — Recommended Design
+
+## 1. Goals
+
+The Go JSON generator should preserve the useful behavior of the TypeScript
+`JSONGenerator` while improving its performance, correctness, and
+maintainability.
+
+The primary goals are:
+
+- Keep memory usage bounded by streaming rows instead of storing the complete
+  output document.
+- Keep JSON document construction independent from the output destination.
+- Continue using the existing `writer.Writer` contract so `etl.go` does not
+  need JSON-specific branches.
+- Use Go's `encoding/json` package for JSON validation and encoding instead of
+  manually repairing complete JSON strings.
+- Preserve the canonical configuration contract and common TypeScript JSON
+  templates.
+- Retain lazy output creation: no valid source rows means no output file.
+
+The first implementation should support local JSON output. Azure Blob JSON
+output and a general destination refactor should follow after the local
+implementation is stable.
+
+---
+
+## 2. Problems in the TypeScript implementation
+
+The TypeScript generator should be treated as a behavior reference, not copied
+directly.
+
+### Entire document retained in memory
+
+Every row is parsed and stored in `arrayBuckets` until processing completes.
+Memory therefore grows with the complete output size.
+
+The Go implementation should stream this structure:
+
+```text
+Push(first row):
+  write {
+  write root fields
+  write "Lines":[
+  write first row
+
+Push(next row):
+  write ,
+  write next row
+
+End():
+  write ]}
+  flush and close
+```
+
+This changes normal memory usage from `O(total output)` to approximately
+`O(current row + buffers)`. Exact `uniqueKey` deduplication remains an
+exception because it must retain distinct keys.
+
+### Fragile sanitization
+
+The TypeScript implementation combines value sanitization, string
+substitution, whole-document sanitization, and `JSON.parse`. These operations
+have different responsibilities and can corrupt valid input or fail to escape
+values correctly.
+
+Go should render a row, validate it with `encoding/json`, and only then write
+the validated JSON value.
+
+### Broken deduplication
+
+The TypeScript `push()` method checks `rowReferences` but does not call
+`trackReference()` after accepting a row. The Go implementation must record a
+key only after its row is written successfully.
+
+### Confusing lifecycle
+
+TypeScript needs a separate `pushFinalJSON()` step because it builds the
+document in memory. Go already has `Writer.End()`, which is the correct place
+to close the JSON array/object and finalize the destination.
+
+### Unused path parsing
+
+`parseRootPath()` and `parseArrayPath()` are unused. Version one should not
+invent nested-path or multiple-array semantics that the running TypeScript
+implementation does not provide.
+
+---
+
+## 3. Recommended architecture
+
+Separate JSON formatting from destination I/O:
+
+```text
+ETL
+ └─ Writer
+     ├─ JSON document encoder
+     │   ├─ render root/header
+     │   ├─ render and validate rows
+     │   ├─ manage document state and commas
+     │   └─ deduplicate rows
+     │
+     └─ Destination
+         ├─ local file
+         └─ Azure Blob stream (later)
+```
+
+### JSON document encoder
+
+The internal encoder should own JSON-specific state but no filesystem or cloud
+logic:
+
+```go
+type JSONDocumentEncoder struct {
+    opts        JSONConfig
+    out         io.Writer
+    filename    string
+    started     bool
+    finalized   bool
+    rowsWritten int
+    rowRefs     map[string]struct{}
+}
+```
+
+Suggested responsibilities:
+
+```go
+func NewJSONDocumentEncoder(opts JSONConfig) *JSONDocumentEncoder
+func (e *JSONDocumentEncoder) SetOutput(w io.Writer)
+func (e *JSONDocumentEncoder) Start(sl *line.SourceLine) error
+func (e *JSONDocumentEncoder) WriteRow(sl *line.SourceLine) error
+func (e *JSONDocumentEncoder) Finalize() error
+func (e *JSONDocumentEncoder) Filename() string
+```
+
+Its explicit lifecycle is:
+
+```text
+new → started → finalized
+```
+
+`Finalize()` should be idempotent. Writing after finalization should return an
+error.
+
+### Existing Writer contract
+
+Do not add the TypeScript-specific `PushFinalJSON()` operation. Implement the
+existing contract as follows:
+
+- `Push()` lazily resolves the filename, creates the destination, starts the
+  JSON document, and writes one row.
+- `PushFooter()` is a no-op because a JSON document has structural
+  finalization rather than a raw footer.
+- `End()` finalizes the JSON document, flushes buffers, and closes/promotes the
+  destination.
+- `Delete()` closes and removes any partial or completed output.
+
+This allows the existing ETL orchestrator to use the JSON writer without
+changes.
+
+### Destination abstraction
+
+The repository currently has separate local and Azure writers that share a
+text renderer. Adding every format as another full destination-specific writer
+would eventually create a format-by-destination matrix.
+
+A later refactor should introduce an internal destination contract:
+
+```go
+type Sink interface {
+    Start(filename string) (io.Writer, error)
+    Close() error
+    Delete() error
+    Location(filename string) string
+}
+```
+
+Likely implementations are `LocalSink` and `AzureBlobSink`. Delimited and JSON
+writers can then compose a format encoder with a sink.
+
+This refactor should follow the first local JSON implementation instead of
+being performed at the same time, reducing regression risk.
+
+---
+
+## 4. Configuration and validation
+
+Add the existing TypeScript wire option to `writer.OutputConfig`:
+
+```go
+ArrayField string `json:"arrayField"`
+```
+
+Use `lines` as the default:
+
+```go
+const DefaultJSONArrayField = "lines"
+```
+
+Internally normalize the generic writer options into a JSON-specific
+configuration:
+
+```go
+type JSONConfig struct {
+    Filename   string
+    Root       string
+    Row        string
+    ArrayField string
+    UniqueKey  string
+    Metadata   map[string]any
+}
+```
+
+For wire compatibility:
+
+- `output.header` is the root-object template.
+- `output.template` is the row template.
+- `output.arrayField` identifies the root array property.
+- `output.uniqueKey` enables in-memory deduplication.
+- `output.footer` has no meaning for JSON and should be rejected when non-empty
+  rather than silently ignored.
+- `output.separator` is unused by the JSON generator.
+
+Validate static configuration in the factory or constructor:
+
+- `filename` must not be empty.
+- `template` must not be empty.
+- Empty `arrayField` is normalized to `lines`.
+- `arrayField` must be a valid non-empty JSON property name after
+  normalization.
+
+Validation that depends on source data occurs on the first row:
+
+- The rendered root must be a JSON object.
+- A missing root template means an empty root object, not an error.
+- A root object that already contains `arrayField` should be rejected to avoid
+  silently overwriting configured data.
+- Every rendered row must be one JSON object. Arrays, scalars, and `null`
+  should be rejected for parity with the intended line-object model.
+- A configured `uniqueKey` must exist in the source row. A missing key should
+  return an error instead of treating all missing keys as the empty-string
+  duplicate.
+
+---
+
+## 5. JSON rendering and encoding
+
+### Root rendering
+
+On the first accepted row:
+
+1. Resolve the filename through field and function templates.
+2. Render `header` using both field replacement and function replacement.
+3. Treat an empty header as `{}`.
+4. Decode the root into `map[string]json.RawMessage`.
+5. Reject an existing `arrayField`.
+6. Write root keys in sorted order for deterministic output.
+7. Marshal property names with `json.Marshal`.
+8. Open the configured array.
+
+Sorting root keys makes golden tests, diffs, hashes, and troubleshooting
+reproducible. JSON object property order remains semantically irrelevant.
+
+### Row rendering
+
+For every accepted row:
+
+1. Check the deduplication key.
+2. Render the configured row template.
+3. Validate that it is exactly one JSON object.
+4. Compact it with `json.Compact`.
+5. Write a comma only when at least one previous row was written.
+6. Write the compact object.
+7. Record the deduplication key after the write succeeds.
+
+Errors should contain the source line number, operation, underlying JSON
+error, and a bounded preview of the rendered value:
+
+```text
+render JSON row at source line 42: invalid character '}' after object key;
+rendered value: {"SKU":"ABC",}
+```
+
+The preview must be truncated to avoid logging very large or sensitive input.
+
+### Field escaping
+
+The ordinary text `ReplaceWithMap()` is insufficient for JSON templates. For
+example, a source value containing a quote breaks:
+
+```json
+{"SKU":"{SKU}"}
+```
+
+The JSON writer should use a dedicated JSON-aware field renderer:
+
+- Placeholders inside JSON strings receive JSON-escaped string contents.
+- Raw placeholders outside JSON strings are inserted as raw text and must
+  produce valid JSON after rendering.
+- The complete row is always validated by `encoding/json`.
+
+This preserves common TypeScript templates such as:
+
+```json
+{"SKU":"{SKU}","Quantity":{Quantity},"Received":true}
+```
+
+A future structured template format may provide explicit string, number,
+boolean, literal, and function nodes. It should be additive so existing string
+templates continue to work.
+
+### No whole-document sanitization
+
+Do not port `sanitizeJsonValue()` or whole-document `sanitizeString()` into the
+writer pipeline. JSON escaping belongs in the field renderer and structural
+validation belongs to `encoding/json`.
+
+Configured template functions such as `[sanitizeString ...]` remain available
+when explicitly requested.
+
+---
+
+## 6. Local output and atomic completion
+
+The local writer should create output lazily on the first valid row.
+
+Write to a temporary sibling file:
+
+```text
+<final filename>.partial
+```
+
+On successful `End()`:
+
+1. Finalize the JSON structure.
+2. Flush the buffered writer.
+3. Sync and close the file.
+4. Rename the partial file to the final filename.
+
+This prevents consumers from observing a syntactically incomplete JSON
+document. The rename remains atomic when the temporary and final files are on
+the same filesystem.
+
+`Delete()` should be idempotent and remove both the partial and final path when
+present. `End()` should also be safe when no row was ever pushed and must not
+create an output file.
+
+If a destination already exists, version one should preserve the repository's
+current overwrite/append policy only where it produces a valid complete JSON
+document. JSON must never append a second document to an existing file; the
+partial file should be newly truncated and the final rename should replace the
+previous result according to the platform-supported atomic replacement
+behavior.
+
+---
+
+## 7. Deduplication and performance
+
+Use:
+
+```go
+map[string]struct{}
+```
+
+for exact in-memory deduplication. The sequence must be:
+
+```text
+resolve key
+check key
+render and write row
+record key
+```
+
+Do not introduce row-rendering goroutines in version one. The output order is
+significant, deduplication is stateful, and buffered sequential output already
+provides backpressure with substantially less synchronization and error
+complexity.
+
+Azure's background upload goroutine remains appropriate because `io.Pipe`
+requires a concurrent reader and writer.
+
+For very large exact-dedup workloads, a later design may introduce a disk-backed
+index or external key store. A Bloom filter must only be considered when false
+positive row loss is explicitly acceptable.
+
+---
+
+## 8. Failure behavior
+
+The writer must define cleanup for each failure stage:
+
+| Failure | Required behavior |
+|---|---|
+| Filename rendering | Do not create a destination |
+| Root rendering or validation | Close and delete partial output |
+| Row rendering or validation | Abort processing and delete partial output |
+| Local write or flush | Close and delete partial output |
+| Finalization | Delete partial output |
+| ETL invalid after processing | Close safely, then delete output |
+| Future Azure upload | Abort the pipe and return the original upload error |
+
+`End()` and `Delete()` should be idempotent. An error returned during rendering
+or writing must retain its original cause via `%w`.
+
+---
+
+## 9. Implementation phases
+
+### Phase 1 — local streaming JSON
+
+- Add `arrayField` to `OutputConfig`.
+- Implement the destination-independent JSON document encoder.
+- Implement the local JSON writer with buffered, atomic output.
+- Register `json-generator` for local destinations in `writer.Factory`.
+- Add encoder, writer, and ETL tests.
+- Update migration documentation to mark local JSON generation complete.
+
+No `etl.go` changes should be required.
+
+### Phase 2 — destination refactor
+
+- Extract local destination behavior from `DefaultWriter`.
+- Extract Azure destination behavior from `AzureBlobWriter`.
+- Convert delimited and JSON writers to compose format encoders with sinks.
+- Preserve current default-writer bytes using parity tests.
+
+### Phase 3 — JSON cloud output
+
+- Enable JSON generation through `AzureBlobSink`.
+- Add upload-abort, finalization, and deletion tests.
+- Add S3 composition when the S3 destination is implemented.
+
+### Deferred features
+
+- Structured typed JSON templates
+- Disk-backed or external deduplication
+- Nested array paths
+- Multiple output arrays
+- Arbitrary JSON aggregation/grouping
+
+---
+
+## 10. Test plan
+
+### Encoder unit tests
+
+- Empty root and default `lines` array
+- Rendered root metadata
+- Custom `arrayField`
+- One and multiple rows
+- Correct comma placement
+- Deterministic root-key order
+- Quotes, backslashes, Unicode, and control characters
+- Invalid root and invalid row JSON
+- Non-object root and row values
+- Root/array-field collision
+- Finalize twice
+- Write after finalization
+- Duplicate keys
+- Missing configured unique key
+
+### Local writer tests
+
+- File is created only on the first accepted row
+- Filename field/function rendering
+- Complete valid document
+- Partial file promoted only after successful finalization
+- Partial file removed on failure
+- `End()` and `Delete()` idempotence
+- No rows produces no file
+- Existing output is replaced with one complete JSON document, never appended
+
+### ETL end-to-end tests
+
+- CSV to JSON
+- Source header row skipped
+- Invalid source row skipped while valid rows are emitted
+- `rejectOnInvalidRow`
+- Empty and all-invalid input
+- `uniqueKey` deduplication
+- Root and row metadata functions
+- Result output paths and filenames
+
+### TypeScript compatibility fixtures
+
+Create shared fixtures containing an input file, configuration, and expected
+semantic JSON. Compare decoded JSON values rather than raw bytes because
+formatting and object-property order may differ.
+
+---
+
+## 11. Acceptance criteria
+
+The local Go JSON generator is complete when:
+
+- `fileGenerator: "json-generator"` is accepted for local output.
+- Existing common TypeScript header, row-template, filename, metadata,
+  `arrayField`, and `uniqueKey` behavior is supported.
+- Output is streamed and the complete row collection is never retained in
+  memory.
+- No JSON-specific logic is added to the ETL orchestrator.
+- Special characters in source values cannot create malformed JSON.
+- Failed or invalid processing does not leave a final-looking partial document.
+- Empty/all-invalid input produces no output file.
+- Exact deduplication works and tracks keys only after successful writes.
+- `go test ./...`, `go vet ./...`, and `go build ./...` pass.
+

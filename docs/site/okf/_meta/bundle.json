@@ -1,0 +1,102 @@
+{
+  "okf_version": "0.8.16",
+  "bundle": {
+    "name": "bundle",
+    "title": ".",
+    "description": "",
+    "url": "",
+    "generated_by": "@docmd/plugin-okf",
+    "generated_at": "2026-07-20T07:11:07.553Z",
+    "default_type": "concept"
+  },
+  "stats": {
+    "concepts": 8,
+    "by_type": {
+      "concept": 8
+    },
+    "locales": [],
+    "versions": []
+  },
+  "concepts": [
+    {
+      "id": "etl-code-review-and-go-design",
+      "type": "concept",
+      "title": "ETL Utility — Code Review & Go Implementation Design",
+      "path": "/ETL_CODE_REVIEW_AND_GO_DESIGN/",
+      "file": "concepts/etl-code-review-and-go-design.md",
+      "locale": "",
+      "version": "",
+      "tags": []
+    },
+    {
+      "id": "go-json-generator-design",
+      "type": "concept",
+      "title": "Go JSON Generator — Recommended Design",
+      "path": "/GO_JSON_GENERATOR_DESIGN/",
+      "file": "concepts/go-json-generator-design.md",
+      "locale": "",
+      "version": "",
+      "tags": []
+    },
+    {
+      "id": "migration-process",
+      "type": "concept",
+      "title": "Migration Process — TypeScript ETL → Go",
+      "path": "/MIGRATION_PROCESS/",
+      "file": "concepts/migration-process.md",
+      "locale": "",
+      "version": "",
+      "tags": []
+    },
+    {
+      "id": "backlogs",
+      "type": "concept",
+      "title": "Backlog",
+      "path": "/backlogs/",
+      "file": "concepts/backlogs.md",
+      "locale": "",
+      "version": "",
+      "tags": []
+    },
+    {
+      "id": "deployment-guide",
+      "type": "concept",
+      "title": "Deployment Guide — ETL Utility",
+      "path": "/deployment-guide/",
+      "file": "concepts/deployment-guide.md",
+      "locale": "",
+      "version": "",
+      "tags": []
+    },
+    {
+      "id": "output-file-improvement",
+      "type": "concept",
+      "title": "Output File Improvement Plan",
+      "path": "/output-file-improvement/",
+      "file": "concepts/output-file-improvement.md",
+      "locale": "",
+      "version": "",
+      "tags": []
+    },
+    {
+      "id": "source-file-improvement",
+      "type": "concept",
+      "title": "Source File Improvement Plan",
+      "path": "/source-file-improvement/",
+      "file": "concepts/source-file-improvement.md",
+      "locale": "",
+      "version": "",
+      "tags": []
+    },
+    {
+      "id": "usage",
+      "type": "concept",
+      "title": "Usage Guide — Integrating the ETL Utility (Go)",
+      "path": "/usage/",
+      "file": "concepts/usage.md",
+      "locale": "",
+      "version": "",
+      "tags": []
+    }
+  ]
+}

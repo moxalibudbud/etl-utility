@@ -1,0 +1,1364 @@
+<!--
+  ---------------------------------------------------------------
+  docmd : the zero-config documentation engine.
+  @website https://docmd.io
+  [docmd-source] - Please do not remove this header.
+  ---------------------------------------------------------------
+-->
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="generator" content="docmd v0.8.16">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script>/**
+ * --------------------------------------------------------------------
+ * docmd : the zero-config documentation engine.
+ *
+ * @package     @docmd/core (and ecosystem)
+ * @website     https://docmd.io
+ * @repository  https://github.com/docmd-io/docmd
+ * @license     MIT
+ * @copyright   Copyright (c) 2025-present docmd.io
+ *
+ * [docmd-source] - Please do not remove this header.
+ * --------------------------------------------------------------------
+ */
+
+(function () {
+  try {
+    // 1. Determine Theme
+    //
+    // Resolve from three sources, in priority order:
+    //   1. localStorage explicit user choice (light / dark)
+    //   2. window.DOCMD_APPEARANCE  (current canonical name, set by EJS templates)
+    //   3. window.DOCMD_DEFAULT_MODE (legacy alias kept for pre-0.8.7 outputs)
+    //   4. 'light' as the final fallback
+    //
+    // Note: localStorage is only honoured when it holds an explicit
+    // 'light' or 'dark' value. A stored 'system' value (from a prior
+    // session where the user picked "follow system") must NOT win over
+    // a freshly resolved config value — the resolved value will itself
+    // be 'system' in that case and the OS preference check below takes
+    // over, so this is a no-op for the in-session behaviour but keeps
+    // any future storage migration simple.
+    var localValue = localStorage.getItem('docmd-theme');
+    var configValue = window.DOCMD_APPEARANCE
+      || window.DOCMD_DEFAULT_MODE
+      || 'light';
+    var theme = (localValue === 'light' || localValue === 'dark')
+      ? localValue
+      : configValue;
+
+    if (theme === 'system') {
+      theme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    }
+
+    // 2. Apply to Root
+    document.documentElement.setAttribute('data-theme', theme);
+
+    // 3. Highlight.js Toggle Strategy
+    var lightLink = document.getElementById('hljs-light');
+    var darkLink = document.getElementById('hljs-dark');
+
+    if (lightLink && darkLink) {
+      if (theme === 'dark') {
+        lightLink.disabled = true;
+        darkLink.disabled = false;
+      } else {
+        lightLink.disabled = false;
+        darkLink.disabled = true;
+      }
+    }
+
+    document.documentElement.style.visibility = "visible";
+  } catch (e) {
+    document.documentElement.style.visibility = "visible";
+    console.error('Theme init failed', e);
+  }
+})();</script>
+    <style>
+      html {
+        visibility: hidden;
+      }
+    </style>
+    
+    <script>
+      var root = "../";
+      if (root && !root.endsWith('/')) root += '/';
+      if (root === '') root = './';
+      window.DOCMD_ROOT = root;
+
+      window.DOCMD_SITE_ROOT = "/";
+
+      window.DOCMD_APPEARANCE = "system";
+      window.DOCMD_VERSION_ROOT = "/";
+      window.DOCMD_BASE = "/";
+      window.DOCMD_LOCALE = "";
+      window.DOCMD_DEFAULT_LOCALE = "";
+    </script>
+    <title>
+      Source File Improvement Plan : .
+    </title>
+    
+    
+
+    <link id="site-favicon" rel="icon" href="../assets/favicon.ico?v=mrsvyjpx">
+    <link rel="stylesheet" href="../assets/css/docmd-main.css?v=mrsvyjpx">
+    
+    <link rel="stylesheet" href="../assets/css/docmd-highlight-light.css?v=mrsvyjpx" id="hljs-light" >
+    <link rel="stylesheet" href="../assets/css/docmd-highlight-dark.css?v=mrsvyjpx" id="hljs-dark" disabled>
+    
+    
+<meta name="description" content="">
+<meta property="og:title" content="Source File Improvement Plan - .">
+<meta property="og:description" content="">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Source File Improvement Plan - .">
+<meta name="twitter:description" content="">
+
+
+
+<link rel="stylesheet" href="../assets/css/docmd-git.css?v=mrsvyjpx" >
+<link rel="stylesheet" href="../assets/css/docmd-openapi.css?v=mrsvyjpx" >
+
+    
+    <script>/**
+ * --------------------------------------------------------------------
+ * docmd : the zero-config documentation engine.
+ *
+ * @package     @docmd/core (and ecosystem)
+ * @website     https://docmd.io
+ * @repository  https://github.com/docmd-io/docmd
+ * @license     MIT
+ * @copyright   Copyright (c) 2025-present docmd.io
+ *
+ * [docmd-source] - Please do not remove this header.
+ * --------------------------------------------------------------------
+ */
+
+(function () {
+  try {
+    // 1. Determine Theme
+    //
+    // Resolve from three sources, in priority order:
+    //   1. localStorage explicit user choice (light / dark)
+    //   2. window.DOCMD_APPEARANCE  (current canonical name, set by EJS templates)
+    //   3. window.DOCMD_DEFAULT_MODE (legacy alias kept for pre-0.8.7 outputs)
+    //   4. 'light' as the final fallback
+    //
+    // Note: localStorage is only honoured when it holds an explicit
+    // 'light' or 'dark' value. A stored 'system' value (from a prior
+    // session where the user picked "follow system") must NOT win over
+    // a freshly resolved config value — the resolved value will itself
+    // be 'system' in that case and the OS preference check below takes
+    // over, so this is a no-op for the in-session behaviour but keeps
+    // any future storage migration simple.
+    var localValue = localStorage.getItem('docmd-theme');
+    var configValue = window.DOCMD_APPEARANCE
+      || window.DOCMD_DEFAULT_MODE
+      || 'light';
+    var theme = (localValue === 'light' || localValue === 'dark')
+      ? localValue
+      : configValue;
+
+    if (theme === 'system') {
+      theme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    }
+
+    // 2. Apply to Root
+    document.documentElement.setAttribute('data-theme', theme);
+
+    // 3. Highlight.js Toggle Strategy
+    var lightLink = document.getElementById('hljs-light');
+    var darkLink = document.getElementById('hljs-dark');
+
+    if (lightLink && darkLink) {
+      if (theme === 'dark') {
+        lightLink.disabled = true;
+        darkLink.disabled = false;
+      } else {
+        lightLink.disabled = false;
+        darkLink.disabled = true;
+      }
+    }
+
+    document.documentElement.style.visibility = "visible";
+  } catch (e) {
+    document.documentElement.style.visibility = "visible";
+    console.error('Theme init failed', e);
+  }
+})();</script>
+  </head>
+  <body
+    class="sidebar-collapsible"
+    data-default-collapsed="false"
+    data-copy-code-enabled="true" data-spa-enabled="true" data-source-file="source-file-improvement.md">
+
+    <a href="#main-content" class="skip-link">Skip to main content</a>
+
+    
+    
+      <aside class="sidebar">
+        <div class="sidebar-header">
+          
+<h1><a href="../">
+                .
+              </a></h1>
+          
+          <span class="mobile-view sidebar-menu-button float-right">
+            
+<svg class="lucide-icon icon-menu " width="1em" height="1em" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"
+  class="lucide lucide-menu"
+  xmlns="http://www.w3.org/2000/svg"
+  width="24"
+  height="24"
+  viewBox="0 0 24 24"
+  fill="none"
+  stroke="currentColor"
+  stroke-width="2"
+  stroke-linecap="round"
+  stroke-linejoin="round"
+>
+  <path d="M4 5h16" />
+  <path d="M4 12h16" />
+  <path d="M4 19h16" />
+</svg>
+
+          </span>
+        </div>
+        <div class="sidebar-top-group">
+          
+          
+          
+          
+        </div>
+        
+
+<nav class="sidebar-nav" aria-label="Main Navigation">
+  <ul>
+    
+      <li class="" >
+      
+        <a href="../backlogs/" class=" "
+          >
+          
+          <span class="nav-item-title">
+            Backlog
+            </span>
+          
+          
+        </a>
+        
+
+        
+      </li>
+    
+      <li class="" >
+      
+        <a href="../deployment-guide/" class=" "
+          >
+          
+          <span class="nav-item-title">
+            Deployment Guide — ETL Utility
+            </span>
+          
+          
+        </a>
+        
+
+        
+      </li>
+    
+      <li class="" >
+      
+        <a href="../ETL_CODE_REVIEW_AND_GO_DESIGN/" class=" "
+          >
+          
+          <span class="nav-item-title">
+            ETL Utility — Code Review &amp; Go Implementation Design
+            </span>
+          
+          
+        </a>
+        
+
+        
+      </li>
+    
+      <li class="" >
+      
+        <a href="../GO_JSON_GENERATOR_DESIGN/" class=" "
+          >
+          
+          <span class="nav-item-title">
+            Go JSON Generator — Recommended Design
+            </span>
+          
+          
+        </a>
+        
+
+        
+      </li>
+    
+      <li class="" >
+      
+        <a href="../MIGRATION_PROCESS/" class=" "
+          >
+          
+          <span class="nav-item-title">
+            Migration Process — TypeScript ETL → Go
+            </span>
+          
+          
+        </a>
+        
+
+        
+      </li>
+    
+      <li class="" >
+      
+        <a href="../output-file-improvement/" class=" "
+          >
+          
+          <span class="nav-item-title">
+            Output File Improvement Plan
+            </span>
+          
+          
+        </a>
+        
+
+        
+      </li>
+    
+      <li class="active" >
+      
+        <a href="../source-file-improvement/" class="active "
+          >
+          
+          <span class="nav-item-title">
+            Source File Improvement Plan
+            </span>
+          
+          
+        </a>
+        
+
+        
+      </li>
+    
+      <li class="" >
+      
+        <a href="../usage/" class=" "
+          >
+          
+          <span class="nav-item-title">
+            Usage Guide — Integrating the ETL Utility (Go)
+            </span>
+          
+          
+        </a>
+        
+
+        
+      </li>
+    
+  </ul>
+</nav>
+        <div class="sidebar-bottom-group mt-auto">
+          
+          
+          
+          
+        </div>
+      </aside>
+      
+      
+      
+      <div class="main-content-wrapper">
+        
+        
+          <header class="page-header">
+            <div class="header-left">
+              
+                <button id="sidebar-toggle-button" class="sidebar-toggle-button"
+                  aria-label="Toggle Sidebar">
+                  
+<svg class="lucide-icon icon-chevron-left " width="1em" height="1em" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"
+  class="lucide lucide-chevron-left"
+  xmlns="http://www.w3.org/2000/svg"
+  width="24"
+  height="24"
+  viewBox="0 0 24 24"
+  fill="none"
+  stroke="currentColor"
+  stroke-width="2"
+  stroke-linecap="round"
+  stroke-linejoin="round"
+>
+  <path d="m15 18-6-6 6-6" />
+</svg>
+
+                </button>
+              
+              <div class="header-titles-wrapper">
+                <span class="header-title">
+                  Source File Improvement Plan
+                </span>
+              </div>
+            </div>
+            <div class="header-right">
+              
+                
+
+
+<div class="docmd-options-menu">
+    
+    <button class="docmd-search-trigger" aria-label="Search">
+        
+<svg class="lucide-icon icon-search " width="1em" height="1em" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"
+  class="lucide lucide-search"
+  xmlns="http://www.w3.org/2000/svg"
+  width="24"
+  height="24"
+  viewBox="0 0 24 24"
+  fill="none"
+  stroke="currentColor"
+  stroke-width="2"
+  stroke-linecap="round"
+  stroke-linejoin="round"
+>
+  <path d="m21 21-4.34-4.34" />
+  <circle cx="11" cy="11" r="8" />
+</svg>
+
+        <span class="search-label">Search</span>
+        <span class="search-keys"><kbd class="docmd-kbd">⌘</kbd><kbd class="docmd-kbd">K</kbd></span>
+    </button>
+    
+
+    
+
+    
+
+    
+    <button class="theme-toggle-button" aria-label="Toggle theme">
+        
+<svg class="lucide-icon icon-sun icon-sun" width="1em" height="1em" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"
+  class="lucide lucide-sun"
+  xmlns="http://www.w3.org/2000/svg"
+  width="24"
+  height="24"
+  viewBox="0 0 24 24"
+  fill="none"
+  stroke="currentColor"
+  stroke-width="2"
+  stroke-linecap="round"
+  stroke-linejoin="round"
+>
+  <circle cx="12" cy="12" r="4" />
+  <path d="M12 2v2" />
+  <path d="M12 20v2" />
+  <path d="m4.93 4.93 1.41 1.41" />
+  <path d="m17.66 17.66 1.41 1.41" />
+  <path d="M2 12h2" />
+  <path d="M20 12h2" />
+  <path d="m6.34 17.66-1.41 1.41" />
+  <path d="m19.07 4.93-1.41 1.41" />
+</svg>
+ 
+<svg class="lucide-icon icon-moon icon-moon" width="1em" height="1em" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"
+  class="lucide lucide-moon"
+  xmlns="http://www.w3.org/2000/svg"
+  width="24"
+  height="24"
+  viewBox="0 0 24 24"
+  fill="none"
+  stroke="currentColor"
+  stroke-width="2"
+  stroke-linecap="round"
+  stroke-linejoin="round"
+>
+  <path d="M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401" />
+</svg>
+
+    </button>
+    
+
+    
+</div>
+
+              
+            </div>
+          </header>
+        
+        <div class="content-theme-cover">
+          <main class="content-area" id="main-content">
+            <div class="content-layout">
+              <div class="main-content">
+                <div class="docmd-breadcrumbs-row">
+                  <div id="docmd-raw-markdown" data-content="%23%20Source%20File%20Improvement%20Plan%0A%0A%23%23%20Goal%0A%0AExtend%20the%20Go%20ETL%20input%20system%20so%20source%20files%20can%20be%20streamed%20from%3A%0A%0A-%20the%20local%20filesystem%3B%0A-%20Amazon%20S3%3B%0A-%20Azure%20Blob%20Storage.%0A%0AThe%20ETL%20must%20process%20all%20sources%20line%20by%20line%20without%20downloading%20the%20complete%0Afile%20into%20memory%20or%20requiring%20a%20temporary%20local%20copy.%0A%0AThis%20work%20is%20part%20of%20the%20TypeScript-to-Go%20migration%20and%20complements%20the%20output%0Agenerator%20and%20destination%20work%20described%20in%0A%5B%60output-file-improvement.md%60%5D(output-file-improvement.md).%0A%0A%60%60%60text%0ASource%20configuration%20-%3E%20Source%20factory%20-%3E%20byte%20stream%20-%3E%20line%20scanner%20-%3E%20ETL%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%7C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%7C-%20Local%20file%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%7C-%20Amazon%20S3%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%60-%20Azure%20Blob%20Storage%0A%60%60%60%0A%0A%23%23%20Implementation%20Status%0A%0AAn%20Azure%20Blob%20reader%20has%20shipped%2C%20but%20as%20a%20narrower%2C%20more%20direct%20change%20than%0Athe%20design%20below%3A%20it%20extends%20the%20existing%20%60reader.Reader%60%20interface%20instead%0Aof%20introducing%20the%20%60Source%60%2F%60LineReader%60%20split.%20See%0A%60go%2Freader%2Fblobreader.go%60%2C%20%60sourceconfig.go%60%2C%20and%20%60azureauth.go%60%2C%20and%0A%5Busage.md%5D(usage.md)%2C%20%C2%A74.1%2C%20for%20the%20resulting%20configuration%20shape.%20Concretely%2C%0Athis%20plan&#039;s%20proposals%20were%20**not**%20followed%20as%20written%3A%0A%0A-%20No%20%60Source%60%2F%60LineReader%60%20interface%20separation%20%E2%80%94%20%60AzureBlobReader%60%0A%20%20implements%20%60Reader%60%20directly%2C%20the%20same%20shape%20as%20%60LocalFileReader%60%3B%20%60etl.New%60%0A%20%20keeps%20its%20existing%20three-argument%20signature.%0A-%20%60SourceConfig%60%20is%20flatter%20than%20the%20%60Local%60%2F%60S3%60%2F%60AzureBlob%60%20nested-pointer%0A%20%20shape%20sketched%20in%20%5BProposed%20Configuration%5D(%23proposed-configuration)%3A%0A%20%20%60%7BType%2C%20Path%2C%20URL%2C%20Auth%7D%60%2C%20one%20local-or-blob%20source%20per%20config.%0A-%20Credentials%20are%20caller-supplied%20through%20an%20explicit%20%60AzureAuth%60%20struct%0A%20%20(shared%20key%2C%20connection%20string%2C%20SAS%20token%2C%20or%20the%20zero-value%20default%0A%20%20credential%20chain%2C%20disambiguated%20by%20%60AzureAuth.Type()%60)%20rather%20than%20assumed%0A%20%20from%20the%20provider%20default%20chain%20only.%0A-%20S3%2C%20%60context.Context%60%20threading%2C%20configurable%20max%20line%20size%2C%20and%20object%0A%20%20versioning%20remain%20unimplemented%20%E2%80%94%20the%20phased%20design%20below%20is%20still%20the%0A%20%20reference%20for%20that%20future%20work.%0A%0A%23%23%20Current%20State%0A%0AThe%20Go%20%60reader.Reader%60%20interface%20already%20isolates%20the%20ETL%20orchestrator%20from%20the%0Alocal%20file%20implementation%3A%0A%0A%60%60%60go%0Atype%20Reader%20interface%20%7B%0A%09Open()%20error%0A%09Scan()%20bool%0A%09Text()%20string%0A%09Err()%20error%0A%09Close()%20error%0A%09Filename()%20string%0A%09Filepath()%20string%0A%7D%0A%60%60%60%0A%0AHowever%2C%20%60reader.New%60%20currently%20accepts%20only%20a%20string%20and%20rejects%20URLs.%20The%20local%0Areader%20also%20owns%20the%20%60bufio.Scanner%60%2C%20which%20would%20cause%20scanner%20configuration%0Aand%20line%20behavior%20to%20be%20repeated%20in%20every%20cloud%20reader.%0A%0AThe%20migration%20should%20separate%3A%0A%0A1.%20opening%20and%20closing%20a%20source%20byte%20stream%3B%0A2.%20scanning%20that%20stream%20into%20lines.%0A%0A%23%23%20Proposed%20Configuration%0A%0AUse%20an%20explicit%20source%20object%20for%20new%20configurations%20while%20temporarily%20accepting%0Athe%20existing%20source%20string%20for%20backward%20compatibility.%0A%0A%23%23%23%20Local%20file%0A%0A%60%60%60json%0A%7B%0A%20%20%22source%22%3A%20%7B%0A%20%20%20%20%22type%22%3A%20%22local%22%2C%0A%20%20%20%20%22path%22%3A%20%22%2Fvar%2Ftmp%2Fproducts.csv%22%0A%20%20%7D%0A%7D%0A%60%60%60%0A%0A%23%23%23%20Amazon%20S3%0A%0A%60%60%60json%0A%7B%0A%20%20%22source%22%3A%20%7B%0A%20%20%20%20%22type%22%3A%20%22s3%22%2C%0A%20%20%20%20%22bucket%22%3A%20%22imports%22%2C%0A%20%20%20%20%22key%22%3A%20%22daily%2Fproducts.csv%22%2C%0A%20%20%20%20%22region%22%3A%20%22me-central-1%22%0A%20%20%7D%0A%7D%0A%60%60%60%0A%0A%23%23%23%20Azure%20Blob%20Storage%0A%0A%60%60%60json%0A%7B%0A%20%20%22source%22%3A%20%7B%0A%20%20%20%20%22type%22%3A%20%22azure-blob%22%2C%0A%20%20%20%20%22container%22%3A%20%22imports%22%2C%0A%20%20%20%20%22blob%22%3A%20%22daily%2Fproducts.csv%22%2C%0A%20%20%20%20%22accountURL%22%3A%20%22https%3A%2F%2Fexample.blob.core.windows.net%22%0A%20%20%7D%0A%7D%0A%60%60%60%0A%0AThe%20configuration%20should%20use%20bucket%2Fcontainer%20and%20object%20names%20rather%20than%0Arequiring%20credentials%20inside%20the%20ETL%20request.%0A%0A%23%23%23%20Backward%20compatibility%0A%0AContinue%20accepting%20the%20current%20local%20form%3A%0A%0A%60%60%60json%0A%7B%0A%20%20%22source%22%3A%20%22%2Fvar%2Ftmp%2Fproducts.csv%22%0A%7D%0A%60%60%60%0A%0ABecause%20%60source%60%20currently%20has%20a%20string%20wire%20type%2C%20a%20custom%20JSON%20decoder%20or%20an%0Aintermediate%20wire%20type%20can%20accept%20both%20forms%20during%20migration.%20Internally%2C%20both%0Aforms%20should%20normalize%20to%20one%20%60SourceConfig%60.%0A%0AAutomatically%20interpreting%20arbitrary%20URLs%20is%20not%20recommended.%20An%20explicit%0Asource%20type%20makes%20validation%2C%20authentication%2C%20and%20error%20reporting%20predictable.%0AIf%20URI%20shorthand%20is%20desired%20later%2C%20support%20only%20documented%20schemes%20such%20as%3A%0A%0A-%20%60file%3A%2F%2F%2Fvar%2Ftmp%2Fproducts.csv%60%3B%0A-%20%60s3%3A%2F%2Fimports%2Fdaily%2Fproducts.csv%60%3B%0A-%20a%20validated%20Azure%20Blob%20URL.%0A%0A%23%23%20Proposed%20Design%0A%0A%23%23%23%20Source%20stream%0A%0AA%20source%20implementation%20should%20only%20locate%20and%20open%20an%20object%3A%0A%0A%60%60%60go%0Atype%20Source%20interface%20%7B%0A%09Open(ctx%20context.Context)%20(io.ReadCloser%2C%20error)%0A%09Filename()%20string%0A%09Location()%20string%0A%7D%0A%60%60%60%0A%0AImplementations%3A%0A%0A-%20%60LocalSource%60%3B%0A-%20%60S3Source%60%3B%0A-%20%60AzureBlobSource%60.%0A%0A%60Location%60%20returns%20a%20stable%20source%20location%20suitable%20for%20diagnostics%3A%0A%0A-%20%60%2Fvar%2Ftmp%2Fproducts.csv%60%3B%0A-%20%60s3%3A%2F%2Fimports%2Fdaily%2Fproducts.csv%60%3B%0A-%20an%20Azure%20Blob%20URL%20or%20equivalent%20Azure%20location.%0A%0A%23%23%23%20Shared%20line%20reader%0A%0AOne%20line%20reader%20should%20wrap%20every%20source%3A%0A%0A%60%60%60go%0Atype%20LineReader%20struct%20%7B%0A%09source%20%20Source%0A%09stream%20%20io.ReadCloser%0A%09scanner%20*bufio.Scanner%0A%7D%0A%60%60%60%0A%0AIts%20behavior%20remains%20equivalent%20across%20all%20backends%3A%0A%0A-%20%60Open%60%20obtains%20the%20stream%20and%20constructs%20the%20scanner%3B%0A-%20%60Scan%60%20advances%20one%20line%3B%0A-%20%60Text%60%20returns%20the%20current%20line%3B%0A-%20%60Err%60%20exposes%20scanner%20and%20underlying%20stream%20errors%3B%0A-%20%60Close%60%20closes%20the%20response%20body%20or%20local%20file%3B%0A-%20%60Filename%60%20and%20%60Location%60%20delegate%20to%20the%20source.%0A%0AThis%20preserves%20the%20current%20ETL%20scan%20loop%20and%20prevents%20separate%20local%2C%20S3%2C%20and%0AAzure%20implementations%20from%20drifting%20in%20CRLF%20handling%20or%20maximum%20line%20size.%0A%0A%23%23%23%20Factory%0A%0ANormalize%20configuration%20first%2C%20then%20select%20the%20source%20implementation%3A%0A%0A%60%60%60go%0Asource%2C%20err%20%3A%3D%20SourceFactory(ctx%2C%20cfg.Source)%0Aif%20err%20!%3D%20nil%20%7B%0A%09return%20Result%7B%7D%2C%20err%0A%7D%0A%0Ainput%20%3A%3D%20reader.New(source)%0A%60%60%60%0A%0ASuggested%20configuration%20types%3A%0A%0A%60%60%60go%0Atype%20SourceConfig%20struct%20%7B%0A%09Type%20%20%20%20%20%20string%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%60json%3A%22type%22%60%0A%09Local%20%20%20%20%20*LocalSourceConfig%20%20%20%20%20%60json%3A%22local%2Comitempty%22%60%0A%09S3%20%20%20%20%20%20%20%20*S3SourceConfig%20%20%20%20%20%20%20%20%60json%3A%22s3%2Comitempty%22%60%0A%09AzureBlob%20*AzureBlobSourceConfig%20%60json%3A%22azureBlob%2Comitempty%22%60%0A%7D%0A%60%60%60%0A%0AThe%20final%20JSON%20shape%20can%20remain%20flat%20within%20%60source%60%3B%20the%20nested%20Go%20fields%20above%0Aonly%20illustrate%20type%20separation.%20Validation%20should%20reject%20ambiguous%0Aconfigurations%20and%20report%20missing%20required%20fields%20before%20processing%20begins.%0A%0A%23%23%20Streaming%20Behavior%0A%0A%23%23%23%20Local%20files%0A%0A%60LocalSource.Open%60%20returns%20an%20%60*os.File%60.%20The%20shared%20scanner%20consumes%20it%0Aincrementally%2C%20preserving%20the%20current%20behavior.%0A%0A%23%23%23%20Amazon%20S3%0A%0AThe%20S3%20source%20should%3A%0A%0A1.%20create%20a%20client%20using%20the%20AWS%20default%20configuration%20and%20credential%20chain%3B%0A2.%20call%20%60GetObject%60%20with%20the%20function%20context%3B%0A3.%20return%20the%20response%20body%20directly%20as%20%60io.ReadCloser%60%3B%0A4.%20scan%20the%20response%20body%20incrementally%3B%0A5.%20close%20the%20body%20on%20success%2C%20failure%2C%20or%20cancellation.%0A%0AThe%20implementation%20must%20not%20read%20the%20complete%20response%20with%20%60io.ReadAll%60.%0A%0AOptional%20configuration%20may%20include%20region%2C%20endpoint%20override%20for%20testing%2C%20object%0Aversion%2C%20and%20expected%20ETag.%20Credentials%20should%20not%20normally%20be%20accepted%20in%20the%0AETL%20configuration.%0A%0A%23%23%23%20Azure%20Blob%20Storage%0A%0AThe%20Azure%20source%20should%3A%0A%0A1.%20build%20a%20blob%20client%20using%20the%20Azure%20default%20credential%20chain%3B%0A2.%20start%20a%20streaming%20download%20with%20the%20function%20context%3B%0A3.%20return%20the%20response%20body%20directly%20as%20%60io.ReadCloser%60%3B%0A4.%20scan%20the%20response%20body%20incrementally%3B%0A5.%20close%20the%20response%20body%20on%20success%2C%20failure%2C%20or%20cancellation.%0A%0AAn%20optional%20connection-string%20mode%20can%20be%20supported%20for%20compatibility%2C%20but%0Amanaged%20identity%20should%20be%20the%20preferred%20serverless%20authentication%20method.%0A%0AThe%20implementation%20must%20not%20buffer%20the%20complete%20blob%20in%20memory.%0A%0A%23%23%20Serverless%20Requirements%0A%0A%23%23%23%20Context%20and%20cancellation%0A%0AThread%20%60context.Context%60%20through%20ETL%20construction%20and%20processing%3A%0A%0A%60%60%60go%0Afunc%20Run(ctx%20context.Context%2C%20cfg%20Config)%20(Result%2C%20error)%0A%60%60%60%0A%0AThe%20same%20context%20should%20control%3A%0A%0A-%20opening%20the%20cloud%20source%3B%0A-%20reading%20the%20response%20stream%3B%0A-%20output%20uploads%3B%0A-%20cleanup%20when%20the%20function%20is%20cancelled%20or%20reaches%20its%20deadline.%0A%0AIf%20compatibility%20is%20required%2C%20retain%20a%20wrapper%20that%20uses%0A%60context.Background()%60.%0A%0A%23%23%23%20Memory%20limits%0A%0AMemory%20consumption%20should%20be%20bounded%20by%3A%0A%0A-%20the%20scanner%20buffer%3B%0A-%20one%20source%20line%3B%0A-%20output%20upload%20buffers%3B%0A-%20ETL%20metadata%20and%20de-duplication%20state.%0A%0AThe%20current%20maximum%20line%20size%20is%2010%20MiB.%20It%20should%20become%20configurable%20with%20a%0Asafe%20default%20because%20a%20single%20accepted%20line%20determines%20the%20scanner&#039;s%20potential%0Amemory%20use.%0A%0A%23%23%23%20Temporary%20storage%0A%0ACloud%20sources%20should%20stream%20directly%20and%20should%20not%20rely%20on%20Lambda%20%60%2Ftmp%60%20or%20the%0AAzure%20Functions%20temporary%20directory.%20A%20temporary-download%20mode%20is%20outside%20the%0Ainitial%20scope%20and%20should%20only%20be%20added%20for%20formats%20that%20require%20seeking.%0A%0A%23%23%23%20Authentication%0A%0AUse%20standard%20provider%20identity%20chains%3A%0A%0A-%20AWS%20Lambda%20execution%20roles%20and%20the%20AWS%20default%20credential%20chain%3B%0A-%20Azure%20managed%20identity%20and%20%60DefaultAzureCredential%60%3B%0A-%20developer%20profiles%20or%20environment%20credentials%20for%20local%20execution.%0A%0AAvoid%20logging%20signed%20URLs%2C%20authorization%20headers%2C%20connection%20strings%2C%20or%0Acredentials.%0A%0A%23%23%20Errors%20and%20Cleanup%0A%0AThe%20reader%20must%20distinguish%20errors%20occurring%20while%20opening%20a%20source%20from%20errors%0Athat%20occur%20partway%20through%20scanning%20it.%0A%0ACleanup%20must%20be%20attempted%20even%20when%20processing%20fails%3A%0A%0A-%20close%20the%20S3%20response%20body%2C%20Azure%20response%20body%2C%20or%20local%20file%3B%0A-%20cancel%20in-flight%20provider%20operations%20through%20the%20context%3B%0A-%20abort%20an%20incomplete%20output%20upload%3B%0A-%20finalize%20or%20remove%20error-report%20artifacts%20as%20appropriate%3B%0A-%20preserve%20the%20primary%20read%20or%20validation%20error%20while%20also%20reporting%20cleanup%0A%20%20failures.%0A%0AImportant%20cases%20include%3A%0A%0A-%20local%20file%20not%20found%20or%20permission%20denied%3B%0A-%20S3%20bucket%2Fkey%20not%20found%3B%0A-%20Azure%20container%2Fblob%20not%20found%3B%0A-%20authentication%20or%20authorization%20failure%3B%0A-%20throttling%20and%20transient%20connection%20failure%3B%0A-%20connection%20loss%20after%20some%20lines%20have%20been%20processed%3B%0A-%20context%20cancellation%20or%20deadline%20expiry%3B%0A-%20scanner%20token%20exceeding%20the%20configured%20maximum%3B%0A-%20empty%20object%3B%0A-%20object%20deleted%20or%20replaced%20while%20being%20read%3B%0A-%20failure%20closing%20the%20response%20body.%0A%0AThe%20first%20implementation%20should%20not%20silently%20resume%20a%20partially%20processed%0Astream.%20Retrying%20a%20stream%20after%20ETL%20state%20has%20advanced%20can%20duplicate%20rows%20and%0Aproduce%20inconsistent%20output.%20Safe%20resumability%20requires%20explicit%20checkpointing%0Aand%20is%20a%20separate%20feature.%0A%0A%23%23%20Consistency%20and%20Object%20Versioning%0A%0AWhere%20supported%2C%20allow%20callers%20to%20identify%20an%20immutable%20object%20version%3A%0A%0A-%20S3%20%60versionId%60%3B%0A-%20Azure%20blob%20version%20ID%20or%20snapshot.%0A%0AFor%20non-versioned%20objects%2C%20record%20useful%20provider%20metadata%20when%20opening%20the%0Asource%2C%20such%20as%20ETag%20and%20content%20length.%20This%20helps%20diagnose%20changes%20to%20an%0Aobject%20during%20or%20between%20runs.%0A%0AThese%20values%20can%20later%20be%20included%20in%20ETL%20result%20metadata%2C%20but%20they%20should%20not%0Abe%20required%20for%20the%20initial%20implementation.%0A%0A%23%23%20Compression%0A%0ATransparent%20compression%20is%20not%20required%20for%20the%20first%20cloud-reader%20migration.%0AThe%20design%20should%20allow%20a%20decompression%20layer%20between%20%60Source.Open%60%20and%20the%20line%0Ascanner%3A%0A%0A%60%60%60text%0Acloud%20response%20body%20-%3E%20optional%20decompressor%20-%3E%20line%20scanner%0A%60%60%60%0A%0AGzip%20can%20be%20added%20later%20without%20changing%20S3%20or%20Azure%20source%20implementations.%0AArchive%20formats%20containing%20multiple%20files%20require%20a%20separate%20selection%20policy%0Aand%20are%20outside%20the%20initial%20scope.%0A%0A%23%23%20Testing%20Strategy%0A%0A%23%23%23%20Unit%20tests%0A%0A-%20source%20configuration%20normalization%20and%20validation%3B%0A-%20legacy%20string%20source%20compatibility%3B%0A-%20filename%20and%20location%20calculation%3B%0A-%20the%20shared%20scanner%20with%20local%20and%20in-memory%20streams%3B%0A-%20CRLF%20and%20final-line%20behavior%3B%0A-%20maximum-line-size%20errors%3B%0A-%20close%20behavior%20after%20success%20and%20failure%3B%0A-%20context%20cancellation%3B%0A-%20provider%20error%20translation.%0A%0AProvider%20clients%20should%20be%20injected%20behind%20narrow%20interfaces%20so%20unit%20tests%20do%0Anot%20require%20real%20cloud%20accounts.%0A%0A%23%23%23%20Integration%20tests%0A%0AOptional%20integration%20suites%20should%20verify%3A%0A%0A-%20S3%20streaming%20against%20a%20test%20bucket%20or%20compatible%20local%20service%3B%0A-%20Azure%20Blob%20streaming%20against%20a%20test%20container%20or%20emulator%3B%0A-%20large%20objects%20are%20processed%20without%20memory%20growth%20proportional%20to%20file%20size%3B%0A-%20cancellation%20closes%20the%20stream%20and%20stops%20processing%3B%0A-%20source%20stream%20failures%20abort%20the%20corresponding%20output%20upload.%0A%0AIntegration%20tests%20should%20be%20opt-in%20and%20use%20isolated%20object%20names%20with%20automatic%0Acleanup.%0A%0A%23%23%23%20End-to-end%20combinations%0A%0AAt%20minimum%2C%20test%20these%20paths%3A%0A%0A%7C%20Source%20%7C%20Output%20%7C%0A%7C---%7C---%7C%0A%7C%20Local%20%7C%20Local%20%7C%0A%7C%20S3%20%7C%20Local%20%7C%0A%7C%20Azure%20Blob%20%7C%20Local%20%7C%0A%7C%20Local%20%7C%20S3%20%7C%0A%7C%20Local%20%7C%20Azure%20Blob%20%7C%0A%7C%20S3%20%7C%20Azure%20Blob%20%7C%0A%7C%20Azure%20Blob%20%7C%20S3%20%7C%0A%0AThe%20cross-cloud%20cases%20confirm%20that%20source%20and%20output%20abstractions%20are%20genuinely%0Aindependent.%0A%0A%23%23%20Implementation%20Phases%0A%0A%23%23%23%20Phase%201%3A%20Extract%20the%20shared%20stream%20scanner%0A%0A-%20Introduce%20the%20%60Source%60%20interface.%0A-%20Move%20scanner%20ownership%20out%20of%20%60LocalFileReader%60.%0A-%20Implement%20%60LineReader%60%20over%20any%20%60io.ReadCloser%60.%0A-%20Adapt%20the%20local%20source%20without%20changing%20ETL%20behavior.%0A-%20Add%20compatibility%20and%20golden%20tests.%0A%0AEstimated%20effort%3A%201%E2%80%932%20days.%0A%0A%23%23%23%20Phase%202%3A%20Normalize%20source%20configuration%0A%0A-%20Add%20typed%20source%20configuration.%0A-%20Accept%20the%20legacy%20local%20source%20string.%0A-%20Add%20validation%20and%20the%20source%20factory.%0A-%20Add%20destination-neutral%20%60Location%60%20terminology%20while%20preserving%20compatibility%0A%20%20methods%20if%20necessary.%0A%0AEstimated%20effort%3A%201%20day.%0A%0A%23%23%23%20Phase%203%3A%20Add%20S3%20streaming%0A%0A-%20Add%20the%20AWS%20SDK%20dependency%20and%20injectable%20client%20boundary.%0A-%20Implement%20%60GetObject%60%20response%20streaming.%0A-%20Use%20the%20default%20credential%20chain.%0A-%20Add%20cancellation%2C%20close%2C%20error%2C%20and%20mock-client%20tests.%0A-%20Add%20an%20opt-in%20integration%20test.%0A%0AEstimated%20effort%3A%201%E2%80%932%20days.%0A%0A%23%23%23%20Phase%204%3A%20Add%20Azure%20Blob%20streaming%0A%0A-%20Add%20Azure%20SDK%20dependencies%20and%20an%20injectable%20client%20boundary.%0A-%20Implement%20streaming%20download.%0A-%20Use%20managed%20identity%2Fdefault%20credentials.%0A-%20Add%20cancellation%2C%20close%2C%20error%2C%20and%20mock-client%20tests.%0A-%20Add%20an%20opt-in%20integration%20test.%0A%0AEstimated%20effort%3A%201%E2%80%932%20days.%0A%0A%23%23%23%20Phase%205%3A%20Harden%20serverless%20execution%0A%0A-%20Thread%20%60context.Context%60%20through%20the%20complete%20ETL%20lifecycle.%0A-%20Make%20cleanup%20resilient%20to%20multiple%20failures.%0A-%20Add%20configurable%20maximum%20line%20size.%0A-%20Add%20memory%2C%20cancellation%2C%20timeout%2C%20and%20cross-cloud%20tests.%0A-%20Document%20Lambda%20and%20Azure%20Functions%20usage.%0A%0AEstimated%20effort%3A%202%E2%80%933%20days.%0A%0A%23%23%20Overall%20Estimate%0A%0AA%20production-ready%20implementation%20for%20streaming%20local%2C%20S3%2C%20and%20Azure%20Blob%0Asources%20is%20expected%20to%20take%20approximately%20one%20week%2C%20including%20compatibility%2C%0Atests%2C%20and%20serverless%20hardening.%0A%0AThe%20critical%20architectural%20step%20is%20separating%20byte-stream%20acquisition%20from%20line%0Ascanning.%20Once%20that%20boundary%20exists%2C%20additional%20sources%20such%20as%20HTTP%2C%20SFTP%2C%20GCS%2C%0Aor%20caller-provided%20%60io.Reader%60%20implementations%20can%20be%20added%20without%20changing%0Athe%20ETL%20processing%20loop.%0A" style="display: none;"></div>
+                  
+                    <nav aria-label="breadcrumb" class="docmd-breadcrumbs">
+                      <ol>
+                        
+                        
+                          <li class="breadcrumb-item active" aria-current=&quot;page&quot;>
+                            
+                              <span>Source File Improvement Plan</span>
+                            
+                            
+                          </li>
+                        
+                      </ol>
+                    </nav>
+                  
+
+                  
+                    <div class="docmd-copy-widgets">
+                      
+                        <button class="docmd-copy-btn docmd-copy-raw-btn" data-copied="Copied!" title="Copy Markdown" aria-label="Copy Markdown">
+                          <span class="docmd-btn-icon">
+<svg class="lucide-icon icon-copy " width="1em" height="1em" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"
+  class="lucide lucide-copy"
+  xmlns="http://www.w3.org/2000/svg"
+  width="24"
+  height="24"
+  viewBox="0 0 24 24"
+  fill="none"
+  stroke="currentColor"
+  stroke-width="2"
+  stroke-linecap="round"
+  stroke-linejoin="round"
+>
+  <rect width="14" height="14" x="8" y="8" rx="2" ry="2" />
+  <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" />
+</svg>
+</span>
+                        </button>
+                      
+                      
+                        <button class="docmd-copy-btn docmd-copy-context-btn" data-copied="Copied!" title="Copy Context">
+                          <span class="docmd-btn-icon">
+<svg class="lucide-icon icon-message-square " width="1em" height="1em" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"
+  class="lucide lucide-message-square"
+  xmlns="http://www.w3.org/2000/svg"
+  width="24"
+  height="24"
+  viewBox="0 0 24 24"
+  fill="none"
+  stroke="currentColor"
+  stroke-width="2"
+  stroke-linecap="round"
+  stroke-linejoin="round"
+>
+  <path d="M22 17a2 2 0 0 1-2 2H6.828a2 2 0 0 0-1.414.586l-2.202 2.202A.71.71 0 0 1 2 21.286V5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2z" />
+</svg>
+</span>
+                          <span class="docmd-btn-text">Copy Context</span>
+                        </button>
+                      
+                    </div>
+                  
+                </div>
+                
+                <h1 id="source-file-improvement-plan" class="docmd-heading"><a href="#source-file-improvement-plan" class="heading-anchor" aria-label="Permalink to this section"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-link2-icon lucide-link-2"><path d="M9 17H7A5 5 0 0 1 7 7h2m6 0h2a5 5 0 1 1 0 10h-2m-7-5h8"/></svg></a>Source File Improvement Plan</h1>
+<h2 id="source-file-improvement-plan-goal" class="docmd-heading"><a href="#source-file-improvement-plan-goal" class="heading-anchor" aria-label="Permalink to this section"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-link2-icon lucide-link-2"><path d="M9 17H7A5 5 0 0 1 7 7h2m6 0h2a5 5 0 1 1 0 10h-2m-7-5h8"/></svg></a>Goal</h2>
+<p>Extend the Go ETL input system so source files can be streamed from:</p>
+<ul>
+<li>the local filesystem;</li>
+<li>Amazon S3;</li>
+<li>Azure Blob Storage.</li>
+</ul>
+<p>The ETL must process all sources line by line without downloading the complete<br>
+file into memory or requiring a temporary local copy.</p>
+<p>This work is part of the TypeScript-to-Go migration and complements the output<br>
+generator and destination work described in<br>
+<a href="../../output-file-improvement/"><code>output-file-improvement.md</code></a>.</p>
+<pre class="hljs"><code class="language-text">Source configuration <span class="hljs-punctuation">-&gt;</span> Source factory <span class="hljs-punctuation">-&gt;</span> byte stream <span class="hljs-punctuation">-&gt;</span> line scanner <span class="hljs-punctuation">-&gt;</span> ETL
+                              <span class="hljs-punctuation">|</span>
+                              <span class="hljs-punctuation">|-</span> Local file
+                              <span class="hljs-punctuation">|-</span> Amazon S3
+                              `<span class="hljs-punctuation">-</span> Azure Blob Storage
+</code></pre>
+<h2 id="source-file-improvement-plan-implementation-status" class="docmd-heading"><a href="#source-file-improvement-plan-implementation-status" class="heading-anchor" aria-label="Permalink to this section"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-link2-icon lucide-link-2"><path d="M9 17H7A5 5 0 0 1 7 7h2m6 0h2a5 5 0 1 1 0 10h-2m-7-5h8"/></svg></a>Implementation Status</h2>
+<p>An Azure Blob reader has shipped, but as a narrower, more direct change than<br>
+the design below: it extends the existing <code>reader.Reader</code> interface instead<br>
+of introducing the <code>Source</code>/<code>LineReader</code> split. See<br>
+<code>go/reader/blobreader.go</code>, <code>sourceconfig.go</code>, and <code>azureauth.go</code>, and<br>
+<a href="../../usage/">usage.md</a>, §4.1, for the resulting configuration shape. Concretely,<br>
+this plan’s proposals were <strong>not</strong> followed as written:</p>
+<ul>
+<li>No <code>Source</code>/<code>LineReader</code> interface separation — <code>AzureBlobReader</code><br>
+implements <code>Reader</code> directly, the same shape as <code>LocalFileReader</code>; <code>etl.New</code><br>
+keeps its existing three-argument signature.</li>
+<li><code>SourceConfig</code> is flatter than the <code>Local</code>/<code>S3</code>/<code>AzureBlob</code> nested-pointer<br>
+shape sketched in <a href="#proposed-configuration">Proposed Configuration</a>:<br>
+<code>{Type, Path, URL, Auth}</code>, one local-or-blob source per config.</li>
+<li>Credentials are caller-supplied through an explicit <code>AzureAuth</code> struct<br>
+(shared key, connection string, SAS token, or the zero-value default<br>
+credential chain, disambiguated by <code>AzureAuth.Type()</code>) rather than assumed<br>
+from the provider default chain only.</li>
+<li>S3, <code>context.Context</code> threading, configurable max line size, and object<br>
+versioning remain unimplemented — the phased design below is still the<br>
+reference for that future work.</li>
+</ul>
+<h2 id="source-file-improvement-plan-current-state" class="docmd-heading"><a href="#source-file-improvement-plan-current-state" class="heading-anchor" aria-label="Permalink to this section"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-link2-icon lucide-link-2"><path d="M9 17H7A5 5 0 0 1 7 7h2m6 0h2a5 5 0 1 1 0 10h-2m-7-5h8"/></svg></a>Current State</h2>
+<p>The Go <code>reader.Reader</code> interface already isolates the ETL orchestrator from the<br>
+local file implementation:</p>
+<pre class="hljs"><code class="language-go"><span class="hljs-keyword">type</span> Reader <span class="hljs-keyword">interface</span> {
+	<span class="hljs-title function_">Open</span>() error
+	<span class="hljs-title function_">Scan</span>() <span class="hljs-keyword">bool</span>
+	<span class="hljs-title function_">Text</span>() string
+	<span class="hljs-title function_">Err</span>() error
+	<span class="hljs-title function_">Close</span>() error
+	<span class="hljs-title function_">Filename</span>() string
+	<span class="hljs-title function_">Filepath</span>() string
+}
+</code></pre>
+<p>However, <code>reader.New</code> currently accepts only a string and rejects URLs. The local<br>
+reader also owns the <code>bufio.Scanner</code>, which would cause scanner configuration<br>
+and line behavior to be repeated in every cloud reader.</p>
+<p>The migration should separate:</p>
+<ol>
+<li>opening and closing a source byte stream;</li>
+<li>scanning that stream into lines.</li>
+</ol>
+<h2 id="source-file-improvement-plan-proposed-configuration" class="docmd-heading"><a href="#source-file-improvement-plan-proposed-configuration" class="heading-anchor" aria-label="Permalink to this section"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-link2-icon lucide-link-2"><path d="M9 17H7A5 5 0 0 1 7 7h2m6 0h2a5 5 0 1 1 0 10h-2m-7-5h8"/></svg></a>Proposed Configuration</h2>
+<p>Use an explicit source object for new configurations while temporarily accepting<br>
+the existing source string for backward compatibility.</p>
+<h3 id="source-file-improvement-plan-proposed-configuration-local-file" class="docmd-heading"><a href="#source-file-improvement-plan-proposed-configuration-local-file" class="heading-anchor" aria-label="Permalink to this section"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-link2-icon lucide-link-2"><path d="M9 17H7A5 5 0 0 1 7 7h2m6 0h2a5 5 0 1 1 0 10h-2m-7-5h8"/></svg></a>Local file</h3>
+<pre class="hljs"><code class="language-json">{
+  <span class="hljs-string">&quot;source&quot;</span><span class="hljs-punctuation">:</span> {
+    <span class="hljs-string">&quot;type&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;local&quot;</span>,
+    <span class="hljs-string">&quot;path&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;/var/tmp/products.csv&quot;</span>
+  }
+}
+</code></pre>
+<h3 id="source-file-improvement-plan-proposed-configuration-amazon-s3" class="docmd-heading"><a href="#source-file-improvement-plan-proposed-configuration-amazon-s3" class="heading-anchor" aria-label="Permalink to this section"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-link2-icon lucide-link-2"><path d="M9 17H7A5 5 0 0 1 7 7h2m6 0h2a5 5 0 1 1 0 10h-2m-7-5h8"/></svg></a>Amazon S3</h3>
+<pre class="hljs"><code class="language-json">{
+  <span class="hljs-string">&quot;source&quot;</span><span class="hljs-punctuation">:</span> {
+    <span class="hljs-string">&quot;type&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;s3&quot;</span>,
+    <span class="hljs-string">&quot;bucket&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;imports&quot;</span>,
+    <span class="hljs-string">&quot;key&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;daily/products.csv&quot;</span>,
+    <span class="hljs-string">&quot;region&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;me-central-1&quot;</span>
+  }
+}
+</code></pre>
+<h3 id="source-file-improvement-plan-proposed-configuration-azure-blob-storage" class="docmd-heading"><a href="#source-file-improvement-plan-proposed-configuration-azure-blob-storage" class="heading-anchor" aria-label="Permalink to this section"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-link2-icon lucide-link-2"><path d="M9 17H7A5 5 0 0 1 7 7h2m6 0h2a5 5 0 1 1 0 10h-2m-7-5h8"/></svg></a>Azure Blob Storage</h3>
+<pre class="hljs"><code class="language-json">{
+  <span class="hljs-string">&quot;source&quot;</span><span class="hljs-punctuation">:</span> {
+    <span class="hljs-string">&quot;type&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;azure-blob&quot;</span>,
+    <span class="hljs-string">&quot;container&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;imports&quot;</span>,
+    <span class="hljs-string">&quot;blob&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;daily/products.csv&quot;</span>,
+    <span class="hljs-string">&quot;accountURL&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;https://example.blob.core.windows.net&quot;</span>
+  }
+}
+</code></pre>
+<p>The configuration should use bucket/container and object names rather than<br>
+requiring credentials inside the ETL request.</p>
+<h3 id="source-file-improvement-plan-proposed-configuration-backward-compatibility" class="docmd-heading"><a href="#source-file-improvement-plan-proposed-configuration-backward-compatibility" class="heading-anchor" aria-label="Permalink to this section"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-link2-icon lucide-link-2"><path d="M9 17H7A5 5 0 0 1 7 7h2m6 0h2a5 5 0 1 1 0 10h-2m-7-5h8"/></svg></a>Backward compatibility</h3>
+<p>Continue accepting the current local form:</p>
+<pre class="hljs"><code class="language-json">{
+  <span class="hljs-string">&quot;source&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;/var/tmp/products.csv&quot;</span>
+}
+</code></pre>
+<p>Because <code>source</code> currently has a string wire type, a custom JSON decoder or an<br>
+intermediate wire type can accept both forms during migration. Internally, both<br>
+forms should normalize to one <code>SourceConfig</code>.</p>
+<p>Automatically interpreting arbitrary URLs is not recommended. An explicit<br>
+source type makes validation, authentication, and error reporting predictable.<br>
+If URI shorthand is desired later, support only documented schemes such as:</p>
+<ul>
+<li><code>file:///var/tmp/products.csv</code>;</li>
+<li><code>s3://imports/daily/products.csv</code>;</li>
+<li>a validated Azure Blob URL.</li>
+</ul>
+<h2 id="source-file-improvement-plan-proposed-design" class="docmd-heading"><a href="#source-file-improvement-plan-proposed-design" class="heading-anchor" aria-label="Permalink to this section"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-link2-icon lucide-link-2"><path d="M9 17H7A5 5 0 0 1 7 7h2m6 0h2a5 5 0 1 1 0 10h-2m-7-5h8"/></svg></a>Proposed Design</h2>
+<h3 id="source-file-improvement-plan-proposed-design-source-stream" class="docmd-heading"><a href="#source-file-improvement-plan-proposed-design-source-stream" class="heading-anchor" aria-label="Permalink to this section"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-link2-icon lucide-link-2"><path d="M9 17H7A5 5 0 0 1 7 7h2m6 0h2a5 5 0 1 1 0 10h-2m-7-5h8"/></svg></a>Source stream</h3>
+<p>A source implementation should only locate and open an object:</p>
+<pre class="hljs"><code class="language-go"><span class="hljs-keyword">type</span> Source <span class="hljs-keyword">interface</span> {
+	<span class="hljs-title function_">Open</span>(ctx context.<span class="hljs-attr">Context</span>) (io.<span class="hljs-attr">ReadCloser</span>, error)
+	<span class="hljs-title function_">Filename</span>() string
+	<span class="hljs-title function_">Location</span>() string
+}
+</code></pre>
+<p>Implementations:</p>
+<ul>
+<li><code>LocalSource</code>;</li>
+<li><code>S3Source</code>;</li>
+<li><code>AzureBlobSource</code>.</li>
+</ul>
+<p><code>Location</code> returns a stable source location suitable for diagnostics:</p>
+<ul>
+<li><code>/var/tmp/products.csv</code>;</li>
+<li><code>s3://imports/daily/products.csv</code>;</li>
+<li>an Azure Blob URL or equivalent Azure location.</li>
+</ul>
+<h3 id="source-file-improvement-plan-proposed-design-shared-line-reader" class="docmd-heading"><a href="#source-file-improvement-plan-proposed-design-shared-line-reader" class="heading-anchor" aria-label="Permalink to this section"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-link2-icon lucide-link-2"><path d="M9 17H7A5 5 0 0 1 7 7h2m6 0h2a5 5 0 1 1 0 10h-2m-7-5h8"/></svg></a>Shared line reader</h3>
+<p>One line reader should wrap every source:</p>
+<pre class="hljs"><code class="language-go"><span class="hljs-keyword">type</span> LineReader <span class="hljs-keyword">struct</span> {
+	<span class="hljs-keyword">source</span>  Source
+	stream  io.<span class="hljs-attr">ReadCloser</span>
+	scanner <span class="hljs-punctuation">*</span>bufio.<span class="hljs-attr">Scanner</span>
+}
+</code></pre>
+<p>Its behavior remains equivalent across all backends:</p>
+<ul>
+<li><code>Open</code> obtains the stream and constructs the scanner;</li>
+<li><code>Scan</code> advances one line;</li>
+<li><code>Text</code> returns the current line;</li>
+<li><code>Err</code> exposes scanner and underlying stream errors;</li>
+<li><code>Close</code> closes the response body or local file;</li>
+<li><code>Filename</code> and <code>Location</code> delegate to the source.</li>
+</ul>
+<p>This preserves the current ETL scan loop and prevents separate local, S3, and<br>
+Azure implementations from drifting in CRLF handling or maximum line size.</p>
+<h3 id="source-file-improvement-plan-proposed-design-factory" class="docmd-heading"><a href="#source-file-improvement-plan-proposed-design-factory" class="heading-anchor" aria-label="Permalink to this section"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-link2-icon lucide-link-2"><path d="M9 17H7A5 5 0 0 1 7 7h2m6 0h2a5 5 0 1 1 0 10h-2m-7-5h8"/></svg></a>Factory</h3>
+<p>Normalize configuration first, then select the source implementation:</p>
+<pre class="hljs"><code class="language-go"><span class="hljs-keyword">source</span>, err <span class="hljs-punctuation">:=</span> <span class="hljs-title function_">SourceFactory</span>(ctx, cfg.<span class="hljs-attr">Source</span>)
+<span class="hljs-keyword">if</span> err <span class="hljs-punctuation">!=</span> nil {
+	<span class="hljs-keyword">return</span> Result{}, err
+}
+
+input <span class="hljs-punctuation">:=</span> reader.<span class="hljs-title function_">New</span>(<span class="hljs-keyword">source</span>)
+</code></pre>
+<p>Suggested configuration types:</p>
+<pre class="hljs"><code class="language-go"><span class="hljs-keyword">type</span> SourceConfig <span class="hljs-keyword">struct</span> {
+	Type      string                 <span class="hljs-string">`json:&quot;type&quot;`</span>
+	Local     <span class="hljs-punctuation">*</span>LocalSourceConfig     <span class="hljs-string">`json:&quot;local,omitempty&quot;`</span>
+	S3        <span class="hljs-punctuation">*</span>S3SourceConfig        <span class="hljs-string">`json:&quot;s3,omitempty&quot;`</span>
+	AzureBlob <span class="hljs-punctuation">*</span>AzureBlobSourceConfig <span class="hljs-string">`json:&quot;azureBlob,omitempty&quot;`</span>
+}
+</code></pre>
+<p>The final JSON shape can remain flat within <code>source</code>; the nested Go fields above<br>
+only illustrate type separation. Validation should reject ambiguous<br>
+configurations and report missing required fields before processing begins.</p>
+<h2 id="source-file-improvement-plan-streaming-behavior" class="docmd-heading"><a href="#source-file-improvement-plan-streaming-behavior" class="heading-anchor" aria-label="Permalink to this section"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-link2-icon lucide-link-2"><path d="M9 17H7A5 5 0 0 1 7 7h2m6 0h2a5 5 0 1 1 0 10h-2m-7-5h8"/></svg></a>Streaming Behavior</h2>
+<h3 id="source-file-improvement-plan-streaming-behavior-local-files" class="docmd-heading"><a href="#source-file-improvement-plan-streaming-behavior-local-files" class="heading-anchor" aria-label="Permalink to this section"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-link2-icon lucide-link-2"><path d="M9 17H7A5 5 0 0 1 7 7h2m6 0h2a5 5 0 1 1 0 10h-2m-7-5h8"/></svg></a>Local files</h3>
+<p><code>LocalSource.Open</code> returns an <code>*os.File</code>. The shared scanner consumes it<br>
+incrementally, preserving the current behavior.</p>
+<h3 id="source-file-improvement-plan-streaming-behavior-amazon-s3" class="docmd-heading"><a href="#source-file-improvement-plan-streaming-behavior-amazon-s3" class="heading-anchor" aria-label="Permalink to this section"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-link2-icon lucide-link-2"><path d="M9 17H7A5 5 0 0 1 7 7h2m6 0h2a5 5 0 1 1 0 10h-2m-7-5h8"/></svg></a>Amazon S3</h3>
+<p>The S3 source should:</p>
+<ol>
+<li>create a client using the AWS default configuration and credential chain;</li>
+<li>call <code>GetObject</code> with the function context;</li>
+<li>return the response body directly as <code>io.ReadCloser</code>;</li>
+<li>scan the response body incrementally;</li>
+<li>close the body on success, failure, or cancellation.</li>
+</ol>
+<p>The implementation must not read the complete response with <code>io.ReadAll</code>.</p>
+<p>Optional configuration may include region, endpoint override for testing, object<br>
+version, and expected ETag. Credentials should not normally be accepted in the<br>
+ETL configuration.</p>
+<h3 id="source-file-improvement-plan-streaming-behavior-azure-blob-storage" class="docmd-heading"><a href="#source-file-improvement-plan-streaming-behavior-azure-blob-storage" class="heading-anchor" aria-label="Permalink to this section"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-link2-icon lucide-link-2"><path d="M9 17H7A5 5 0 0 1 7 7h2m6 0h2a5 5 0 1 1 0 10h-2m-7-5h8"/></svg></a>Azure Blob Storage</h3>
+<p>The Azure source should:</p>
+<ol>
+<li>build a blob client using the Azure default credential chain;</li>
+<li>start a streaming download with the function context;</li>
+<li>return the response body directly as <code>io.ReadCloser</code>;</li>
+<li>scan the response body incrementally;</li>
+<li>close the response body on success, failure, or cancellation.</li>
+</ol>
+<p>An optional connection-string mode can be supported for compatibility, but<br>
+managed identity should be the preferred serverless authentication method.</p>
+<p>The implementation must not buffer the complete blob in memory.</p>
+<h2 id="source-file-improvement-plan-serverless-requirements" class="docmd-heading"><a href="#source-file-improvement-plan-serverless-requirements" class="heading-anchor" aria-label="Permalink to this section"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-link2-icon lucide-link-2"><path d="M9 17H7A5 5 0 0 1 7 7h2m6 0h2a5 5 0 1 1 0 10h-2m-7-5h8"/></svg></a>Serverless Requirements</h2>
+<h3 id="source-file-improvement-plan-serverless-requirements-context-and-cancellation" class="docmd-heading"><a href="#source-file-improvement-plan-serverless-requirements-context-and-cancellation" class="heading-anchor" aria-label="Permalink to this section"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-link2-icon lucide-link-2"><path d="M9 17H7A5 5 0 0 1 7 7h2m6 0h2a5 5 0 1 1 0 10h-2m-7-5h8"/></svg></a>Context and cancellation</h3>
+<p>Thread <code>context.Context</code> through ETL construction and processing:</p>
+<pre class="hljs"><code class="language-go"><span class="hljs-keyword">func</span> <span class="hljs-title function_">Run</span>(ctx context.<span class="hljs-attr">Context</span>, cfg Config) (Result, error)
+</code></pre>
+<p>The same context should control:</p>
+<ul>
+<li>opening the cloud source;</li>
+<li>reading the response stream;</li>
+<li>output uploads;</li>
+<li>cleanup when the function is cancelled or reaches its deadline.</li>
+</ul>
+<p>If compatibility is required, retain a wrapper that uses<br>
+<code>context.Background()</code>.</p>
+<h3 id="source-file-improvement-plan-serverless-requirements-memory-limits" class="docmd-heading"><a href="#source-file-improvement-plan-serverless-requirements-memory-limits" class="heading-anchor" aria-label="Permalink to this section"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-link2-icon lucide-link-2"><path d="M9 17H7A5 5 0 0 1 7 7h2m6 0h2a5 5 0 1 1 0 10h-2m-7-5h8"/></svg></a>Memory limits</h3>
+<p>Memory consumption should be bounded by:</p>
+<ul>
+<li>the scanner buffer;</li>
+<li>one source line;</li>
+<li>output upload buffers;</li>
+<li>ETL metadata and de-duplication state.</li>
+</ul>
+<p>The current maximum line size is 10 MiB. It should become configurable with a<br>
+safe default because a single accepted line determines the scanner’s potential<br>
+memory use.</p>
+<h3 id="source-file-improvement-plan-serverless-requirements-temporary-storage" class="docmd-heading"><a href="#source-file-improvement-plan-serverless-requirements-temporary-storage" class="heading-anchor" aria-label="Permalink to this section"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-link2-icon lucide-link-2"><path d="M9 17H7A5 5 0 0 1 7 7h2m6 0h2a5 5 0 1 1 0 10h-2m-7-5h8"/></svg></a>Temporary storage</h3>
+<p>Cloud sources should stream directly and should not rely on Lambda <code>/tmp</code> or the<br>
+Azure Functions temporary directory. A temporary-download mode is outside the<br>
+initial scope and should only be added for formats that require seeking.</p>
+<h3 id="source-file-improvement-plan-serverless-requirements-authentication" class="docmd-heading"><a href="#source-file-improvement-plan-serverless-requirements-authentication" class="heading-anchor" aria-label="Permalink to this section"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-link2-icon lucide-link-2"><path d="M9 17H7A5 5 0 0 1 7 7h2m6 0h2a5 5 0 1 1 0 10h-2m-7-5h8"/></svg></a>Authentication</h3>
+<p>Use standard provider identity chains:</p>
+<ul>
+<li>AWS Lambda execution roles and the AWS default credential chain;</li>
+<li>Azure managed identity and <code>DefaultAzureCredential</code>;</li>
+<li>developer profiles or environment credentials for local execution.</li>
+</ul>
+<p>Avoid logging signed URLs, authorization headers, connection strings, or<br>
+credentials.</p>
+<h2 id="source-file-improvement-plan-errors-and-cleanup" class="docmd-heading"><a href="#source-file-improvement-plan-errors-and-cleanup" class="heading-anchor" aria-label="Permalink to this section"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-link2-icon lucide-link-2"><path d="M9 17H7A5 5 0 0 1 7 7h2m6 0h2a5 5 0 1 1 0 10h-2m-7-5h8"/></svg></a>Errors and Cleanup</h2>
+<p>The reader must distinguish errors occurring while opening a source from errors<br>
+that occur partway through scanning it.</p>
+<p>Cleanup must be attempted even when processing fails:</p>
+<ul>
+<li>close the S3 response body, Azure response body, or local file;</li>
+<li>cancel in-flight provider operations through the context;</li>
+<li>abort an incomplete output upload;</li>
+<li>finalize or remove error-report artifacts as appropriate;</li>
+<li>preserve the primary read or validation error while also reporting cleanup<br>
+failures.</li>
+</ul>
+<p>Important cases include:</p>
+<ul>
+<li>local file not found or permission denied;</li>
+<li>S3 bucket/key not found;</li>
+<li>Azure container/blob not found;</li>
+<li>authentication or authorization failure;</li>
+<li>throttling and transient connection failure;</li>
+<li>connection loss after some lines have been processed;</li>
+<li>context cancellation or deadline expiry;</li>
+<li>scanner token exceeding the configured maximum;</li>
+<li>empty object;</li>
+<li>object deleted or replaced while being read;</li>
+<li>failure closing the response body.</li>
+</ul>
+<p>The first implementation should not silently resume a partially processed<br>
+stream. Retrying a stream after ETL state has advanced can duplicate rows and<br>
+produce inconsistent output. Safe resumability requires explicit checkpointing<br>
+and is a separate feature.</p>
+<h2 id="source-file-improvement-plan-consistency-and-object-versioning" class="docmd-heading"><a href="#source-file-improvement-plan-consistency-and-object-versioning" class="heading-anchor" aria-label="Permalink to this section"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-link2-icon lucide-link-2"><path d="M9 17H7A5 5 0 0 1 7 7h2m6 0h2a5 5 0 1 1 0 10h-2m-7-5h8"/></svg></a>Consistency and Object Versioning</h2>
+<p>Where supported, allow callers to identify an immutable object version:</p>
+<ul>
+<li>S3 <code>versionId</code>;</li>
+<li>Azure blob version ID or snapshot.</li>
+</ul>
+<p>For non-versioned objects, record useful provider metadata when opening the<br>
+source, such as ETag and content length. This helps diagnose changes to an<br>
+object during or between runs.</p>
+<p>These values can later be included in ETL result metadata, but they should not<br>
+be required for the initial implementation.</p>
+<h2 id="source-file-improvement-plan-compression" class="docmd-heading"><a href="#source-file-improvement-plan-compression" class="heading-anchor" aria-label="Permalink to this section"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-link2-icon lucide-link-2"><path d="M9 17H7A5 5 0 0 1 7 7h2m6 0h2a5 5 0 1 1 0 10h-2m-7-5h8"/></svg></a>Compression</h2>
+<p>Transparent compression is not required for the first cloud-reader migration.<br>
+The design should allow a decompression layer between <code>Source.Open</code> and the line<br>
+scanner:</p>
+<pre class="hljs"><code class="language-text">cloud response body <span class="hljs-punctuation">-&gt;</span> optional decompressor <span class="hljs-punctuation">-&gt;</span> line scanner
+</code></pre>
+<p>Gzip can be added later without changing S3 or Azure source implementations.<br>
+Archive formats containing multiple files require a separate selection policy<br>
+and are outside the initial scope.</p>
+<h2 id="source-file-improvement-plan-testing-strategy" class="docmd-heading"><a href="#source-file-improvement-plan-testing-strategy" class="heading-anchor" aria-label="Permalink to this section"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-link2-icon lucide-link-2"><path d="M9 17H7A5 5 0 0 1 7 7h2m6 0h2a5 5 0 1 1 0 10h-2m-7-5h8"/></svg></a>Testing Strategy</h2>
+<h3 id="source-file-improvement-plan-testing-strategy-unit-tests" class="docmd-heading"><a href="#source-file-improvement-plan-testing-strategy-unit-tests" class="heading-anchor" aria-label="Permalink to this section"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-link2-icon lucide-link-2"><path d="M9 17H7A5 5 0 0 1 7 7h2m6 0h2a5 5 0 1 1 0 10h-2m-7-5h8"/></svg></a>Unit tests</h3>
+<ul>
+<li>source configuration normalization and validation;</li>
+<li>legacy string source compatibility;</li>
+<li>filename and location calculation;</li>
+<li>the shared scanner with local and in-memory streams;</li>
+<li>CRLF and final-line behavior;</li>
+<li>maximum-line-size errors;</li>
+<li>close behavior after success and failure;</li>
+<li>context cancellation;</li>
+<li>provider error translation.</li>
+</ul>
+<p>Provider clients should be injected behind narrow interfaces so unit tests do<br>
+not require real cloud accounts.</p>
+<h3 id="source-file-improvement-plan-testing-strategy-integration-tests" class="docmd-heading"><a href="#source-file-improvement-plan-testing-strategy-integration-tests" class="heading-anchor" aria-label="Permalink to this section"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-link2-icon lucide-link-2"><path d="M9 17H7A5 5 0 0 1 7 7h2m6 0h2a5 5 0 1 1 0 10h-2m-7-5h8"/></svg></a>Integration tests</h3>
+<p>Optional integration suites should verify:</p>
+<ul>
+<li>S3 streaming against a test bucket or compatible local service;</li>
+<li>Azure Blob streaming against a test container or emulator;</li>
+<li>large objects are processed without memory growth proportional to file size;</li>
+<li>cancellation closes the stream and stops processing;</li>
+<li>source stream failures abort the corresponding output upload.</li>
+</ul>
+<p>Integration tests should be opt-in and use isolated object names with automatic<br>
+cleanup.</p>
+<h3 id="source-file-improvement-plan-testing-strategy-end-to-end-combinations" class="docmd-heading"><a href="#source-file-improvement-plan-testing-strategy-end-to-end-combinations" class="heading-anchor" aria-label="Permalink to this section"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-link2-icon lucide-link-2"><path d="M9 17H7A5 5 0 0 1 7 7h2m6 0h2a5 5 0 1 1 0 10h-2m-7-5h8"/></svg></a>End-to-end combinations</h3>
+<p>At minimum, test these paths:</p>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>Source</th>
+<th>Output</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Local</td>
+<td>Local</td>
+</tr>
+<tr>
+<td>S3</td>
+<td>Local</td>
+</tr>
+<tr>
+<td>Azure Blob</td>
+<td>Local</td>
+</tr>
+<tr>
+<td>Local</td>
+<td>S3</td>
+</tr>
+<tr>
+<td>Local</td>
+<td>Azure Blob</td>
+</tr>
+<tr>
+<td>S3</td>
+<td>Azure Blob</td>
+</tr>
+<tr>
+<td>Azure Blob</td>
+<td>S3</td>
+</tr>
+</tbody>
+</table>
+</div><p>The cross-cloud cases confirm that source and output abstractions are genuinely<br>
+independent.</p>
+<h2 id="source-file-improvement-plan-implementation-phases" class="docmd-heading"><a href="#source-file-improvement-plan-implementation-phases" class="heading-anchor" aria-label="Permalink to this section"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-link2-icon lucide-link-2"><path d="M9 17H7A5 5 0 0 1 7 7h2m6 0h2a5 5 0 1 1 0 10h-2m-7-5h8"/></svg></a>Implementation Phases</h2>
+<h3 id="source-file-improvement-plan-implementation-phases-phase-1-extract-the-shared-stream-scanner" class="docmd-heading"><a href="#source-file-improvement-plan-implementation-phases-phase-1-extract-the-shared-stream-scanner" class="heading-anchor" aria-label="Permalink to this section"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-link2-icon lucide-link-2"><path d="M9 17H7A5 5 0 0 1 7 7h2m6 0h2a5 5 0 1 1 0 10h-2m-7-5h8"/></svg></a>Phase 1: Extract the shared stream scanner</h3>
+<ul>
+<li>Introduce the <code>Source</code> interface.</li>
+<li>Move scanner ownership out of <code>LocalFileReader</code>.</li>
+<li>Implement <code>LineReader</code> over any <code>io.ReadCloser</code>.</li>
+<li>Adapt the local source without changing ETL behavior.</li>
+<li>Add compatibility and golden tests.</li>
+</ul>
+<p>Estimated effort: 1–2 days.</p>
+<h3 id="source-file-improvement-plan-implementation-phases-phase-2-normalize-source-configuration" class="docmd-heading"><a href="#source-file-improvement-plan-implementation-phases-phase-2-normalize-source-configuration" class="heading-anchor" aria-label="Permalink to this section"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-link2-icon lucide-link-2"><path d="M9 17H7A5 5 0 0 1 7 7h2m6 0h2a5 5 0 1 1 0 10h-2m-7-5h8"/></svg></a>Phase 2: Normalize source configuration</h3>
+<ul>
+<li>Add typed source configuration.</li>
+<li>Accept the legacy local source string.</li>
+<li>Add validation and the source factory.</li>
+<li>Add destination-neutral <code>Location</code> terminology while preserving compatibility<br>
+methods if necessary.</li>
+</ul>
+<p>Estimated effort: 1 day.</p>
+<h3 id="source-file-improvement-plan-implementation-phases-phase-3-add-s3-streaming" class="docmd-heading"><a href="#source-file-improvement-plan-implementation-phases-phase-3-add-s3-streaming" class="heading-anchor" aria-label="Permalink to this section"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-link2-icon lucide-link-2"><path d="M9 17H7A5 5 0 0 1 7 7h2m6 0h2a5 5 0 1 1 0 10h-2m-7-5h8"/></svg></a>Phase 3: Add S3 streaming</h3>
+<ul>
+<li>Add the AWS SDK dependency and injectable client boundary.</li>
+<li>Implement <code>GetObject</code> response streaming.</li>
+<li>Use the default credential chain.</li>
+<li>Add cancellation, close, error, and mock-client tests.</li>
+<li>Add an opt-in integration test.</li>
+</ul>
+<p>Estimated effort: 1–2 days.</p>
+<h3 id="source-file-improvement-plan-implementation-phases-phase-4-add-azure-blob-streaming" class="docmd-heading"><a href="#source-file-improvement-plan-implementation-phases-phase-4-add-azure-blob-streaming" class="heading-anchor" aria-label="Permalink to this section"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-link2-icon lucide-link-2"><path d="M9 17H7A5 5 0 0 1 7 7h2m6 0h2a5 5 0 1 1 0 10h-2m-7-5h8"/></svg></a>Phase 4: Add Azure Blob streaming</h3>
+<ul>
+<li>Add Azure SDK dependencies and an injectable client boundary.</li>
+<li>Implement streaming download.</li>
+<li>Use managed identity/default credentials.</li>
+<li>Add cancellation, close, error, and mock-client tests.</li>
+<li>Add an opt-in integration test.</li>
+</ul>
+<p>Estimated effort: 1–2 days.</p>
+<h3 id="source-file-improvement-plan-implementation-phases-phase-5-harden-serverless-execution" class="docmd-heading"><a href="#source-file-improvement-plan-implementation-phases-phase-5-harden-serverless-execution" class="heading-anchor" aria-label="Permalink to this section"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-link2-icon lucide-link-2"><path d="M9 17H7A5 5 0 0 1 7 7h2m6 0h2a5 5 0 1 1 0 10h-2m-7-5h8"/></svg></a>Phase 5: Harden serverless execution</h3>
+<ul>
+<li>Thread <code>context.Context</code> through the complete ETL lifecycle.</li>
+<li>Make cleanup resilient to multiple failures.</li>
+<li>Add configurable maximum line size.</li>
+<li>Add memory, cancellation, timeout, and cross-cloud tests.</li>
+<li>Document Lambda and Azure Functions usage.</li>
+</ul>
+<p>Estimated effort: 2–3 days.</p>
+<h2 id="source-file-improvement-plan-overall-estimate" class="docmd-heading"><a href="#source-file-improvement-plan-overall-estimate" class="heading-anchor" aria-label="Permalink to this section"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-link2-icon lucide-link-2"><path d="M9 17H7A5 5 0 0 1 7 7h2m6 0h2a5 5 0 1 1 0 10h-2m-7-5h8"/></svg></a>Overall Estimate</h2>
+<p>A production-ready implementation for streaming local, S3, and Azure Blob<br>
+sources is expected to take approximately one week, including compatibility,<br>
+tests, and serverless hardening.</p>
+<p>The critical architectural step is separating byte-stream acquisition from line<br>
+scanning. Once that boundary exists, additional sources such as HTTP, SFTP, GCS,<br>
+or caller-provided <code>io.Reader</code> implementations can be added without changing<br>
+the ETL processing loop.</p>
+
+                
+                  <div class="page-navigation">
+                    
+                      <a href="../output-file-improvement/" class="prev-page">
+                        
+<svg class="lucide-icon icon-arrow-left page-nav-icon" width="1em" height="1em" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"
+  class="lucide lucide-arrow-left"
+  xmlns="http://www.w3.org/2000/svg"
+  width="24"
+  height="24"
+  viewBox="0 0 24 24"
+  fill="none"
+  stroke="currentColor"
+  stroke-width="2"
+  stroke-linecap="round"
+  stroke-linejoin="round"
+>
+  <path d="m12 19-7-7 7-7" />
+  <path d="M19 12H5" />
+</svg>
+
+                        <span><small>Previous</small><strong>
+                            Output File Improvement Plan
+                          </strong></span>
+                      </a>
+                    
+                    
+                      <a href="../usage/" class="next-page">
+                        <span><small>Next</small>
+                          <strong>
+                            Usage Guide — Integrating the ETL Utility (Go)
+                          </strong></span>
+                        
+<svg class="lucide-icon icon-arrow-right page-nav-icon" width="1em" height="1em" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"
+  class="lucide lucide-arrow-right"
+  xmlns="http://www.w3.org/2000/svg"
+  width="24"
+  height="24"
+  viewBox="0 0 24 24"
+  fill="none"
+  stroke="currentColor"
+  stroke-width="2"
+  stroke-linecap="round"
+  stroke-linejoin="round"
+>
+  <path d="M5 12h14" />
+  <path d="m12 5 7 7-7 7" />
+</svg>
+
+                      </a>
+                    
+                  </div>
+                
+              </div>
+              <div class="toc-sidebar">
+                
+
+
+  <div class="toc-container">
+    <h2 class="toc-title">On This Page<span class="mobile-view toc-menu-button float-right">
+<svg class="lucide-icon icon-chevron-down " width="1em" height="1em" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"
+  class="lucide lucide-chevron-down"
+  xmlns="http://www.w3.org/2000/svg"
+  width="24"
+  height="24"
+  viewBox="0 0 24 24"
+  fill="none"
+  stroke="currentColor"
+  stroke-width="2"
+  stroke-linecap="round"
+  stroke-linejoin="round"
+>
+  <path d="m6 9 6 6 6-6" />
+</svg>
+</span></h2>
+    <ul class="toc-list">
+      
+        <li class="toc-item toc-level-1">
+          <a href="#source-file-improvement-plan" class="toc-link">Source File Improvement Plan</a>
+        </li>
+      
+        <li class="toc-item toc-level-2">
+          <a href="#source-file-improvement-plan-goal" class="toc-link">Goal</a>
+        </li>
+      
+        <li class="toc-item toc-level-2">
+          <a href="#source-file-improvement-plan-implementation-status" class="toc-link">Implementation Status</a>
+        </li>
+      
+        <li class="toc-item toc-level-2">
+          <a href="#source-file-improvement-plan-current-state" class="toc-link">Current State</a>
+        </li>
+      
+        <li class="toc-item toc-level-2">
+          <a href="#source-file-improvement-plan-proposed-configuration" class="toc-link">Proposed Configuration</a>
+        </li>
+      
+        <li class="toc-item toc-level-3">
+          <a href="#source-file-improvement-plan-proposed-configuration-local-file" class="toc-link">Local file</a>
+        </li>
+      
+        <li class="toc-item toc-level-3">
+          <a href="#source-file-improvement-plan-proposed-configuration-amazon-s3" class="toc-link">Amazon S3</a>
+        </li>
+      
+        <li class="toc-item toc-level-3">
+          <a href="#source-file-improvement-plan-proposed-configuration-azure-blob-storage" class="toc-link">Azure Blob Storage</a>
+        </li>
+      
+        <li class="toc-item toc-level-3">
+          <a href="#source-file-improvement-plan-proposed-configuration-backward-compatibility" class="toc-link">Backward compatibility</a>
+        </li>
+      
+        <li class="toc-item toc-level-2">
+          <a href="#source-file-improvement-plan-proposed-design" class="toc-link">Proposed Design</a>
+        </li>
+      
+        <li class="toc-item toc-level-3">
+          <a href="#source-file-improvement-plan-proposed-design-source-stream" class="toc-link">Source stream</a>
+        </li>
+      
+        <li class="toc-item toc-level-3">
+          <a href="#source-file-improvement-plan-proposed-design-shared-line-reader" class="toc-link">Shared line reader</a>
+        </li>
+      
+        <li class="toc-item toc-level-3">
+          <a href="#source-file-improvement-plan-proposed-design-factory" class="toc-link">Factory</a>
+        </li>
+      
+        <li class="toc-item toc-level-2">
+          <a href="#source-file-improvement-plan-streaming-behavior" class="toc-link">Streaming Behavior</a>
+        </li>
+      
+        <li class="toc-item toc-level-3">
+          <a href="#source-file-improvement-plan-streaming-behavior-local-files" class="toc-link">Local files</a>
+        </li>
+      
+        <li class="toc-item toc-level-3">
+          <a href="#source-file-improvement-plan-streaming-behavior-amazon-s3" class="toc-link">Amazon S3</a>
+        </li>
+      
+        <li class="toc-item toc-level-3">
+          <a href="#source-file-improvement-plan-streaming-behavior-azure-blob-storage" class="toc-link">Azure Blob Storage</a>
+        </li>
+      
+        <li class="toc-item toc-level-2">
+          <a href="#source-file-improvement-plan-serverless-requirements" class="toc-link">Serverless Requirements</a>
+        </li>
+      
+        <li class="toc-item toc-level-3">
+          <a href="#source-file-improvement-plan-serverless-requirements-context-and-cancellation" class="toc-link">Context and cancellation</a>
+        </li>
+      
+        <li class="toc-item toc-level-3">
+          <a href="#source-file-improvement-plan-serverless-requirements-memory-limits" class="toc-link">Memory limits</a>
+        </li>
+      
+        <li class="toc-item toc-level-3">
+          <a href="#source-file-improvement-plan-serverless-requirements-temporary-storage" class="toc-link">Temporary storage</a>
+        </li>
+      
+        <li class="toc-item toc-level-3">
+          <a href="#source-file-improvement-plan-serverless-requirements-authentication" class="toc-link">Authentication</a>
+        </li>
+      
+        <li class="toc-item toc-level-2">
+          <a href="#source-file-improvement-plan-errors-and-cleanup" class="toc-link">Errors and Cleanup</a>
+        </li>
+      
+        <li class="toc-item toc-level-2">
+          <a href="#source-file-improvement-plan-consistency-and-object-versioning" class="toc-link">Consistency and Object Versioning</a>
+        </li>
+      
+        <li class="toc-item toc-level-2">
+          <a href="#source-file-improvement-plan-compression" class="toc-link">Compression</a>
+        </li>
+      
+        <li class="toc-item toc-level-2">
+          <a href="#source-file-improvement-plan-testing-strategy" class="toc-link">Testing Strategy</a>
+        </li>
+      
+        <li class="toc-item toc-level-3">
+          <a href="#source-file-improvement-plan-testing-strategy-unit-tests" class="toc-link">Unit tests</a>
+        </li>
+      
+        <li class="toc-item toc-level-3">
+          <a href="#source-file-improvement-plan-testing-strategy-integration-tests" class="toc-link">Integration tests</a>
+        </li>
+      
+        <li class="toc-item toc-level-3">
+          <a href="#source-file-improvement-plan-testing-strategy-end-to-end-combinations" class="toc-link">End-to-end combinations</a>
+        </li>
+      
+        <li class="toc-item toc-level-2">
+          <a href="#source-file-improvement-plan-implementation-phases" class="toc-link">Implementation Phases</a>
+        </li>
+      
+        <li class="toc-item toc-level-3">
+          <a href="#source-file-improvement-plan-implementation-phases-phase-1-extract-the-shared-stream-scanner" class="toc-link">Phase 1: Extract the shared stream scanner</a>
+        </li>
+      
+        <li class="toc-item toc-level-3">
+          <a href="#source-file-improvement-plan-implementation-phases-phase-2-normalize-source-configuration" class="toc-link">Phase 2: Normalize source configuration</a>
+        </li>
+      
+        <li class="toc-item toc-level-3">
+          <a href="#source-file-improvement-plan-implementation-phases-phase-3-add-s3-streaming" class="toc-link">Phase 3: Add S3 streaming</a>
+        </li>
+      
+        <li class="toc-item toc-level-3">
+          <a href="#source-file-improvement-plan-implementation-phases-phase-4-add-azure-blob-streaming" class="toc-link">Phase 4: Add Azure Blob streaming</a>
+        </li>
+      
+        <li class="toc-item toc-level-3">
+          <a href="#source-file-improvement-plan-implementation-phases-phase-5-harden-serverless-execution" class="toc-link">Phase 5: Harden serverless execution</a>
+        </li>
+      
+        <li class="toc-item toc-level-2">
+          <a href="#source-file-improvement-plan-overall-estimate" class="toc-link">Overall Estimate</a>
+        </li>
+      
+    </ul>
+  </div>
+
+              </div>
+            </div>
+            <div class="page-footer-actions">
+              
+              
+                <span class="git-last-updated" data-timestamp="1784287714000">
+                  <svg class="git-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <polyline points="12 6 12 12 16 14"></polyline>
+                  </svg>
+                  <span class="git-label">Last updated:</span>
+                  <span class="git-time" data-timestamp="1784287714000"></span>
+                  
+                  <div class="git-commit-tooltip" role="tooltip">
+                    <div class="git-tooltip-title">Recent commits</div>
+                    <ul class="git-commit-list">
+                      
+                        <li class="git-commit-item">
+                          <div class="git-commit-avatar" title="moxalibudbud">
+                            
+                              <img src="https://www.gravatar.com/avatar/b24434cde1d9f733fde069a686a1e09f?d=mp&amp;s=64" alt="moxalibudbud">
+                            
+                          </div>
+                          <div class="git-commit-details">
+                            <div class="git-commit-message" title="document blob reader">document blob reader</div>
+                            <div class="git-commit-meta">
+                              <span class="git-commit-author">moxalibudbud</span>
+                              <span class="git-commit-date" data-timestamp="1784287714000"></span>
+                            </div>
+                          </div>
+                        </li>
+                      
+                        <li class="git-commit-item">
+                          <div class="git-commit-avatar" title="moxalibudbud">
+                            
+                              <img src="https://www.gravatar.com/avatar/b24434cde1d9f733fde069a686a1e09f?d=mp&amp;s=64" alt="moxalibudbud">
+                            
+                          </div>
+                          <div class="git-commit-details">
+                            <div class="git-commit-message" title="plan output and source file improvement">plan output and source file improvement</div>
+                            <div class="git-commit-meta">
+                              <span class="git-commit-author">moxalibudbud</span>
+                              <span class="git-commit-date" data-timestamp="1784281450000"></span>
+                            </div>
+                          </div>
+                        </li>
+                      
+                    </ul>
+                  </div>
+                  
+                </span>
+              
+              <span class="git-spacer"></span>
+              
+            </div>
+          </main>
+          
+
+
+<footer class="page-footer">
+  <div class="footer-content">
+    <div class="user-footer">© 2026</div>
+    
+      <div class="branding-footer">
+        Built with <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"></path><path d="M12 5 9.04 7.96a2.17 2.17 0 0 0 0 3.08c.82.82 2.13.85 3 .07l2.07-1.9a2.82 2.82 0 0 1 3.79 0l2.96 2.66"></path><path d="m18 15-2-2"></path><path d="m15 18-2-2"></path></svg> <a href="https://docmd.io" target="_blank" rel="noopener">docmd.</a>
+      </div>
+    
+  </div>
+</footer>
+
+        </div>
+      </div>
+      
+      <script src="../assets/js/docmd-main.js?v=mrsvyjpx"></script>
+      
+      <script src="../assets/js/docmd-git.js?v=mrsvyjpx"></script>
+      <script src="../assets/js/docmd-image-lightbox.js?v=mrsvyjpx" ></script>
+<script src="../assets/js/vendor/minisearch.js?v=mrsvyjpx" ></script>
+<script src="../assets/js/docmd-search.js?v=mrsvyjpx" ></script>
+<script src="../assets/js/docmd-git.js?v=mrsvyjpx" type="module"></script>
+
+  <!-- Search Modal (Injected by @docmd/plugin-search) -->
+  <div id="docmd-search-modal" class="docmd-search-modal" style="display: none;" data-show-confidence="false" data-show-filters="true"
+       data-search-placeholder="Search documentation..."
+       data-search-no-results="No results found."
+       data-search-error="Failed to load search index."
+       data-search-offline="Search requires a web server. Open this site via http://localhost instead of file:// to enable search."
+       data-search-initial="Type to start searching..."
+       data-search-navigate="to navigate"
+       data-search-escape="to close">
+      <div class="docmd-search-box">
+          <div class="docmd-search-header">
+              <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide-icon icon-search"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg>
+              <input type="text" id="docmd-search-input" placeholder="Search documentation..." autocomplete="off" spellcheck="false">
+              <button onclick="window.closeDocmdSearch()" class="docmd-search-close" aria-label="Close search">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide-icon icon-x"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg>
+              </button>
+          </div>
+          <div id="docmd-search-results" class="docmd-search-results"></div>
+          <div class="docmd-search-footer">
+              <span><kbd class="docmd-kbd">↑</kbd> <kbd class="docmd-kbd">↓</kbd> to navigate</span>
+              <span><kbd class="docmd-kbd">ESC</kbd> to close</span>
+          </div>
+      </div>
+  </div>
+
+    <script>
+      (function() {
+        var searchDebounceTimer;
+
+        document.addEventListener('click', function(e) {
+          var link = e.target.closest('a');
+          if (!link || !window.gtag) return;
+          
+          var url = link.href;
+          var hostname = window.location.hostname;
+          var isExternal = link.hostname && link.hostname !== hostname;
+          var isDownload = link.hasAttribute('download') || url.match(/\.(pdf|zip|tar|gz|exe|pkg)$/i);
+          
+          if (isExternal) {
+            gtag('event', 'click_external', { 'url': url, 'link_text': link.innerText.trim() });
+          } else if (isDownload) {
+            gtag('event', 'download', { 'file_name': url.split('/').pop(), 'url': url });
+          }
+
+          // TOC tracking
+          if (link.classList.contains('toc-link')) {
+            gtag('event', 'toc_click', { 'target_id': link.getAttribute('href'), 'title': link.innerText.trim() });
+          }
+
+          // Permalink tracking
+          if (link.classList.contains('heading-anchor')) {
+            gtag('event', 'permalink_click', { 'url': url });
+          }
+        });
+
+        
+        // Search Keyword Tracking
+        document.addEventListener('input', function(e) {
+          if (e.target.id === 'docmd-search-input' && window.gtag) {
+            var query = e.target.value.trim();
+            if (query.length < 3) return;
+            
+            clearTimeout(searchDebounceTimer);
+            searchDebounceTimer = setTimeout(function() {
+              gtag('event', 'search', { 'search_term': query });
+            }, 1000);
+          }
+        });
+        
+      })();
+    </script>
+
+<script>window.__git_config={"repo":null,"branch":"main","editLink":false,"lastUpdated":true,"commitHistory":true,"maxCommits":5,"dateFormat":"relative"};window.__git_i18n={"lastUpdated":"Last updated","recentCommits":"Recent commits","viewCommitHistory":"View commit history","editOnGitHub":"Edit on GitHub","editOnGitLab":"Edit on GitLab","editOnBitbucket":"Edit on Bitbucket","editThisPage":"Edit this page","justNow":"just now","minutesAgo":"{n}m ago","hoursAgo":"{n}h ago","daysAgo":"{n}d ago"}</script>
+      
+      
+      
+  </body>
+</html>
