@@ -162,11 +162,12 @@ changes.
 
 ### Destination abstraction
 
-The repository currently has separate local and Azure writers that share a
-text renderer. Adding every format as another full destination-specific writer
-would eventually create a format-by-destination matrix.
+The repository previously had separate local and Azure writers that each
+duplicated their own I/O lifecycle alongside a shared text renderer. Adding
+every format as another full destination-specific writer would eventually
+have created a format-by-destination matrix.
 
-A later refactor should introduce an internal destination contract:
+Phase 2 (see §9) introduced the internal destination contract:
 
 ```go
 type Sink interface {
@@ -177,11 +178,15 @@ type Sink interface {
 }
 ```
 
-Likely implementations are `LocalSink` and `AzureBlobSink`. Delimited and JSON
-writers can then compose a format encoder with a sink.
-
-This refactor should follow the first local JSON implementation instead of
-being performed at the same time, reducing regression risk.
+`LocalSink` (`local_sink.go`) and `AzureBlobSink` (`azure_sink.go`) are the two
+implementations. `LocalSink` takes a mode rather than unifying `DefaultWriter`
+and `JSONWriter` onto one on-disk behavior: append-in-place for
+`DefaultWriter` (no partial file, no atomic promotion — preserving its
+original bytes) versus buffered `.partial` + atomic rename for `JSONWriter`
+(preserving its original atomic-completion contract from §6). `DefaultWriter`,
+`JSONWriter`, and `AzureBlobWriter` now each compose a format
+renderer/encoder with a `Sink` and own no filesystem or network logic
+directly.
 
 ---
 
@@ -394,8 +399,8 @@ or writing must retain its original cause via `%w`.
 
 ### Phase 1 — local streaming JSON
 
-**Status: partially complete.** The local streaming path is implemented and
-working. The remaining work is test hardening and compatibility coverage.
+**Status: complete**, except for the TypeScript compatibility fixtures, which
+remain pending.
 
 Completed:
 
@@ -412,32 +417,60 @@ Completed:
 - [x] Add initial encoder/writer, factory, template, and ETL coverage.
 - [x] Update the migration and usage documentation for local JSON generation.
 - [x] Keep JSON-specific behavior out of `etl.go`.
-
-Pending:
-
-- [ ] Correct the promotion test so its post-`End()` assertion checks the
+- [x] Correct the promotion test so its post-`End()` assertion checks the
   rendered `products_DXB01.json.partial` path instead of the unrelated
   `products_1005.json.partial` path.
+- [x] Complete local-writer coverage: idempotent `End()`, replacement of an
+  existing output document, and cleanup for finalization/flush/rename failures
+  (`TestJSONWriterEndIsIdempotent`, `TestJSONWriterReplacesExistingOutput`,
+  `TestJSONWriterCleanupOnFlushFailure`, `TestJSONWriterCleanupOnRenameFailure`
+  in `json_writer_test.go`).
+- [x] Run `go test ./...`, `go vet ./...`, and `go build ./...`.
+
+Still pending (deferred, not blocking Phase 2/3):
+
 - [ ] Complete encoder lifecycle and validation coverage: finalize twice,
   write after finalization, non-object root/row values, invalid root JSON, and
-  escaping of Unicode and control characters.
-- [ ] Complete local-writer coverage: idempotent `End()`, replacement of an
-  existing output document, and cleanup for finalization/flush/rename failures.
+  escaping of Unicode and control characters. (No dedicated
+  `json_encoder_test.go` exists yet; `jsonDocumentEncoder` is exercised only
+  indirectly through `JSONWriter` and ETL tests.)
 - [ ] Expand ETL coverage for JSON-specific `rejectOnInvalidRow`,
   empty/all-invalid inputs, value/function templates, and result paths.
 - [ ] Add shared TypeScript compatibility fixtures and compare decoded JSON
   values.
-- [ ] Run `go test ./...`, `go vet ./...`, and `go build ./...` after the
-  remaining test work.
 
-No `etl.go` changes should be required.
+No `etl.go` changes were required.
 
 ### Phase 2 — destination refactor
 
-- Extract local destination behavior from `DefaultWriter`.
-- Extract Azure destination behavior from `AzureBlobWriter`.
-- Convert delimited and JSON writers to compose format encoders with sinks.
-- Preserve current default-writer bytes using parity tests.
+**Status: complete.**
+
+- [x] Introduce the `Sink` interface (`sink.go`): `Start(filename) (io.Writer,
+  error)`, `Close() error`, `Delete() error`, `Location(filename) string`.
+- [x] Extract local destination behavior from `DefaultWriter` and `JSONWriter`
+  into `LocalSink` (`local_sink.go`), parameterized by a mode rather than
+  unified into one behavior:
+  - `NewLocalSink` (append mode) preserves `DefaultWriter`'s original
+    open-and-append-in-place bytes, with no partial file and no atomic
+    promotion.
+  - `NewAtomicLocalSink` (atomic mode) preserves `JSONWriter`'s original
+    `.partial` + `Sync` + atomic-rename contract, including cleanup on
+    finalize/flush/sync/close/rename failure.
+- [x] Extract Azure destination behavior from `AzureBlobWriter` into
+  `AzureBlobSink` (`azure_sink.go`): the `io.Pipe` + background
+  `UploadStream` goroutine, upload-abort-on-`Delete`, and the blob-client/URL
+  helpers (`joinBlobURL`, `splitBlobURL`, `withSASToken`, `hasSASQuery`).
+- [x] Convert `DefaultWriter`, `JSONWriter`, and `AzureBlobWriter` to compose
+  a format renderer/encoder with a `Sink`; each writer now only owns
+  format-specific state (renderer/encoder, `started`/`finalized`/`failed`
+  flags) and delegates all I/O lifecycle to its sink.
+- [x] Preserve current default-writer bytes using parity tests — the existing
+  `TestBlobWriterMatchesDefaultWriterBytes` continues to pass unchanged
+  against the refactored `DefaultWriter`/`AzureBlobWriter`, and all local
+  JSON writer tests continue to pass unchanged against the refactored
+  `JSONWriter`.
+- [x] `go build ./...`, `go vet ./...`, `go test ./...`, and
+  `go test ./writer/... -race` all pass.
 
 ### Phase 3 — JSON cloud output
 
