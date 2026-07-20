@@ -2,6 +2,7 @@ package writer
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"io"
 	"os"
@@ -11,6 +12,7 @@ import (
 
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 
+	"flatfile-go/azureauth"
 	"flatfile-go/line"
 )
 
@@ -435,6 +437,161 @@ func TestBlobWriterStalledUploadIsTransient(t *testing.T) {
 	// Nothing was committed, so Delete must succeed without contacting Azure.
 	if err := w.Delete(); err != nil {
 		t.Fatalf("Delete after stalled upload: %v", err)
+	}
+}
+
+// newJSONBlobWriterForTest builds a JSONWriter backed by an AzureBlobSink with
+// stubbed Azure calls, mirroring newBlobWriterForTest for the json-generator path.
+func newJSONBlobWriterForTest(t *testing.T, opts OutputConfig) (*JSONWriter, *fakeBlob) {
+	t.Helper()
+	opts.DestinationConfig = DestinationConfig{Type: DestinationAzureBlob, URL: testContainerURL}
+	if opts.Path == "" {
+		opts.Path = os.TempDir()
+	}
+	sink := NewAzureBlobSink(opts.URL, azureauth.AzureAuth{})
+	jw, err := newJSONWriterWithSink(opts, sink)
+	if err != nil {
+		t.Fatalf("newJSONWriterWithSink: %v", err)
+	}
+	fake := &fakeBlob{}
+	sink.startUpload = func(_ context.Context, destURL string, body io.Reader) error {
+		fake.mu.Lock()
+		fake.startedURL = destURL
+		fake.starts++
+		fake.mu.Unlock()
+		data, err := io.ReadAll(body)
+		if err != nil {
+			return err
+		}
+		fake.mu.Lock()
+		fake.uploadedURL = destURL
+		fake.uploadedData = data
+		fake.completions++
+		fake.mu.Unlock()
+		return nil
+	}
+	sink.deleteBlob = func(_ context.Context, destURL string) error {
+		fake.mu.Lock()
+		fake.deletedURL = destURL
+		fake.deletes++
+		fake.mu.Unlock()
+		return nil
+	}
+	return jw, fake
+}
+
+// TestJSONBlobWriterNothingVisibleUntilEnd is the cloud atomicity proof for
+// json-generator: block blob commits make the file visible only once
+// UploadStream's final Put Block List succeeds. Before that moment the blob
+// simply does not exist — a partial upload is invisible to any reader. The
+// fake distinguishes "upload started" (starts==1) from "upload committed"
+// (completions==1), mirroring how the real block blob SDK works.
+func TestJSONBlobWriterNothingVisibleUntilEnd(t *testing.T) {
+	w, fake := newJSONBlobWriterForTest(t, OutputConfig{
+		FileGenerator: "json-generator",
+		Filename:      "products.json",
+		ArrayField:    "items",
+		Template:      `{"sku":"{SKU}"}`,
+	})
+	sl := jsonTestLine("1005;A1;10;Widget", 1)
+	if err := w.Push(sl); err != nil {
+		t.Fatalf("push: %v", err)
+	}
+	fake.mu.Lock()
+	starts, completions := fake.starts, fake.completions
+	fake.mu.Unlock()
+	if starts != 1 {
+		t.Fatalf("starts = %d, want 1 (upload begins on first Push)", starts)
+	}
+	if completions != 0 {
+		t.Fatalf("completions = %d before End: blob must not be visible mid-upload", completions)
+	}
+	if err := w.End(); err != nil {
+		t.Fatalf("end: %v", err)
+	}
+	if fake.completions != 1 {
+		t.Fatalf("completions = %d after End, want 1", fake.completions)
+	}
+}
+
+// TestJSONBlobWriterSuccessfulCompletion proves the json-generator + azure-blob
+// path uploads a valid JSON document with the expected URL and structure.
+func TestJSONBlobWriterSuccessfulCompletion(t *testing.T) {
+	w, fake := newJSONBlobWriterForTest(t, OutputConfig{
+		FileGenerator: "json-generator",
+		Filename:      "products.json",
+		ArrayField:    "items",
+		Template:      `{"sku":"{SKU}","name":"{NAME}"}`,
+	})
+	if err := w.Push(jsonTestLine("1005;A1;10;Widget", 1)); err != nil {
+		t.Fatalf("push 1: %v", err)
+	}
+	if err := w.Push(jsonTestLine("1006;B2;5;Gadget", 2)); err != nil {
+		t.Fatalf("push 2: %v", err)
+	}
+	if err := w.End(); err != nil {
+		t.Fatalf("end: %v", err)
+	}
+	if want := testContainerURL + "/products.json"; fake.uploadedURL != want {
+		t.Fatalf("uploaded URL = %q, want %q", fake.uploadedURL, want)
+	}
+	var doc struct {
+		Items []map[string]any `json:"items"`
+	}
+	if err := json.Unmarshal(fake.uploadedData, &doc); err != nil {
+		t.Fatalf("uploaded data is not valid JSON: %v\n%s", err, fake.uploadedData)
+	}
+	if len(doc.Items) != 2 {
+		t.Fatalf("items = %d, want 2", len(doc.Items))
+	}
+}
+
+// TestJSONBlobWriterDeleteAbortsUnfinishedUpload proves Delete before End
+// aborts the in-flight upload without deadlocking or leaving the goroutine
+// running. Nothing is committed, so no blob-level delete is issued.
+func TestJSONBlobWriterDeleteAbortsUnfinishedUpload(t *testing.T) {
+	w, fake := newJSONBlobWriterForTest(t, OutputConfig{
+		FileGenerator: "json-generator",
+		Filename:      "out.json",
+		Template:      `{"sku":"{SKU}"}`,
+	})
+	started := make(chan struct{})
+	w.sink.(*AzureBlobSink).startUpload = func(_ context.Context, _ string, body io.Reader) error {
+		close(started)
+		_, err := io.ReadAll(body)
+		return err
+	}
+	if err := w.Push(jsonTestLine("1005;A1;10;Widget", 1)); err != nil {
+		t.Fatalf("push: %v", err)
+	}
+	<-started
+	if err := w.Delete(); err != nil {
+		t.Fatalf("delete: %v", err)
+	}
+	if fake.completions != 0 {
+		t.Fatalf("completions = %d, want 0 (upload aborted)", fake.completions)
+	}
+	if fake.deletes != 0 {
+		t.Fatalf("deletes = %d, want 0 (nothing committed)", fake.deletes)
+	}
+}
+
+// TestJSONBlobWriterFactoryRegistration confirms that Factory with
+// json-generator + azure-blob produces a DeadlineAware Writer, completing the
+// Phase 3 registration that lets RunContext inject the job's time budget.
+func TestJSONBlobWriterFactoryRegistration(t *testing.T) {
+	opts := OutputConfig{
+		DestinationConfig: DestinationConfig{Type: DestinationAzureBlob, URL: testContainerURL},
+		FileGenerator:     "json-generator",
+		Filename:          "out.json",
+		Template:          `{"sku":"{SKU}"}`,
+	}
+	w, err := Factory(opts)
+	if err != nil {
+		t.Fatalf("Factory: %v", err)
+	}
+	if _, ok := w.(DeadlineAware); !ok {
+		t.Fatal("json-generator + azure-blob writer must implement DeadlineAware")
 	}
 }
 

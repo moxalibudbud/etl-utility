@@ -648,13 +648,15 @@ uploads do not have that problem.
 Since the protection already exists, the work is mostly about making it
 official and proving it stays that way:
 
-- Allow JSON output to cloud destinations.
-- Write down that this guarantee comes from how the upload is finalized, so
+- [x] Allow JSON output to cloud destinations.
+- [x] Write down that this guarantee comes from how the upload is finalized, so
   anyone changing that code later knows it is load-bearing.
-- Add a test proving nothing is readable at the destination until the job
+- [x] Add a test proving nothing is readable at the destination until the job
   finishes — the cloud equivalent of a check the local writer already has.
-- Add tests for cancelled uploads, successful completion, and deletion.
-- Add support for S3 when that destination is built.
+- [x] Add tests for cancelled uploads, successful completion, and deletion.
+
+S3 destination support is tracked in
+[`output-file-improvement.md`](output-file-improvement.md) (Phase 3).
 
 **Time limits — done.** Cloud functions are stopped after a fixed time. An
 upload used to have no time limit of its own, so a stalled upload could run
@@ -690,8 +692,20 @@ deadline composes with the ceiling (whichever is shorter wins). Covered by
 - [x] Read the budget from `ETL_JOB_CEILING` / `ETL_JOB_NO_LIMIT` at the
   entrypoints; validate loud; default to 15m.
 
-**Still open:** the visibility/atomicity tests, allowing JSON output to cloud
-destinations, and S3 support (below) remain the substantive Phase 3 work.
+**JSON output to cloud destinations — done.** `json-generator` is now registered
+for `azure-blob` in the writer factory. `newJSONWriterWithSink` separates
+validation from sink construction so both local and blob paths share the same
+core; `JSONWriter.SetDeadlineContexts` satisfies `DeadlineAware` by forwarding
+to the underlying `AzureBlobSink`. Covered by `blobwriter_test.go`:
+`TestJSONBlobWriterNothingVisibleUntilEnd` (atomicity), `TestJSONBlobWriterSuccessfulCompletion`,
+`TestJSONBlobWriterDeleteAbortsUnfinishedUpload`, and `TestJSONBlobWriterFactoryRegistration`.
+
+- [x] Register `json-generator` for `azure-blob` in the writer factory.
+- [x] Prove nothing is readable at the destination until the job finishes.
+- [x] Tests for cancelled uploads, successful completion, and deletion.
+
+**Still open:** S3 destination support — tracked in
+[`output-file-improvement.md`](output-file-improvement.md) Phase 3.
 
 **A cost note for whoever owns the storage account.** When an upload is
 abandoned partway, the chunks already sent are not visible as a file, but Azure

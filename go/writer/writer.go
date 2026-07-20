@@ -9,6 +9,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"os"
 
 	"flatfile-go/azureauth"
 	"flatfile-go/line"
@@ -222,10 +223,10 @@ func (c *OutputConfig) UnmarshalJSON(b []byte) error {
 }
 
 // Factory returns a Writer for the given destination and generator kind. The
-// destination axis (local vs azure-blob) is selected first; the generator axis
-// keeps its previous behavior, with an empty kind defaulting to the
-// delimited/template writer. Unsupported kinds (json/excel/dedup variants)
-// return an explicit error.
+// destination axis (local vs azure-blob) is selected first; within each
+// destination, an empty generator kind defaults to the delimited/template
+// writer. json-generator is supported for both destinations. Other kinds
+// (excel/dedup variants) return an explicit error.
 func Factory(opts OutputConfig) (Writer, error) {
 	if err := opts.Validate(); err != nil {
 		return nil, err
@@ -255,6 +256,15 @@ func newBlobWriter(opts OutputConfig) (Writer, error) {
 	switch opts.FileGenerator {
 	case "default-generator", "":
 		return NewAzureBlobWriter(opts), nil
+	case "json-generator":
+		if opts.Path == "" {
+			opts.Path = os.TempDir()
+		}
+		var auth azureauth.AzureAuth
+		if opts.Auth != nil {
+			auth = *opts.Auth
+		}
+		return newJSONWriterWithSink(opts, NewAzureBlobSink(opts.URL, auth))
 	default:
 		return nil, Permanent("build writer", "", fmt.Errorf("writer type %q is not supported in the Go core yet", opts.FileGenerator))
 	}

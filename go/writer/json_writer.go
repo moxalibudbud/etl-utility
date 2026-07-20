@@ -1,6 +1,7 @@
 package writer
 
 import (
+	"context"
 	"fmt"
 	"os"
 
@@ -28,6 +29,13 @@ func NewJSONWriter(opts OutputConfig) (*JSONWriter, error) {
 	if opts.Path == "" {
 		opts.Path = os.TempDir()
 	}
+	return newJSONWriterWithSink(opts, NewAtomicLocalSink(opts.Path))
+}
+
+// newJSONWriterWithSink is the shared constructor; the caller supplies the
+// already-constructed Sink so the factory's destination logic stays in one
+// place. NewJSONWriter (local) and newBlobWriter (azure-blob) both use it.
+func newJSONWriterWithSink(opts OutputConfig, sink Sink) (*JSONWriter, error) {
 	if opts.UniqueKey != "" {
 		return nil, Permanent("configure json writer", "", fmt.Errorf("output.uniqueKey is not supported for json-generator; deduplicate before writing JSON"))
 	}
@@ -37,7 +45,15 @@ func NewJSONWriter(opts OutputConfig) (*JSONWriter, error) {
 	if opts.Filename == "" {
 		return nil, Permanent("configure json writer", "", fmt.Errorf(`output filename is empty; set "filename"`))
 	}
-	return &JSONWriter{opts: opts, sink: NewAtomicLocalSink(opts.Path)}, nil
+	return &JSONWriter{opts: opts, sink: sink}, nil
+}
+
+// SetDeadlineContexts satisfies writer.DeadlineAware when the sink is an
+// AzureBlobSink; local JSON writers ignore this call.
+func (w *JSONWriter) SetDeadlineContexts(work, cleanup context.Context) {
+	if s, ok := w.sink.(*AzureBlobSink); ok {
+		s.setDeadlineContexts(work, cleanup)
+	}
 }
 
 func (w *JSONWriter) Path() string { return w.opts.Path }

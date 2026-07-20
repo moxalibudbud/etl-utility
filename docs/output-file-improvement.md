@@ -72,9 +72,12 @@ Concretely, this plan's proposals were **not** followed as written:
 - Error reports remain local-only, and `Writer.Path()` keeps returning a local
   staging directory (OS temp dir for blob output) so the orchestrator is
   unchanged.
-- S3, JSON output to cloud destinations, `context.Context` threading, the
-  `Result` `outputLocation` fields, and upload tuning remain unimplemented —
-  the phased design below is still the reference for that future work.
+- JSON output to cloud destinations (`json-generator` + `azure-blob`) has
+  shipped — see [`go-json-generator-design.md`](go-json-generator-design.md)
+  Phase 3 for the atomicity model and test coverage.
+- S3, `context.Context` threading, the `Result` `outputLocation` fields, and
+  upload tuning remain unimplemented — the phased design below is still the
+  reference for that future work.
 
 ## Motivation
 
