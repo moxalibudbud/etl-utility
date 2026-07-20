@@ -1,4 +1,5 @@
 [WARN] missing-site-url  (source: fields will be relative)
+[WARN] missing-type /AGENTS/  (using fallback 'concept')
 [WARN] missing-type /backlogs/  (using fallback 'concept')
 [WARN] missing-type /deployment-guide/  (using fallback 'concept')
 [WARN] missing-type /etl-code-review-and-go-des/  (using fallback 'concept')
@@ -8,5 +9,6 @@
 [WARN] missing-type /output-file-improvement/  (using fallback 'concept')
 [WARN] missing-type /source-file-improvement/  (using fallback 'concept')
 [WARN] missing-type /usage/  (using fallback 'concept')
+[WARN] orphan-concept agents  (no inbound links)
 [WARN] orphan-concept etl-code-review-and-go-des  (no inbound links)
 [WARN] orphan-concept root  (no inbound links)

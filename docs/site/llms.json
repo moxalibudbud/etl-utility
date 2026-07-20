@@ -3,6 +3,12 @@
   "description": "",
   "pages": [
     {
+      "title": "Agent Instructions: Documentation Scope",
+      "url": "/AGENTS/",
+      "description": "",
+      "priority": "medium"
+    },
+    {
       "title": "Backlog",
       "url": "/backlogs/",
       "description": "",

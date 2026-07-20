@@ -4,6 +4,7 @@
 
 ## Documentation Files
 
+- [Agent Instructions: Documentation Scope](/AGENTS/)
 - [Backlog](/backlogs/)
 - [Deployment Guide — ETL Utility](/deployment-guide/)
 - [ETL Utility — Code Review & Go Implementation Design](/etl-code-review-and-go-des/)
