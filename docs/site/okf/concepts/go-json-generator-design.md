@@ -6,7 +6,7 @@ path: /go-json-generator-design/
 updated: 2026-07-20
 okf:
   generated_by: "@docmd/plugin-okf"
-  generated_at: "2026-07-20T07:24:35.073Z"
+  generated_at: "2026-07-20T07:39:39.032Z"
 ---
 # Go JSON Generator — Recommended Design
 
