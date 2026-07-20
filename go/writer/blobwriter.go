@@ -1,6 +1,7 @@
 package writer
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"os"
@@ -35,6 +36,13 @@ func NewAzureBlobWriter(opts OutputConfig) *AzureBlobWriter {
 		auth = *opts.Auth
 	}
 	return &AzureBlobWriter{opts: opts, gen: newRenderer(opts), sink: NewAzureBlobSink(opts.URL, auth)}
+}
+
+// SetDeadlineContexts satisfies writer.DeadlineAware: it forwards the run's
+// work and cleanup contexts to the sink so the upload and the abort/delete
+// respect the job's time budget.
+func (w *AzureBlobWriter) SetDeadlineContexts(work, cleanup context.Context) {
+	w.sink.setDeadlineContexts(work, cleanup)
 }
 
 // Path returns the local staging directory used for the error report, not an

@@ -559,6 +559,72 @@ the invalid/error paths.
   `PushIfExist`/file-index dedup variants, custom JS template functions, and
   flags-only CLI mode.
 
+### 7.1 Job time budget
+
+Cloud functions are killed after a fixed time. Left unbounded, a stalled upload
+or download runs until the platform kills the whole process — producing no error
+you can act on and skipping cleanup entirely. So each run carves a time budget
+out of the host's execution ceiling, reserving a slice at the end for cleanup.
+
+Two environment variables control it (read once at process start; nothing is
+read from the environment inside the pipeline):
+
+| Variable | Default | Meaning |
+|---|---|---|
+| `ETL_JOB_CEILING` | `15m` | Your host's execution ceiling, as a Go duration (`15m`, `600s`, `9m30s`). **Set this to your platform's real limit.** |
+| `ETL_JOB_NO_LIMIT` | `false` | When `true`, removes all deadlines. For long-running hosts (a VM or container) that never kill the process. Overrides `ETL_JOB_CEILING`. |
+
+The ceiling is split into three parts, all derived — you only set the ceiling:
+
+```
+worker  = ceiling − 1m    the actual read/render/upload window (14m at the default)
+cleanup = 30s             reserved so close + delete run after work stops
+margin  = 30s             slack before the host's hard kill
+```
+
+The **worker** window bounds the whole pipeline: download, parse, render, and
+upload. If it is exceeded, the run fails with a retryable error (`KindTransient`,
+§6.1) instead of being silently killed by the host. The **cleanup** window runs
+on an independent clock, so it still completes even when the worker window has
+already timed out — which is exactly when cleanup matters most.
+
+**Set the ceiling to your host's real limit.** The default assumes an
+AWS-Lambda-class ceiling; other platforms differ, and a ceiling larger than the
+host's actual limit means the host kills the job mid-cleanup:
+
+| Host | Real execution ceiling |
+|---|---|
+| AWS Lambda | 15m |
+| Azure Functions — Consumption | 10m (5m default) |
+| Azure Functions — Premium/Dedicated | 30m → unbounded |
+| Google Cloud Functions gen1 / gen2 | 9m / 60m |
+
+A malformed or unusable value (`ETL_JOB_CEILING=15mm`, or a ceiling too small to
+fund the 1m reserve) **fails the run immediately with a permanent error** rather
+than falling back to a default — a silent fallback to a different duration is
+precisely the misconfiguration this feature exists to prevent. (This is stricter
+than the `output.options` toggles in §4.3.1, which tolerate bad values, because
+a wrong time budget has real cleanup consequences.)
+
+**Running locally or on a VM?** Set `ETL_JOB_NO_LIMIT=true` to remove all
+deadlines, or raise `ETL_JOB_CEILING` to whatever your process may run for. Note
+that with no limit a stalled network call blocks indefinitely — you are trading
+away the stalled-upload protection, so only do this where an operator or
+supervisor can intervene.
+
+**File-size guidance (not a hard limit).** The budget is about *time*, not
+memory — the pipeline streams, so memory stays flat regardless of file size
+(§7, "Large files"). For a serverless deployment, keeping inbound and outbound
+files to roughly a few hundred MB (≈400MB) comfortably fits the default worker
+window; larger files on a slow link may need a larger ceiling on a host that
+allows one.
+
+**Where the deadline comes from per surface:** the Lambda handler uses the
+invocation context (which already carries the function's remaining time, and
+composes with the ceiling — whichever is shorter wins); the HTTP handler uses
+the request context (note the server's own `WriteTimeout` also caps a run); the
+CLI uses a background context bounded only by the budget.
+
 ---
 
 ## 8. Testing your integration

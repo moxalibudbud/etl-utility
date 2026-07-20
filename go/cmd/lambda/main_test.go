@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"net/http"
 	"strings"
 	"testing"
@@ -9,7 +10,7 @@ import (
 )
 
 func TestHandleRequestRejectsUnsupportedMethod(t *testing.T) {
-	resp, err := handleRequest(events.LambdaFunctionURLRequest{
+	resp, err := handleRequest(context.Background(), events.LambdaFunctionURLRequest{
 		RequestContext: events.LambdaFunctionURLRequestContext{
 			HTTP: events.LambdaFunctionURLRequestContextHTTPDescription{Method: http.MethodGet},
 		},
@@ -24,7 +25,7 @@ func TestHandleRequestRejectsUnsupportedMethod(t *testing.T) {
 }
 
 func TestHandleRequestRejectsUnsupportedPath(t *testing.T) {
-	resp, err := handleRequest(events.LambdaFunctionURLRequest{
+	resp, err := handleRequest(context.Background(), events.LambdaFunctionURLRequest{
 		RawPath: "/unknown",
 		RequestContext: events.LambdaFunctionURLRequestContext{
 			HTTP: events.LambdaFunctionURLRequestContextHTTPDescription{Method: http.MethodPost},
@@ -40,7 +41,7 @@ func TestHandleRequestRejectsUnsupportedPath(t *testing.T) {
 }
 
 func TestHandleRequestRejectsInvalidJSON(t *testing.T) {
-	resp, err := handleRequest(events.LambdaFunctionURLRequest{
+	resp, err := handleRequest(context.Background(), events.LambdaFunctionURLRequest{
 		RawPath: "/etl",
 		RequestContext: events.LambdaFunctionURLRequestContext{
 			HTTP: events.LambdaFunctionURLRequestContextHTTPDescription{Method: http.MethodPost},
@@ -60,7 +61,7 @@ func TestHandleRequestRejectsInvalidJSON(t *testing.T) {
 }
 
 func TestHandleRequestRejectsUnknownFields(t *testing.T) {
-	resp, err := handleRequest(events.LambdaFunctionURLRequest{
+	resp, err := handleRequest(context.Background(), events.LambdaFunctionURLRequest{
 		RawPath: "/etl",
 		RequestContext: events.LambdaFunctionURLRequestContext{
 			HTTP: events.LambdaFunctionURLRequestContextHTTPDescription{Method: http.MethodPost},
@@ -85,7 +86,7 @@ func TestHandleRequestRejectsUnknownFields(t *testing.T) {
 }
 
 func TestHandleRequestRejectsInvalidBase64(t *testing.T) {
-	resp, err := handleRequest(events.LambdaFunctionURLRequest{
+	resp, err := handleRequest(context.Background(), events.LambdaFunctionURLRequest{
 		RawPath: "/etl",
 		RequestContext: events.LambdaFunctionURLRequestContext{
 			HTTP: events.LambdaFunctionURLRequestContextHTTPDescription{Method: http.MethodPost},

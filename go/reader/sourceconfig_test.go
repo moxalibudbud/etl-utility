@@ -1,6 +1,7 @@
 package reader
 
 import (
+	"context"
 	"encoding/json"
 	"strings"
 	"testing"
@@ -107,7 +108,7 @@ func TestSourceConfigValidateErrors(t *testing.T) {
 }
 
 func TestNewDispatchesBySourceType(t *testing.T) {
-	r, err := New(SourceConfig{Path: "in.csv"})
+	r, err := New(context.Background(), SourceConfig{Path: "in.csv"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -115,7 +116,7 @@ func TestNewDispatchesBySourceType(t *testing.T) {
 		t.Fatalf("reader = %T, want *LocalFileReader", r)
 	}
 
-	r, err = New(SourceConfig{
+	r, err = New(context.Background(), SourceConfig{
 		URL:  "https://acct.blob.core.windows.net/c/b.csv",
 		Auth: &AzureAuth{AccountName: "acct", AccountKey: "key"},
 	})
@@ -126,7 +127,7 @@ func TestNewDispatchesBySourceType(t *testing.T) {
 		t.Fatalf("reader = %T, want *AzureBlobReader", r)
 	}
 
-	if _, err := New(SourceConfig{}); err == nil {
+	if _, err := New(context.Background(), SourceConfig{}); err == nil {
 		t.Fatal("expected invalid config to fail")
 	}
 }

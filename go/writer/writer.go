@@ -6,6 +6,7 @@
 package writer
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 
@@ -22,6 +23,17 @@ type Writer interface {
 	Filepath() string
 	Filename() string
 	Path() string
+}
+
+// DeadlineAware is implemented by writers whose destination performs network
+// I/O that must respect the job's time budget. The ETL orchestrator probes for
+// it and injects the work and cleanup contexts, keeping the deadline out of the
+// core Writer interface (which every local writer and test double would
+// otherwise have to satisfy). This mirrors the OptionsProvider probe. The work
+// context bounds the upload; the cleanup context — reserved separately so it
+// survives a work-deadline timeout — bounds the abort/delete.
+type DeadlineAware interface {
+	SetDeadlineContexts(work, cleanup context.Context)
 }
 
 // Destination types accepted by DestinationConfig. They mirror the source

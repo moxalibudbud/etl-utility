@@ -16,6 +16,7 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -63,7 +64,12 @@ func run(args []string, stdin io.Reader, stdout io.Writer) error {
 		return err
 	}
 
-	result, err := etl.Run(cfg)
+	budget, err := etl.BudgetFromEnv()
+	if err != nil {
+		return err
+	}
+
+	result, err := etl.RunContext(context.Background(), budget, cfg)
 	if err != nil {
 		return err
 	}

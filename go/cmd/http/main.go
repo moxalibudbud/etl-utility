@@ -58,7 +58,16 @@ func handleETL(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	result, err := etl.Run(cfg)
+	budget, err := etl.BudgetFromEnv()
+	if err != nil {
+		log.Printf("invalid job budget: %v", err)
+		writeJSON(w, http.StatusInternalServerError, errorResponse{Error: err.Error()})
+		return
+	}
+
+	// The request context is the base deadline; note the server's WriteTimeout
+	// also caps a run over HTTP independently of ETL_JOB_CEILING.
+	result, err := etl.RunContext(r.Context(), budget, cfg)
 	if err != nil {
 		// Log the detailed internal error, while returning a stable HTTP response.
 		log.Printf("ETL run failed: %v", err)

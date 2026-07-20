@@ -3,6 +3,7 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
@@ -26,7 +27,12 @@ func main() {
 	lambda.Start(handleRequest)
 }
 
-func handleRequest(req events.LambdaFunctionURLRequest) (events.LambdaFunctionURLResponse, error) {
+// handleRequest takes the invocation context because Lambda encodes the
+// function's remaining execution time in it (ctx.Deadline()). Passing it as the
+// budget's base means our derived work deadline composes with the platform's:
+// WithDeadline picks whichever is earlier, so the reserved cleanup window is
+// preserved even if the function is configured with less time than the ceiling.
+func handleRequest(ctx context.Context, req events.LambdaFunctionURLRequest) (events.LambdaFunctionURLResponse, error) {
 	if req.RequestContext.HTTP.Method != "" && req.RequestContext.HTTP.Method != http.MethodPost {
 		return jsonResponse(http.StatusMethodNotAllowed, errorResponse{Error: "method not allowed"})
 	}
@@ -50,7 +56,12 @@ func handleRequest(req events.LambdaFunctionURLRequest) (events.LambdaFunctionUR
 		})
 	}
 
-	result, err := etl.Run(cfg)
+	budget, err := etl.BudgetFromEnv()
+	if err != nil {
+		return jsonResponse(http.StatusInternalServerError, errorResponse{Error: err.Error()})
+	}
+
+	result, err := etl.RunContext(ctx, budget, cfg)
 	if err != nil {
 		return jsonResponse(http.StatusInternalServerError, errorResponse{Error: err.Error()})
 	}

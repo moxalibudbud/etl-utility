@@ -29,6 +29,13 @@ type AzureBlobSink struct {
 	urlPrefix string
 	auth      azureauth.AzureAuth
 
+	// workCtx bounds the upload and its commit; cleanupCtx bounds the abort/
+	// delete and is independent of workCtx (see Budget.Deadlines) so cleanup
+	// still runs after work hits its deadline. Both default to
+	// context.Background() and are overridden via setDeadlineContexts.
+	workCtx    context.Context
+	cleanupCtx context.Context
+
 	pw       *io.PipeWriter
 	done     chan error // the single result of the background upload
 	destURL  string
@@ -47,10 +54,27 @@ type AzureBlobSink struct {
 // NewAzureBlobSink returns a sink that uploads to urlPrefix (a container/
 // prefix URL) joined with whatever filename Start is called with.
 func NewAzureBlobSink(urlPrefix string, auth azureauth.AzureAuth) *AzureBlobSink {
-	s := &AzureBlobSink{urlPrefix: urlPrefix, auth: auth}
+	s := &AzureBlobSink{
+		urlPrefix:  urlPrefix,
+		auth:       auth,
+		workCtx:    context.Background(),
+		cleanupCtx: context.Background(),
+	}
 	s.startUpload = s.uploadStream
 	s.deleteBlob = s.deleteUploadedBlob
 	return s
+}
+
+// setDeadlineContexts injects the run's work and cleanup contexts. A nil
+// context is ignored so a partial wiring never drops back to no deadline
+// unintentionally.
+func (s *AzureBlobSink) setDeadlineContexts(work, cleanup context.Context) {
+	if work != nil {
+		s.workCtx = work
+	}
+	if cleanup != nil {
+		s.cleanupCtx = cleanup
+	}
 }
 
 // Location joins the rendered filename onto the container/prefix URL,
@@ -70,7 +94,10 @@ func (s *AzureBlobSink) Start(filename string) (io.Writer, error) {
 	s.done = make(chan error, 1)
 	s.destURL = s.Location(filename)
 	go func() {
-		err := s.startUpload(context.Background(), s.destURL, pr)
+		// workCtx bounds the whole upload, including the final Put Block List
+		// that Close awaits: a stalled upload fails on the job deadline rather
+		// than running until the host kills the process.
+		err := s.startUpload(s.workCtx, s.destURL, pr)
 		// Unblock any writer currently or later blocked on pw with the real
 		// failure reason, not a generic closed-pipe error.
 		_ = pr.CloseWithError(err)
@@ -126,7 +153,7 @@ func (s *AzureBlobSink) Delete() error {
 	if !s.uploaded {
 		return nil
 	}
-	if err := s.deleteBlob(context.Background(), s.destURL); err != nil {
+	if err := s.deleteBlob(s.cleanupCtx, s.destURL); err != nil {
 		return Unresolved("delete blob", s.destURL, err)
 	}
 	s.uploaded = false

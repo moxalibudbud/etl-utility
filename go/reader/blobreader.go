@@ -23,15 +23,23 @@ type AzureBlobReader struct {
 	body    io.ReadCloser
 	scanner *bufio.Scanner
 
+	// ctx is the work context supplied by reader.New; it bounds the streaming
+	// download to the job's time budget. The streaming Open/Scan/Close
+	// lifecycle has no per-call context, so the request-scoped context is held
+	// on the reader (as with the open func below). It defaults to
+	// context.Background() for direct construction in tests.
+	ctx context.Context
+
 	// open acquires the blob byte stream. Tests replace it to exercise the
 	// reader without contacting Azure.
 	open func(ctx context.Context) (io.ReadCloser, error)
 }
 
 // NewAzureBlobReader returns a reader for the given blob URL using the
-// caller-supplied credentials.
+// caller-supplied credentials. reader.New overrides ctx with the run's work
+// context; the Background default keeps direct construction (tests) working.
 func NewAzureBlobReader(source string, auth AzureAuth) *AzureBlobReader {
-	r := &AzureBlobReader{source: source, auth: auth}
+	r := &AzureBlobReader{source: source, auth: auth, ctx: context.Background()}
 	r.open = r.download
 	return r
 }
@@ -40,7 +48,7 @@ func NewAzureBlobReader(source string, auth AzureAuth) *AzureBlobReader {
 // setup matches LocalFileReader so line limits and CRLF handling are identical
 // across sources.
 func (r *AzureBlobReader) Open() error {
-	body, err := r.open(context.Background())
+	body, err := r.open(r.ctx)
 	if err != nil {
 		return err
 	}

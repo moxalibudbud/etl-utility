@@ -656,15 +656,42 @@ official and proving it stays that way:
 - Add tests for cancelled uploads, successful completion, and deletion.
 - Add support for S3 when that destination is built.
 
-**Still to do first: time limits.** Cloud functions are stopped after a fixed
-time. Today an upload has no time limit of its own, so a stalled upload can run
-until the platform kills the whole job — producing no error anyone can act on
-and skipping cleanup entirely. Uploads need to respect the job's deadline.
+**Time limits — done.** Cloud functions are stopped after a fixed time. An
+upload used to have no time limit of its own, so a stalled upload could run
+until the platform killed the whole job — producing no error anyone could act on
+and skipping cleanup entirely. Now every run carves a time budget out of the
+host's execution ceiling and threads it, as a `context.Context` work deadline,
+through the streaming download (`reader.AzureBlobReader`) and the upload/commit
+(`writer.AzureBlobSink`). A stalled upload fails on the work deadline with a
+retryable error instead of a silent host kill.
 
-Cleanup, though, must deliberately *not* share that deadline. If it did, then
-the moment a job runs out of time, its cleanup would be cancelled too — failing
-exactly when it is needed most. Cleanup needs its own small, separate time
-budget, reserved up front.
+Cleanup deliberately does *not* share that deadline. If it did, the moment a job
+ran out of time its cleanup would be cancelled too — failing exactly when it is
+needed most. Cleanup runs on an independent context (`context.WithoutCancel`)
+with its own budget, reserved up front. The split (`etl.Budget.Deadlines`):
+
+```
+worker  = ceiling − cleanupBudget − safetyMargin   (the work window)
+cleanup = cleanupBudget (30s)                       (close + delete)
+margin  = safetyMargin (30s)                        (slack before the host kill)
+```
+
+The ceiling is the single knob, defaulting to 15m (AWS-Lambda-class) and set per
+host via `ETL_JOB_CEILING`; `ETL_JOB_NO_LIMIT=true` removes all deadlines for a
+long-running VM. It is read at the process edge (the `cmd/*` entrypoints) via
+`etl.BudgetFromEnv`, keeping `etl.Config` a pure request. A malformed budget
+fails loud as `KindPermanent` rather than falling back to a default. On Lambda
+the invocation context is the base, so the platform's own remaining-time
+deadline composes with the ceiling (whichever is shorter wins). Covered by
+`budget_test.go`; see usage.md §7.1 for the operator-facing reference.
+
+- [x] Bound the streaming download and the upload/commit with the job's work
+  deadline; keep cleanup on an independent reserved budget.
+- [x] Read the budget from `ETL_JOB_CEILING` / `ETL_JOB_NO_LIMIT` at the
+  entrypoints; validate loud; default to 15m.
+
+**Still open:** the visibility/atomicity tests, allowing JSON output to cloud
+destinations, and S3 support (below) remain the substantive Phase 3 work.
 
 **A cost note for whoever owns the storage account.** When an upload is
 abandoned partway, the chunks already sent are not visible as a file, but Azure

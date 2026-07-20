@@ -3,7 +3,10 @@
 // bytes come from. Supported sources: local files and Azure Blob Storage.
 package reader
 
-import "fmt"
+import (
+	"context"
+	"fmt"
+)
 
 // Reader streams lines from a source. Open must be called before Scan.
 type Reader interface {
@@ -18,8 +21,10 @@ type Reader interface {
 
 // New validates cfg and builds the Reader for its source type. Credentials for
 // cloud sources travel inside cfg (see SourceConfig.Auth); nothing is read
-// from the environment here.
-func New(cfg SourceConfig) (Reader, error) {
+// from the environment here. ctx is the work context: it bounds a streaming
+// blob download so a stalled read fails on the job deadline instead of hanging
+// until the host kills the whole process. A local source does not use it.
+func New(ctx context.Context, cfg SourceConfig) (Reader, error) {
 	if err := cfg.Validate(); err != nil {
 		return nil, err
 	}
@@ -29,7 +34,9 @@ func New(cfg SourceConfig) (Reader, error) {
 		if cfg.Auth != nil {
 			auth = *cfg.Auth
 		}
-		return NewAzureBlobReader(cfg.URL, auth), nil
+		r := NewAzureBlobReader(cfg.URL, auth)
+		r.ctx = ctx
+		return r, nil
 	case SourceLocal:
 		return NewLocalFileReader(cfg.Path), nil
 	default:

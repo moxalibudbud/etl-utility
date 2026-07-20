@@ -7,6 +7,7 @@ import (
 	"os"
 	"sync"
 	"testing"
+	"time"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 
@@ -382,6 +383,58 @@ func TestBlobWriterDeleteRetriesUploadedStateAfterFailure(t *testing.T) {
 	}
 	if calls != 2 {
 		t.Fatalf("deleteBlob calls = %d, want 2 (the retry must call deleteBlob again, not no-op)", calls)
+	}
+}
+
+// TestBlobWriterStalledUploadIsTransient is the end-to-end proof that the
+// Phase 3 time-limit plumbing works. It simulates a stalled network call by
+// blocking startUpload on ctx.Done() without reading from the pipe — which also
+// blocks the Push pipe-write. When the work deadline fires, the goroutine
+// unblocks, closes the read side of the pipe with the context error, and Push
+// returns. Both Push and End must surface KindTransient, not KindPermanent:
+// this is what lets the caller retry rather than dead-letter a job that simply
+// hit a slow network.
+func TestBlobWriterStalledUploadIsTransient(t *testing.T) {
+	w, _ := newBlobWriterForTest(t, OutputConfig{Filename: "out.csv", Template: "{ITEM}"})
+
+	// Block without reading from body — simulates a hung SDK call.
+	w.sink.startUpload = func(ctx context.Context, _ string, _ io.Reader) error {
+		<-ctx.Done()
+		return ctx.Err()
+	}
+
+	// Short work deadline; cleanup gets its own independent deadline (not a
+	// child of work) so it still runs after work times out — mirroring
+	// Budget.Deadlines exactly.
+	work, cancelWork := context.WithTimeout(context.Background(), 80*time.Millisecond)
+	defer cancelWork()
+	cleanup, cancelCleanup := context.WithTimeout(context.WithoutCancel(context.Background()), 5*time.Second)
+	defer cancelCleanup()
+	w.SetDeadlineContexts(work, cleanup)
+
+	sl := line.New("1005;ABC", line.LineConfig{Columns: []string{"LOC", "ITEM"}}, 1)
+
+	// Push blocks on the pipe write until the work deadline fires (~80ms).
+	pushErr := w.Push(sl)
+	if pushErr == nil {
+		t.Fatal("expected Push to fail when the work deadline fires")
+	}
+	if got := KindOf(pushErr); got != KindTransient {
+		t.Fatalf("KindOf(Push error) = %v (%v), want KindTransient", got, pushErr)
+	}
+
+	// End must surface the same resolved failure, not block or panic.
+	endErr := w.End()
+	if endErr == nil {
+		t.Fatal("expected End to report the upload failure")
+	}
+	if got := KindOf(endErr); got != KindTransient {
+		t.Fatalf("KindOf(End error) = %v (%v), want KindTransient", got, endErr)
+	}
+
+	// Nothing was committed, so Delete must succeed without contacting Azure.
+	if err := w.Delete(); err != nil {
+		t.Fatalf("Delete after stalled upload: %v", err)
 	}
 }
 
