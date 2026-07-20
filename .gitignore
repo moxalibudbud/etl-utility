@@ -9,3 +9,6 @@
 .devdata
 
 # Per-implementation ignores live in typescript/.gitignore and go/.gitignore
+
+# Build output
+dist/
