@@ -29,18 +29,21 @@ func NewJSONWriter(opts OutputConfig) (*JSONWriter, error) {
 		opts.Path = os.TempDir()
 	}
 	if opts.UniqueKey != "" {
-		return nil, fmt.Errorf("output.uniqueKey is not supported for json-generator; deduplicate before writing JSON")
+		return nil, Permanent("configure json writer", "", fmt.Errorf("output.uniqueKey is not supported for json-generator; deduplicate before writing JSON"))
 	}
 	if opts.Footer != "" {
-		return nil, fmt.Errorf("output.footer is not supported for json-generator")
+		return nil, Permanent("configure json writer", "", fmt.Errorf("output.footer is not supported for json-generator"))
 	}
 	if opts.Filename == "" {
-		return nil, fmt.Errorf(`output filename is empty; set "filename"`)
+		return nil, Permanent("configure json writer", "", fmt.Errorf(`output filename is empty; set "filename"`))
 	}
 	return &JSONWriter{opts: opts, sink: NewAtomicLocalSink(opts.Path)}, nil
 }
 
 func (w *JSONWriter) Path() string { return w.opts.Path }
+
+// Options exposes the output-level toggles for writer.OptionsProvider.
+func (w *JSONWriter) Options() map[string]any { return w.opts.Options }
 
 func (w *JSONWriter) Filename() string { return w.filename }
 
@@ -53,10 +56,10 @@ func (w *JSONWriter) Filepath() string {
 
 func (w *JSONWriter) Push(sl *line.SourceLine) error {
 	if w.failed {
-		return fmt.Errorf("json writer is in a failed state")
+		return Permanent("push json row", w.Filepath(), fmt.Errorf("json writer is in a failed state"))
 	}
 	if w.finalized {
-		return fmt.Errorf("json writer is already finalized")
+		return Permanent("push json row", w.Filepath(), fmt.Errorf("json writer is already finalized"))
 	}
 	if !w.started {
 		if err := w.start(sl); err != nil {
@@ -100,7 +103,7 @@ func (w *JSONWriter) Delete() error {
 func (w *JSONWriter) start(sl *line.SourceLine) error {
 	w.filename = renderFilename(w.opts, sl)
 	if w.filename == "" {
-		return fmt.Errorf(`output filename is empty; set "filename"`)
+		return Permanent("render json filename", "", fmt.Errorf(`output filename is empty; set "filename"`))
 	}
 
 	out, err := w.sink.Start(w.filename)

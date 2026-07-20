@@ -9,6 +9,8 @@
 package etl
 
 import (
+	"errors"
+
 	"flatfile-go/line"
 	"flatfile-go/reader"
 	"flatfile-go/writer"
@@ -61,7 +63,7 @@ func New(source reader.SourceConfig, opts Options, output writer.Writer) (*ETL, 
 	return &ETL{
 		reader:      r,
 		output:      output,
-		errorReport: writer.NewErrorReport(r.Filename(), output.Path()),
+		errorReport: writer.NewErrorReport(r.Filename(), output.Path(), writer.ErrorReportEnabled(output)),
 		opts:        opts,
 		valid:       true,
 	}, nil
@@ -73,14 +75,16 @@ func (e *ETL) Process() (Result, error) {
 		return Result{}, err
 	}
 
+	// On the failure paths the cleanup error is joined with the original
+	// rather than discarded: a cleanup that could not remove the artifact
+	// escalates the whole failure to writer.KindUnresolved, which is what
+	// tells a worker handler to reconcile instead of blindly retrying.
 	if err := e.processLines(); err != nil {
-		_ = e.cleanUp(true) // force cleanup, then surface the error
-		return Result{}, err
+		return Result{}, errors.Join(err, e.cleanUp(true))
 	}
 
 	if err := e.output.PushFooter(); err != nil {
-		_ = e.cleanUp(true)
-		return Result{}, err
+		return Result{}, errors.Join(err, e.cleanUp(true))
 	}
 
 	e.validateFinalResult()
@@ -133,28 +137,31 @@ func (e *ETL) validateFinalResult() {
 // cleanUp ends streams and deletes empty/invalid artifacts. With force=true both
 // files are deleted unconditionally (the error path), unifying the TS cleanUp and
 // forceCleanUp methods.
+//
+// Every step runs even if an earlier one failed, and the failures are joined.
+// Returning early here used to skip the deletes entirely, so a failed End left
+// its artifact behind — exactly the case cleanup exists for. On a serverless
+// worker there is no later pass to catch it: the container is frozen or
+// destroyed once Process returns, so anything not deleted now is leaked for
+// good (a committed blob, or a file occupying the small ephemeral scratch
+// space that warm invocations share).
 func (e *ETL) cleanUp(force bool) error {
-	if err := e.output.End(); err != nil {
-		return err
-	}
-	if err := e.errorReport.End(); err != nil {
-		return err
-	}
-	if err := e.reader.Close(); err != nil {
-		return err
-	}
+	var errs []error
+
+	// A failed End means the output was never finalized cleanly, so it must be
+	// removed regardless of how the run itself was judged.
+	endErr := e.output.End()
+	errs = append(errs, endErr)
+	errs = append(errs, e.errorReport.End())
+	errs = append(errs, e.reader.Close())
 
 	if force || e.errorReport.InvalidRows == 0 {
-		if err := e.errorReport.Delete(); err != nil {
-			return err
-		}
+		errs = append(errs, e.errorReport.Delete())
 	}
-	if force || !e.valid {
-		if err := e.output.Delete(); err != nil {
-			return err
-		}
+	if force || !e.valid || endErr != nil {
+		errs = append(errs, e.output.Delete())
 	}
-	return nil
+	return errors.Join(errs...)
 }
 
 func (e *ETL) getResult() Result {

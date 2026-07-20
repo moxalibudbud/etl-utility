@@ -41,6 +41,9 @@ func NewAzureBlobWriter(opts OutputConfig) *AzureBlobWriter {
 // Azure location; the output itself goes to the blob URL.
 func (w *AzureBlobWriter) Path() string { return w.opts.Path }
 
+// Options exposes the output-level toggles for writer.OptionsProvider.
+func (w *AzureBlobWriter) Options() map[string]any { return w.opts.Options }
+
 func (w *AzureBlobWriter) Filename() string { return w.gen.Filename() }
 
 // Filepath returns the full destination blob URL, empty until the first row
@@ -65,7 +68,7 @@ func (w *AzureBlobWriter) Push(sl *line.SourceLine) error {
 	}
 	if !w.started {
 		if w.gen.Filename() == "" {
-			return fmt.Errorf(`output filename is empty; set "filename"`)
+			return Permanent("render output filename", "", fmt.Errorf(`output filename is empty; set "filename"`))
 		}
 		out, err := w.sink.Start(w.gen.Filename())
 		if err != nil {

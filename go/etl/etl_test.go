@@ -2,6 +2,7 @@ package etl
 
 import (
 	"encoding/json"
+	"errors"
 	"os"
 	"path/filepath"
 	"strings"
@@ -55,7 +56,13 @@ func TestProcessHappyPathWithOneInvalidRow(t *testing.T) {
 			"333,CCC,Widget C\n", // valid
 	)
 
-	res, err := Run(baseConfig(src, outDir))
+	// errorReport is opt-in (default off); enable it here because this test
+	// asserts on the report's contents. See TestProcessErrorReportDisabledByDefault
+	// for the off-by-default behavior.
+	cfg := baseConfig(src, outDir)
+	cfg.Output.Options = map[string]any{writer.OptionErrorReport: true}
+
+	res, err := Run(cfg)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -88,6 +95,41 @@ func TestProcessHappyPathWithOneInvalidRow(t *testing.T) {
 
 	if res.Metadata["barcode"] != "111" || res.Metadata["SKU"] != "AAA" {
 		t.Errorf("metadata sample/identifiers wrong: %#v", res.Metadata)
+	}
+}
+
+// TestProcessErrorReportDisabledByDefault locks in that OptionErrorReport
+// defaults to off: no report file is created or named in the result, but
+// invalid-row counting (TotalErrors/WithErrors) is unaffected, since
+// RejectOnInvalidRow depends on that count regardless of whether the file
+// exists.
+func TestProcessErrorReportDisabledByDefault(t *testing.T) {
+	outDir := t.TempDir()
+	src := writeFixture(t,
+		"BARCODE,SKU,NAME\n"+
+			"111,AAA,Widget A\n"+
+			",BBB,Widget B\n",
+	)
+
+	res, err := Run(baseConfig(src, outDir))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if !res.WithErrors || res.TotalErrors != 1 {
+		t.Errorf("expected counting to work without the report file, got WithErrors=%v TotalErrors=%d", res.WithErrors, res.TotalErrors)
+	}
+	if res.LocalErrorReportFile != "" || res.LocalErrorReportFilename != "" {
+		t.Errorf("expected no report file path when disabled, got file=%q filename=%q", res.LocalErrorReportFile, res.LocalErrorReportFilename)
+	}
+	entries, err := os.ReadDir(outDir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, entry := range entries {
+		if strings.Contains(entry.Name(), "error") {
+			t.Errorf("no error-report file should be written when disabled, found %q", entry.Name())
+		}
 	}
 }
 
@@ -140,12 +182,20 @@ func TestProcessNoErrorsDeletesErrorReport(t *testing.T) {
 			"111,AAA,Widget A\n",
 	)
 
-	res, err := Run(baseConfig(src, outDir))
+	// Enabled explicitly: this test verifies the zero-errors delete path,
+	// which only applies when the report is being written at all.
+	cfg := baseConfig(src, outDir)
+	cfg.Output.Options = map[string]any{writer.OptionErrorReport: true}
+
+	res, err := Run(cfg)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if res.WithErrors {
 		t.Error("expected no errors")
+	}
+	if res.LocalErrorReportFile == "" {
+		t.Fatal("expected a report path to be named since the option is enabled")
 	}
 	if _, err := os.Stat(res.LocalErrorReportFile); !os.IsNotExist(err) {
 		t.Error("error report should be deleted when there are zero errors")
@@ -193,5 +243,81 @@ func TestProcessJSONGeneratorLocalOutput(t *testing.T) {
 	}
 	if got.Items[0]["sku"] != "AAA" || got.Items[1]["sku"] != "AAA" {
 		t.Fatalf("duplicate valid rows should both be emitted: %#v", got.Items)
+	}
+}
+
+// fakeWriter is a minimal writer.Writer double that lets cleanUp tests inject
+// failures at End/Delete without touching the filesystem.
+type fakeWriter struct {
+	endErr, deleteErr       error
+	endCalled, deleteCalled bool
+}
+
+func (f *fakeWriter) Push(*line.SourceLine) error { return nil }
+func (f *fakeWriter) PushFooter() error           { return nil }
+func (f *fakeWriter) End() error                  { f.endCalled = true; return f.endErr }
+func (f *fakeWriter) Delete() error               { f.deleteCalled = true; return f.deleteErr }
+func (f *fakeWriter) Filepath() string            { return "fake-output" }
+func (f *fakeWriter) Filename() string            { return "fake-output" }
+func (f *fakeWriter) Path() string                { return "" }
+
+// fakeReader is a minimal reader.Reader double with no lines, used only to
+// inject a Close failure.
+type fakeReader struct {
+	closeErr    error
+	closeCalled bool
+}
+
+func (r *fakeReader) Open() error      { return nil }
+func (r *fakeReader) Scan() bool       { return false }
+func (r *fakeReader) Text() string     { return "" }
+func (r *fakeReader) Err() error       { return nil }
+func (r *fakeReader) Close() error     { r.closeCalled = true; return r.closeErr }
+func (r *fakeReader) Filename() string { return "fake-source" }
+func (r *fakeReader) Filepath() string { return "fake-source" }
+
+// TestCleanUpAccumulatesAllFailures is a regression test for cleanUp's old
+// short-circuiting behavior: returning on the first failing step used to
+// skip the deletes entirely, so a failed End() left its artifact behind with
+// no later pass to catch it (the pipeline targets serverless workers, where
+// the process is frozen or destroyed right after Process returns). Every
+// step must now run regardless of earlier failures, and every failure must
+// be reachable from the returned error.
+func TestCleanUpAccumulatesAllFailures(t *testing.T) {
+	fw := &fakeWriter{endErr: errors.New("end failed"), deleteErr: errors.New("delete failed")}
+	fr := &fakeReader{closeErr: errors.New("reader close failed")}
+	er := writer.NewErrorReport("src", t.TempDir(), false)
+
+	e := &ETL{reader: fr, output: fw, errorReport: er, valid: false}
+
+	err := e.cleanUp(true) // force path, mirrors the failure branch in Process
+	if err == nil {
+		t.Fatal("expected a joined error")
+	}
+	if !fw.endCalled || !fw.deleteCalled || !fr.closeCalled {
+		t.Fatalf("expected every cleanup step to run despite earlier failures: end=%v delete=%v readerClose=%v",
+			fw.endCalled, fw.deleteCalled, fr.closeCalled)
+	}
+	if !errors.Is(err, fw.endErr) || !errors.Is(err, fw.deleteErr) || !errors.Is(err, fr.closeErr) {
+		t.Fatalf("expected the joined error to reach all three causes, got %v", err)
+	}
+}
+
+// TestCleanUpDeletesOutputWhenEndFailsEvenIfValid proves the new endErr != nil
+// condition on the output.Delete() guard: previously only force or an invalid
+// result triggered a delete, so a valid, non-forced run whose End() failed to
+// finalize cleanly would leave the (incompletely written) output file in
+// place, since the old code required !e.valid to delete it and there was no
+// other route to a delete on this path.
+func TestCleanUpDeletesOutputWhenEndFailsEvenIfValid(t *testing.T) {
+	fw := &fakeWriter{endErr: errors.New("end failed")}
+	fr := &fakeReader{}
+	er := writer.NewErrorReport("src", t.TempDir(), false)
+
+	e := &ETL{reader: fr, output: fw, errorReport: er, valid: true}
+
+	_ = e.cleanUp(false) // not forced, and the result is otherwise valid
+	if !fw.deleteCalled {
+		t.Fatal("expected output.Delete() to run because End() failed, even though force=false and valid=true")
 	}
 }

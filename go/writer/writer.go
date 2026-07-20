@@ -53,6 +53,10 @@ type DestinationConfig struct {
 // that exactly the fields required by the type are present. Unlike the
 // reader's SourceConfig, an entirely empty config is valid: it stays local
 // and DefaultWriter falls back to the OS temp dir.
+// Validate errors are always KindPermanent: they fire before any I/O, purely
+// from the shape of the request, so retrying the identical config produces
+// the identical rejection. A worker handler should dead-letter these
+// immediately rather than spend a retry budget on them.
 func (c *DestinationConfig) Validate() error {
 	if c.Type == "" {
 		switch {
@@ -61,27 +65,27 @@ func (c *DestinationConfig) Validate() error {
 		case c.URL == "":
 			c.Type = DestinationLocal
 		default:
-			return fmt.Errorf("output: path and url must not both be set")
+			return Permanent("validate output config", "", fmt.Errorf("output: path and url must not both be set"))
 		}
 	}
 
 	switch c.Type {
 	case DestinationLocal:
 		if c.URL != "" {
-			return fmt.Errorf("output: url must not be set when type is %q", DestinationLocal)
+			return Permanent("validate output config", "", fmt.Errorf("output: url must not be set when type is %q", DestinationLocal))
 		}
 		if c.Auth != nil {
-			return fmt.Errorf("output: auth is only valid when type is %q", DestinationAzureBlob)
+			return Permanent("validate output config", "", fmt.Errorf("output: auth is only valid when type is %q", DestinationAzureBlob))
 		}
 	case DestinationAzureBlob:
 		if c.URL == "" {
-			return fmt.Errorf("output: url is required when type is %q", DestinationAzureBlob)
+			return Permanent("validate output config", "", fmt.Errorf("output: url is required when type is %q", DestinationAzureBlob))
 		}
 		if c.Path != "" {
-			return fmt.Errorf("output: path must not be set when type is %q", DestinationAzureBlob)
+			return Permanent("validate output config", "", fmt.Errorf("output: path must not be set when type is %q", DestinationAzureBlob))
 		}
 	default:
-		return fmt.Errorf("output: unsupported type %q", c.Type)
+		return Permanent("validate output config", "", fmt.Errorf("output: unsupported type %q", c.Type))
 	}
 	return nil
 }
@@ -103,6 +107,62 @@ type OutputConfig struct {
 	ArrayField    string         `json:"arrayField"`
 	UniqueKey     string         `json:"uniqueKey"`
 	Metadata      map[string]any `json:"metadata"`
+
+	// Options holds optional writer behavior toggles that are not part of the
+	// document format itself. It is a map rather than typed fields so new
+	// toggles can be added without another wire-shape migration, and every
+	// option must default to the zero value so an absent map behaves like the
+	// current default.
+	//
+	// Note this is "output.options", distinct from the top-level "options"
+	// that carries the line rules:
+	//
+	//	{"output": {"options": {"errorReport": true}}, "options": {"line": {...}}}
+	Options map[string]any `json:"options,omitempty"`
+}
+
+// Option keys recognized in OutputConfig.Options.
+const (
+	// OptionErrorReport enables writing the "<source>.error.txt" report file.
+	// It defaults to false: the pipeline targets serverless workers where the
+	// writable filesystem is a small ephemeral scratch space reused across
+	// warm invocations, so producing a side file nobody collects is a leak,
+	// not a feature. Invalid rows are still counted and still surface through
+	// Result.TotalErrors and RejectOnInvalidRow when this is off.
+	OptionErrorReport = "errorReport"
+)
+
+// BoolOption reads a boolean toggle from Options, returning def when the key
+// is absent. A value of the wrong type is treated as absent rather than an
+// error, keeping an unrecognized wire value from failing an otherwise valid
+// run.
+func (c OutputConfig) BoolOption(name string, def bool) bool {
+	v, ok := c.Options[name]
+	if !ok {
+		return def
+	}
+	b, ok := v.(bool)
+	if !ok {
+		return def
+	}
+	return b
+}
+
+// OptionsProvider is implemented by writers constructed from an OutputConfig.
+// ETL uses it to read output-level toggles without widening the Writer
+// interface, which every writer and test double would then have to satisfy.
+type OptionsProvider interface {
+	Options() map[string]any
+}
+
+// ErrorReportEnabled reports whether w opted into writing an error-report
+// file. Writers that carry no config (test doubles) get the default: off.
+func ErrorReportEnabled(w Writer) bool {
+	p, ok := w.(OptionsProvider)
+	if !ok {
+		return false
+	}
+	return OutputConfig{Options: p.Options()}.BoolOption(OptionErrorReport, false)
 }
 
 // UnmarshalJSON accepts the three historical wire shapes for the filename:
@@ -164,7 +224,7 @@ func Factory(opts OutputConfig) (Writer, error) {
 	case DestinationLocal:
 		return newLocalWriter(opts)
 	default:
-		return nil, fmt.Errorf("output: unsupported type %q", opts.Type)
+		return nil, Permanent("build writer", "", fmt.Errorf("output: unsupported type %q", opts.Type))
 	}
 }
 
@@ -175,7 +235,7 @@ func newLocalWriter(opts OutputConfig) (Writer, error) {
 	case "json-generator":
 		return NewJSONWriter(opts)
 	default:
-		return nil, fmt.Errorf("writer type %q is not supported in the Go core yet", opts.FileGenerator)
+		return nil, Permanent("build writer", "", fmt.Errorf("writer type %q is not supported in the Go core yet", opts.FileGenerator))
 	}
 }
 
@@ -184,6 +244,6 @@ func newBlobWriter(opts OutputConfig) (Writer, error) {
 	case "default-generator", "":
 		return NewAzureBlobWriter(opts), nil
 	default:
-		return nil, fmt.Errorf("writer type %q is not supported in the Go core yet", opts.FileGenerator)
+		return nil, Permanent("build writer", "", fmt.Errorf("writer type %q is not supported in the Go core yet", opts.FileGenerator))
 	}
 }

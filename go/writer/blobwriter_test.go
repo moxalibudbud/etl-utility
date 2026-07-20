@@ -8,6 +8,8 @@ import (
 	"sync"
 	"testing"
 
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
+
 	"flatfile-go/line"
 )
 
@@ -273,6 +275,113 @@ func TestBlobWriterPathStaysLocalForErrorReport(t *testing.T) {
 	w, _ := newBlobWriterForTest(t, OutputConfig{Filename: "out.csv"})
 	if w.Path() == "" || w.Path() == testContainerURL {
 		t.Fatalf("Path = %q, want a local staging directory", w.Path())
+	}
+}
+
+// TestBlobWriterCloseFailureClassifiedByAzureCause proves an upload failure
+// is classified from Azure's response rather than given a blanket kind: per
+// the design doc's chosen atomicity model, the blob does not exist until Put
+// Block List commits, so an error at this point never leaves anything
+// behind — the only open question is whether the cause (throttling vs. a
+// rejected request) makes a retry worthwhile.
+//
+// The fake startUpload never reads body, so — exactly as in
+// TestBlobWriterUploadFailureSurfacesThroughPush — the blocked pipe write
+// inside Push is where the error actually surfaces, not End.
+func TestBlobWriterCloseFailureClassifiedByAzureCause(t *testing.T) {
+	tests := []struct {
+		name   string
+		status int
+		want   ErrorKind
+	}{
+		{"throttled is transient", 503, KindTransient},
+		{"rejected is permanent", 403, KindPermanent},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			w, _ := newBlobWriterForTest(t, OutputConfig{Filename: "out.csv", Template: "{ITEM}"})
+			w.sink.startUpload = func(context.Context, string, io.Reader) error {
+				return &azcore.ResponseError{StatusCode: tt.status}
+			}
+			sl := line.New("1005;ABC", line.LineConfig{Columns: []string{"LOC", "ITEM"}}, 1)
+
+			pushErr := w.Push(sl)
+			if pushErr == nil {
+				t.Fatal("expected the upload failure to surface through Push")
+			}
+			if got := KindOf(pushErr); got != tt.want {
+				t.Fatalf("KindOf(Push() error) = %v, want %v", got, tt.want)
+			}
+
+			// End must report the same already-resolved failure, not block.
+			if endErr := w.End(); endErr == nil || KindOf(endErr) != tt.want {
+				t.Fatalf("KindOf(End() error) = %v, want %v", KindOf(endErr), tt.want)
+			}
+		})
+	}
+}
+
+// TestBlobWriterDeleteFailureIsUnresolved proves that failing to remove an
+// already-committed blob is reported Unresolved rather than classified by
+// cause: the blob is confirmed to exist regardless of why the delete call
+// itself failed, so a worker handler must reconcile it rather than treat the
+// run as cleanly retryable.
+func TestBlobWriterDeleteFailureIsUnresolved(t *testing.T) {
+	w, _ := newBlobWriterForTest(t, OutputConfig{Filename: "out.csv", Template: "{ITEM}"})
+	pushLine(t, w, "1005;ABC")
+	if err := w.End(); err != nil {
+		t.Fatalf("end: %v", err)
+	}
+	calls := 0
+	w.sink.deleteBlob = func(context.Context, string) error {
+		calls++
+		return errors.New("delete rejected")
+	}
+
+	err := w.Delete()
+	if err == nil {
+		t.Fatal("expected the delete failure to surface")
+	}
+	if got := KindOf(err); got != KindUnresolved {
+		t.Fatalf("KindOf(Delete() error) = %v, want KindUnresolved", got)
+	}
+	if calls != 1 {
+		t.Fatalf("deleteBlob calls = %d, want 1 (the attempt was made)", calls)
+	}
+}
+
+// TestBlobWriterDeleteRetriesUploadedStateAfterFailure is a regression test:
+// the sink used to mark the blob as no-longer-uploaded before attempting the
+// delete, so a failed delete would silently make a second Delete() call a
+// no-op — the caller would see success on retry despite the blob still
+// existing. The blob must stay "uploaded" until removal actually succeeds so
+// a retry really retries.
+func TestBlobWriterDeleteRetriesUploadedStateAfterFailure(t *testing.T) {
+	w, _ := newBlobWriterForTest(t, OutputConfig{Filename: "out.csv", Template: "{ITEM}"})
+	pushLine(t, w, "1005;ABC")
+	if err := w.End(); err != nil {
+		t.Fatalf("end: %v", err)
+	}
+
+	calls := 0
+	fail := true
+	w.sink.deleteBlob = func(context.Context, string) error {
+		calls++
+		if fail {
+			return errors.New("transient delete failure")
+		}
+		return nil
+	}
+
+	if err := w.Delete(); err == nil {
+		t.Fatal("expected the first delete to fail")
+	}
+	fail = false
+	if err := w.Delete(); err != nil {
+		t.Fatalf("expected the retried delete to succeed, got %v", err)
+	}
+	if calls != 2 {
+		t.Fatalf("deleteBlob calls = %d, want 2 (the retry must call deleteBlob again, not no-op)", calls)
 	}
 }
 

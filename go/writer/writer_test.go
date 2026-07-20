@@ -262,3 +262,60 @@ func TestOutputConfigUnmarshalDestinationFields(t *testing.T) {
 		t.Fatalf("Filename = %q, want out.csv", cfg.Filename)
 	}
 }
+
+func TestOutputConfigBoolOptionDefaultsWhenAbsentOrWrongType(t *testing.T) {
+	tests := []struct {
+		name string
+		opts map[string]any
+		def  bool
+		want bool
+	}{
+		{"nil map uses default true", nil, true, true},
+		{"nil map uses default false", nil, false, false},
+		{"missing key uses default", map[string]any{"other": true}, true, true},
+		{"present true overrides default false", map[string]any{"errorReport": true}, false, true},
+		{"present false overrides default true", map[string]any{"errorReport": false}, true, false},
+		{"wrong type falls back to default rather than erroring", map[string]any{"errorReport": "yes"}, false, false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cfg := OutputConfig{Options: tt.opts}
+			if got := cfg.BoolOption(OptionErrorReport, tt.def); got != tt.want {
+				t.Fatalf("BoolOption() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+// fakeWriterNoOptions is a Writer that does not implement OptionsProvider, standing
+// in for the pattern used by hand-built test doubles elsewhere.
+type fakeWriterNoOptions struct{}
+
+func (fakeWriterNoOptions) Push(*line.SourceLine) error { return nil }
+func (fakeWriterNoOptions) PushFooter() error           { return nil }
+func (fakeWriterNoOptions) End() error                  { return nil }
+func (fakeWriterNoOptions) Delete() error               { return nil }
+func (fakeWriterNoOptions) Filepath() string            { return "" }
+func (fakeWriterNoOptions) Filename() string            { return "" }
+func (fakeWriterNoOptions) Path() string                { return "" }
+
+func TestErrorReportEnabledDefaultsFalseWithoutOptionsProvider(t *testing.T) {
+	if ErrorReportEnabled(fakeWriterNoOptions{}) {
+		t.Fatal("a Writer with no Options() method must default to disabled, not error or panic")
+	}
+}
+
+func TestErrorReportEnabledReadsWriterOptions(t *testing.T) {
+	off := NewDefaultWriter(OutputConfig{DestinationConfig: DestinationConfig{Path: t.TempDir()}, Filename: "out.csv"})
+	if ErrorReportEnabled(off) {
+		t.Fatal("errorReport must default to disabled")
+	}
+	on := NewDefaultWriter(OutputConfig{
+		DestinationConfig: DestinationConfig{Path: t.TempDir()},
+		Filename:          "out.csv",
+		Options:           map[string]any{OptionErrorReport: true},
+	})
+	if !ErrorReportEnabled(on) {
+		t.Fatal("errorReport should be enabled when output.options.errorReport is true")
+	}
+}

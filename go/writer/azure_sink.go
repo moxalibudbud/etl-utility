@@ -63,7 +63,7 @@ func (s *AzureBlobSink) Location(filename string) string {
 // the filename (and therefore the destination URL) is known.
 func (s *AzureBlobSink) Start(filename string) (io.Writer, error) {
 	if filename == "" {
-		return nil, fmt.Errorf(`output filename is empty; set "filename"`)
+		return nil, Permanent("open output", "", fmt.Errorf(`output filename is empty; set "filename"`))
 	}
 	pr, pw := io.Pipe()
 	s.pw = pw
@@ -82,6 +82,13 @@ func (s *AzureBlobSink) Start(filename string) (io.Writer, error) {
 
 // Close closes the upload pipe, letting the background upload observe EOF
 // and commit the blob, then waits for its result.
+//
+// A failure here is classified by cause via Classify rather than reported as
+// a blanket kind: per the design doc's chosen atomicity model, the blob does
+// not exist until UploadStream's internal Put Block List commits, so an
+// error at this point means nothing was left behind — the only open question
+// is whether the underlying cause (throttling vs. a rejected request) makes
+// a retry worthwhile, and Azure's response tells us that.
 func (s *AzureBlobSink) Close() error {
 	if !s.started || s.finished {
 		return nil
@@ -90,7 +97,7 @@ func (s *AzureBlobSink) Close() error {
 	err := <-s.done
 	s.finished = true
 	if err != nil {
-		return err
+		return Classify("commit blob", s.destURL, err)
 	}
 	s.uploaded = true
 	return nil
@@ -100,6 +107,13 @@ func (s *AzureBlobSink) Close() error {
 // never-finalized upload), it aborts the upload by closing the pipe with an
 // error instead, so nothing is committed; the background goroutine is always
 // awaited so Delete cannot return while it is still running.
+//
+// Unlike Close, a failure to remove an already-uploaded blob is always
+// Unresolved regardless of cause: the blob is confirmed to exist (uploaded
+// was true) and the caller's request to remove it did not succeed, which is
+// exactly the state a worker handler must reconcile rather than retry blind
+// (a retry that re-runs the whole pipeline would upload a duplicate document
+// alongside the one this call failed to remove).
 func (s *AzureBlobSink) Delete() error {
 	if !s.started {
 		return nil
@@ -112,8 +126,11 @@ func (s *AzureBlobSink) Delete() error {
 	if !s.uploaded {
 		return nil
 	}
+	if err := s.deleteBlob(context.Background(), s.destURL); err != nil {
+		return Unresolved("delete blob", s.destURL, err)
+	}
 	s.uploaded = false
-	return s.deleteBlob(context.Background(), s.destURL)
+	return nil
 }
 
 func (s *AzureBlobSink) uploadStream(ctx context.Context, destURL string, body io.Reader) error {

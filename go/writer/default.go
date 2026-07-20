@@ -31,6 +31,9 @@ func NewDefaultWriter(opts OutputConfig) *DefaultWriter {
 
 func (w *DefaultWriter) Path() string { return w.opts.Path }
 
+// Options exposes the output-level toggles for writer.OptionsProvider.
+func (w *DefaultWriter) Options() map[string]any { return w.opts.Options }
+
 func (w *DefaultWriter) Filename() string { return w.gen.Filename() }
 
 func (w *DefaultWriter) Filepath() string {
@@ -49,7 +52,7 @@ func (w *DefaultWriter) Push(sl *line.SourceLine) error {
 	}
 	if !w.started {
 		if w.gen.Filename() == "" {
-			return fmt.Errorf(`output filename is empty; set "filename"`)
+			return Permanent("render output filename", "", fmt.Errorf(`output filename is empty; set "filename"`))
 		}
 		out, err := w.sink.Start(w.gen.Filename())
 		if err != nil {
