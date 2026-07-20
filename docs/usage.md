@@ -27,8 +27,10 @@ It streams the source line by line and produces:
 
 - An **output file** containing every valid, non-header row (created lazily — an
   empty or all-invalid source produces **no** output file).
-- An **error report** (`<source-filename>.error.txt`) listing invalid rows — only
-  kept when at least one row failed validation.
+- Optionally, an **error report** (`<source-filename>.error.txt`) listing invalid
+  rows — opt-in via `output.options.errorReport` (§4.3.1), and even then only
+  kept when at least one row failed validation. Invalid rows are always counted
+  in the result whether or not the file is written.
 - A JSON **result** summarizing validity, error counts, file locations, and
   metadata sampled from the first valid row.
 
@@ -350,6 +352,39 @@ account and write to another.
 | `arrayField` | `string` | ⬜ | JSON output only. Root array property name. Default: `"lines"`. |
 | `uniqueKey` | `string` | ⬜ | Default writer only. Source column name used to de-duplicate rows in-memory: rows whose value for this column was already written are skipped. JSON output rejects `uniqueKey`; deduplicate before writing JSON. |
 | `metadata` | `object` | ⬜ | Arbitrary JSON object exposed to filename, header, and row templates under `metadata` / `data.metadata` (for example `{metadata.store.code}` or `[replaceString data.metadata.store.code - _]`). |
+| `options` | `object` | ⬜ | Writer behavior toggles that are not part of the output format. See §4.3.1. |
+
+#### 4.3.1 Writer toggles — `output.options`
+
+Behavior toggles live in their own map so new ones can be added without a wire
+change. A missing key — or a value of the wrong type — falls back to the
+default rather than failing the run.
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `errorReport` | `bool` | `false` | Write the `<source>.error.txt` report file next to `path`. |
+
+```json
+"output": {
+  "filename": "products.json",
+  "options": { "errorReport": true }
+}
+```
+
+> Note this is `output.options`, which is **not** the same as the top-level
+> `options` carrying the line rules and `rejectOnInvalidRow` (§4.5). Both can
+> appear in the same config.
+
+`errorReport` defaults to **off** because the utility is built to run in
+serverless workers, where the writable filesystem is a small ephemeral scratch
+space reused across warm invocations — a report file nobody collects
+accumulates until unrelated runs start failing.
+
+Turning it off suppresses only the *file*. Invalid rows are still counted, so
+`totalErrors`, `withErrors`, and `rejectOnInvalidRow` behave identically either
+way. When it is off, `localErrorReportFile` and `localErrorReportFilename` in
+the result are empty strings rather than naming a file that was never written —
+so check for a non-empty path before trying to read the report.
 
 ### 4.4 Ordered mappings — why arrays, not objects
 
@@ -437,7 +472,7 @@ Unknown function names are left in place untouched (the TS JS-eval
 | `withErrors` | At least one row failed validation. ⚠️ Independent of `valid`: a run can be `valid: true, withErrors: true` (bad rows were skipped, good rows were written). |
 | `totalErrors` | Count of invalid rows. |
 | `localOutputFile` / `localOutputFilename` | Absolute path / bare name of the output file. Empty if no row was ever written (lazy writer). |
-| `localErrorReportFile` / `localErrorReportFilename` | Path / name of the error report. The file only **exists on disk** when `totalErrors > 0` (it is deleted when there were zero errors). |
+| `localErrorReportFile` / `localErrorReportFilename` | Path / name of the error report. **Empty strings unless `output.options.errorReport` is enabled** (§4.3.1) — the report is opt-in. When enabled, the file only **exists on disk** when `totalErrors > 0` (it is deleted when there were zero errors). |
 | `metadata` | The first valid row's parsed record merged with the `identifierMappings` projection (identifiers win on key collisions). Use it to correlate the file with entities in your application. |
 
 **Errors vs. invalid results:** validation failures do **not** return a Go
@@ -447,6 +482,37 @@ file or blob not found, invalid/incomplete Azure auth, an S3 source (not yet
 supported), unsupported writer kind, I/O failure. On that path both the
 output and error-report files are force-deleted.
 
+### 6.1 Routing failures — `writer.ErrorKind`
+
+Errors returned from `etl.Run` are classified so a worker can decide what to do
+without parsing error text. In-process, read it with `writer.KindOf(err)`:
+
+| Kind | Meaning | What to do |
+| --- | --- | --- |
+| `KindPermanent` | Retrying the same input fails identically: bad config, unrenderable template, malformed row, rejected request. | Dead-letter. Don't spend retries. |
+| `KindTransient` | Could succeed on retry: throttling, 5xx, dropped connection, deadline. Nothing was committed. | Retry with backoff. |
+| `KindUnresolved` | The run failed **and** cleanup could not guarantee the destination was left clean. | Reconcile / alert. **Do not retry unattended.** |
+
+```go
+res, err := etl.Run(cfg)
+if err != nil {
+    switch writer.KindOf(err) {
+    case writer.KindTransient:  // requeue with backoff
+    case writer.KindUnresolved: // inspect the destination before retrying
+    default:                    // dead-letter
+    }
+}
+```
+
+`writer.IsRetryable(err)` is shorthand for the `KindTransient` case. Note it
+returns `false` for `KindUnresolved`: that failure is *not* permanent, but
+retrying it blind risks a duplicate or half-replaced document, so it needs a
+human or a reconciliation pass.
+
+An error carrying no explicit kind is classified from its cause, and anything
+unrecognized reports `KindPermanent` — an unknown failure isn't proven safe to
+retry.
+
 Your application is responsible for consuming and then removing the produced
 files (uploading them, moving them, etc.) — the pipeline only deletes files on
 the invalid/error paths.
@@ -455,10 +521,11 @@ the invalid/error paths.
 
 ## 7. Operational notes for integrators
 
-- **Concurrency**: each run writes `filename` into `path` and
-  `<source-filename>.error.txt` next to it. If your web app processes uploads
-  concurrently, give each job a unique output `path` (or a `filename`
-  with `[timestamp]`) and unique source filenames to avoid collisions.
+- **Concurrency**: each run writes `filename` into `path` (plus
+  `<source-filename>.error.txt` next to it when `errorReport` is enabled). If
+  your web app processes uploads concurrently, give each job a unique output
+  `path` (or a `filename` with `[timestamp]`) and unique source filenames to
+  avoid collisions.
 - **Large files**: the pipeline streams line by line with buffered writes, so
   memory stays flat regardless of file size. Default-writer `uniqueKey`
   de-duplication is the exception — it keeps one map entry per distinct key
@@ -470,17 +537,23 @@ the invalid/error paths.
   the streaming blob *source* — output size isn't bounded by memory. The blob
   is only committed (visible to readers) when the run ends; a run that fails
   before then leaves nothing visible at the destination.
-- **Cleanup on failure is best-effort for blob output**: when a run fails
+- **Cleanup failures are surfaced, not swallowed**: when a run fails
   mid-stream (e.g. the source connection drops), the orchestrator's forced
   cleanup calls the writer's `End()` *before* `Delete()` — so the partial
-  output is first committed, then deleted, rather than aborted in-flight. If
-  that commit fails too (say the network is down), nothing is committed and
-  the run's original error is returned — but cleanup's own errors are
-  discarded, so in the narrow case where the commit succeeds and the
-  follow-up delete then fails, a stray partial blob can remain at the
-  destination without any error surfaced. If your integration is sensitive
-  to stray partials, verify the destination after a failed run (the blob URL
-  is deterministic: `url` + rendered `filename`).
+  output is first committed, then deleted, rather than aborted in-flight. Every
+  cleanup step runs even if an earlier one failed, and all failures are joined
+  into the returned error. In the case where the commit succeeds and the
+  follow-up delete then fails, a stray blob remains at the destination **and**
+  the run reports `KindUnresolved` (§6.1) — so route that kind to
+  reconciliation rather than a blind retry, which would write a second document
+  alongside the one that could not be removed. The blob URL is deterministic:
+  `url` + rendered `filename`.
+- **Serverless deployments**: the process is typically frozen or destroyed
+  right after a run returns, so there is no later pass to tidy up. Two
+  consequences: leave `output.options.errorReport` off (the default) unless you
+  actually collect the file, since warm containers share a small capped `/tmp`
+  across invocations; and treat `KindUnresolved` as an alert rather than a
+  retry, because nothing else will clean up after it.
 - **Not yet supported** (explicit errors, planned per the design doc): S3
   sources and destinations, JSON output to cloud destinations, Excel writers,
   `PushIfExist`/file-index dedup variants, custom JS template functions, and
