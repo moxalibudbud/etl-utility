@@ -56,7 +56,7 @@ func TestJSONWriterStreamsAndPromotesLocalFile(t *testing.T) {
 	if err := w.End(); err != nil {
 		t.Fatalf("end: %v", err)
 	}
-	if _, err := os.Stat(filepath.Join(dir, "products_1005.json.partial")); !os.IsNotExist(err) {
+	if _, err := os.Stat(filepath.Join(dir, "products_DXB01.json.partial")); !os.IsNotExist(err) {
 		t.Fatalf("partial should be gone after End, stat err = %v", err)
 	}
 
@@ -172,6 +172,153 @@ func TestJSONWriterRejectsRootArrayFieldCollision(t *testing.T) {
 	err = w.Push(jsonTestLine("1005;SKU-1;2;Widget", 3))
 	if err == nil || !strings.Contains(err.Error(), `arrayField "lines"`) {
 		t.Fatalf("Push() error = %v, want arrayField collision", err)
+	}
+}
+
+func TestJSONWriterEndIsIdempotent(t *testing.T) {
+	dir := t.TempDir()
+	w, err := NewJSONWriter(OutputConfig{
+		DestinationConfig: DestinationConfig{Path: dir},
+		FileGenerator:     "json-generator",
+		Filename:          "idempotent.json",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := w.Push(jsonTestLine("1005;SKU-1;2;Widget", 1)); err != nil {
+		t.Fatal(err)
+	}
+	if err := w.End(); err != nil {
+		t.Fatalf("first End: %v", err)
+	}
+	first, err := os.ReadFile(w.Filepath())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := w.End(); err != nil {
+		t.Fatalf("second End() should be a no-op, got: %v", err)
+	}
+	second, err := os.ReadFile(w.Filepath())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(first) != string(second) {
+		t.Fatalf("second End() modified output:\nfirst:  %s\nsecond: %s", first, second)
+	}
+}
+
+func TestJSONWriterReplacesExistingOutput(t *testing.T) {
+	dir := t.TempDir()
+	final := filepath.Join(dir, "replace.json")
+	if err := os.WriteFile(final, []byte(`{"stale":true}`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	w, err := NewJSONWriter(OutputConfig{
+		DestinationConfig: DestinationConfig{Path: dir},
+		FileGenerator:     "json-generator",
+		Filename:          "replace.json",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := w.Push(jsonTestLine("1005;SKU-1;2;Widget", 1)); err != nil {
+		t.Fatal(err)
+	}
+	if err := w.End(); err != nil {
+		t.Fatal(err)
+	}
+
+	content, err := os.ReadFile(final)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var got struct {
+		Stale bool             `json:"stale"`
+		Lines []map[string]any `json:"lines"`
+	}
+	if err := json.Unmarshal(content, &got); err != nil {
+		t.Fatalf("output is not valid JSON: %v\n%s", err, content)
+	}
+	if got.Stale {
+		t.Fatalf("stale content survived replacement: %s", content)
+	}
+	if len(got.Lines) != 1 {
+		t.Fatalf("lines = %#v, want exactly the new row and nothing appended", got.Lines)
+	}
+}
+
+func TestJSONWriterCleanupOnFlushFailure(t *testing.T) {
+	dir := t.TempDir()
+	w, err := NewJSONWriter(OutputConfig{
+		DestinationConfig: DestinationConfig{Path: dir},
+		FileGenerator:     "json-generator",
+		Filename:          "flush-fail.json",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := w.Push(jsonTestLine("1005;SKU-1;2;Widget", 1)); err != nil {
+		t.Fatal(err)
+	}
+
+	// Simulate an I/O failure beneath the buffered writer: close the
+	// underlying file out from under the sink so the pending Flush/Sync
+	// in End() fails, exercising the "local write or flush" cleanup row
+	// from the design doc's failure table.
+	sink, ok := w.sink.(*LocalSink)
+	if !ok {
+		t.Fatalf("sink = %T, want *LocalSink", w.sink)
+	}
+	if err := sink.file.Close(); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := w.End(); err == nil {
+		t.Fatal("End() should surface the underlying flush/sync failure")
+	}
+	if w.finalized {
+		t.Fatal("writer should not be marked finalized after a failed End()")
+	}
+	if _, statErr := os.Stat(filepath.Join(dir, "flush-fail.json.partial")); !os.IsNotExist(statErr) {
+		t.Fatalf("partial should be removed after End() failure, stat err = %v", statErr)
+	}
+	if _, statErr := os.Stat(filepath.Join(dir, "flush-fail.json")); !os.IsNotExist(statErr) {
+		t.Fatalf("final output should not exist after End() failure, stat err = %v", statErr)
+	}
+}
+
+func TestJSONWriterCleanupOnRenameFailure(t *testing.T) {
+	dir := t.TempDir()
+	final := filepath.Join(dir, "rename-fail.json")
+	// Pre-create a non-empty directory at the destination path so the
+	// rename from the .partial file can never succeed, exercising the
+	// "finalization" cleanup row from the design doc's failure table.
+	if err := os.Mkdir(final, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(final, "keep.txt"), []byte("x"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	w, err := NewJSONWriter(OutputConfig{
+		DestinationConfig: DestinationConfig{Path: dir},
+		FileGenerator:     "json-generator",
+		Filename:          "rename-fail.json",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := w.Push(jsonTestLine("1005;SKU-1;2;Widget", 1)); err != nil {
+		t.Fatal(err)
+	}
+	if err := w.End(); err == nil {
+		t.Fatal("End() should surface the rename failure")
+	}
+	if _, statErr := os.Stat(filepath.Join(dir, "rename-fail.json.partial")); !os.IsNotExist(statErr) {
+		t.Fatalf("partial should be removed after rename failure, stat err = %v", statErr)
+	}
+	if _, statErr := os.Stat(filepath.Join(final, "keep.txt")); statErr != nil {
+		t.Fatalf("pre-existing destination should be untouched by a failed rename: %v", statErr)
 	}
 }
 

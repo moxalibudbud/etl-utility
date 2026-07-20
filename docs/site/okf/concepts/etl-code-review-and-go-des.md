@@ -6,7 +6,7 @@ path: /etl-code-review-and-go-des/
 updated: 2026-07-20
 okf:
   generated_by: "@docmd/plugin-okf"
-  generated_at: "2026-07-20T07:39:39.031Z"
+  generated_at: "2026-07-20T11:55:03.313Z"
 ---
 # ETL Utility — Code Review & Go Implementation Design
 
@@ -43,7 +43,7 @@ and an **output writer**, it:
 
 ### Templating model (preserved in the port)
 
-- **`{field}`** → `replaceWithMap`: substitutes record values.
+- **`{path}`** → value substitution from row/output/metadata data.
 - **`[func arg ...]`** → `replaceWithFunction`: computed tokens —
   `[timestamp]`, `[dateTime YYYY-MM-DD]`, `[sanitizeString]`, `[removeWhiteSpaces]`,
   `[replaceString a b]`. `data.x.y` args resolve against a metadata object.
@@ -111,7 +111,7 @@ exercise identical core logic.
 
 ```
 go/
-  template/   {field} + [func] templating, sanitize helpers   (field.go, function.go, sanitize.go)
+  template/   {path} + [func] templating, sanitize helpers    (field.go, function.go, sanitize.go)
   line/       SourceLine: parse, validate, map projections    (options.go, sourceline.go, validator.go, mapping.go)
   reader/     Reader interface + local/Azure Blob streamers    (reader.go, filereader.go, blobreader.go, sourceconfig.go, azureauth.go)
   writer/     Writer interface + DefaultWriter + ErrorReport + Factory  (writer.go, default.go, errorreport.go)
@@ -217,13 +217,15 @@ runnable configs under [`samples/`](../samples).
 
 ### Deferred (out of current core scope)
 
-S3 reader; Azure Blob + S3 output destinations (writers); Excel (`ExcelJS`);
-`JSONGenerator`; the `PushIfExist` / `FileIndexGenerator` dedup variants; the
-JS-eval `customFunction` template fallback; `indexFile` external dedup; and
+S3 reader; S3 output; JSON output to cloud destinations; Excel (`ExcelJS`);
+the `PushIfExist` / `FileIndexGenerator` dedup variants; the JS-eval
+`customFunction` template fallback; `indexFile` external dedup; and
 `context.Context` threading through the reader (Azure calls currently use
-`context.Background()`). In-memory `uniqueKey` deduplication is supported by
-the default writer. The `Reader` / `Writer` interfaces + factory are shaped so
-these slot in **without touching `etl.go`**.
+`context.Background()`). Local streaming `JSONGenerator` output is implemented.
+In-memory `uniqueKey` deduplication is supported by the default writer only; the
+JSON writer rejects `uniqueKey` and serializes every valid row it receives. The
+`Reader` / `Writer` interfaces + factory are shaped so these slot in **without
+touching `etl.go`**.
 
 ---
 

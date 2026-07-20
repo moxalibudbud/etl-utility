@@ -36,7 +36,7 @@ func newBlobWriterForTest(t *testing.T, opts OutputConfig) (*AzureBlobWriter, *f
 	opts.DestinationConfig = DestinationConfig{Type: DestinationAzureBlob, URL: testContainerURL}
 	w := NewAzureBlobWriter(opts)
 	fake := &fakeBlob{}
-	w.startUpload = func(_ context.Context, destURL string, body io.Reader) error {
+	w.sink.startUpload = func(_ context.Context, destURL string, body io.Reader) error {
 		fake.mu.Lock()
 		fake.startedURL = destURL
 		fake.starts++
@@ -54,7 +54,7 @@ func newBlobWriterForTest(t *testing.T, opts OutputConfig) (*AzureBlobWriter, *f
 		fake.mu.Unlock()
 		return nil
 	}
-	w.deleteBlob = func(_ context.Context, destURL string) error {
+	w.sink.deleteBlob = func(_ context.Context, destURL string) error {
 		fake.mu.Lock()
 		fake.deletedURL = destURL
 		fake.deletes++
@@ -218,7 +218,7 @@ func TestBlobWriterEmptyFilenameErrors(t *testing.T) {
 func TestBlobWriterUploadFailureSurfacesThroughPush(t *testing.T) {
 	w, fake := newBlobWriterForTest(t, OutputConfig{Filename: "out.csv", Template: "{ITEM}"})
 	wantErr := errors.New("network reset")
-	w.startUpload = func(context.Context, string, io.Reader) error { return wantErr }
+	w.sink.startUpload = func(context.Context, string, io.Reader) error { return wantErr }
 
 	sl := line.New("1005;ABC", line.LineConfig{Columns: []string{"LOC", "ITEM"}}, 1)
 	if err := w.Push(sl); !errors.Is(err, wantErr) {
@@ -246,7 +246,7 @@ func TestBlobWriterUploadFailureSurfacesThroughPush(t *testing.T) {
 func TestBlobWriterDeleteAbortsUnfinishedUpload(t *testing.T) {
 	w, fake := newBlobWriterForTest(t, OutputConfig{Filename: "out.csv", Template: "{ITEM}"})
 	started := make(chan struct{})
-	w.startUpload = func(_ context.Context, _ string, body io.Reader) error {
+	w.sink.startUpload = func(_ context.Context, _ string, body io.Reader) error {
 		close(started)
 		_, err := io.ReadAll(body) // blocks until Delete aborts the pipe
 		return err

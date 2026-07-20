@@ -1,22 +1,23 @@
 package writer
 
 import (
-	"bufio"
 	"fmt"
+	"io"
 	"os"
-	"path/filepath"
 
 	"flatfile-go/line"
 )
 
 // DefaultWriter is the port of DefaultGenerator: a lazily-created delimited or
 // templated text writer with optional uniqueKey de-duplication. Rendering is
-// delegated to the shared renderer; this type owns only the local-disk sink.
+// delegated to the shared renderer; a LocalSink (in its append mode, matching
+// this writer's historical bytes-on-disk contract) owns the local-disk I/O.
 type DefaultWriter struct {
-	opts OutputConfig
-	gen  *renderer
-	file *os.File
-	bw   *bufio.Writer
+	opts    OutputConfig
+	gen     *renderer
+	sink    *LocalSink
+	out     io.Writer
+	started bool
 }
 
 // NewDefaultWriter constructs a DefaultWriter, defaulting Path to the OS temp dir
@@ -25,7 +26,7 @@ func NewDefaultWriter(opts OutputConfig) *DefaultWriter {
 	if opts.Path == "" {
 		opts.Path = os.TempDir()
 	}
-	return &DefaultWriter{opts: opts, gen: newRenderer(opts)}
+	return &DefaultWriter{opts: opts, gen: newRenderer(opts), sink: NewLocalSink(opts.Path)}
 }
 
 func (w *DefaultWriter) Path() string { return w.opts.Path }
@@ -36,7 +37,7 @@ func (w *DefaultWriter) Filepath() string {
 	if w.gen.Filename() == "" {
 		return ""
 	}
-	return filepath.Join(w.opts.Path, w.gen.Filename())
+	return w.sink.Location(w.gen.Filename())
 }
 
 // Push writes one validated line, creating the file + header on first call.
@@ -46,12 +47,18 @@ func (w *DefaultWriter) Push(sl *line.SourceLine) error {
 	if w.gen.Filename() == "" {
 		w.gen.setFilename(sl)
 	}
-	if w.file == nil {
-		if err := w.createStream(); err != nil {
+	if !w.started {
+		if w.gen.Filename() == "" {
+			return fmt.Errorf(`output filename is empty; set "filename"`)
+		}
+		out, err := w.sink.Start(w.gen.Filename())
+		if err != nil {
 			return err
 		}
+		w.out = out
+		w.started = true
 		if header := w.gen.header(sl); header != "" {
-			if _, err := w.bw.WriteString(header); err != nil {
+			if _, err := io.WriteString(w.out, header); err != nil {
 				return err
 			}
 		}
@@ -60,7 +67,7 @@ func (w *DefaultWriter) Push(sl *line.SourceLine) error {
 		return nil
 	}
 
-	if _, err := w.bw.WriteString(w.gen.row(sl)); err != nil {
+	if _, err := io.WriteString(w.out, w.gen.row(sl)); err != nil {
 		return err
 	}
 	w.gen.trackReference(sl)
@@ -69,53 +76,19 @@ func (w *DefaultWriter) Push(sl *line.SourceLine) error {
 
 // PushFooter appends the footer, only if a file was actually opened.
 func (w *DefaultWriter) PushFooter() error {
-	if w.bw == nil || w.gen.footer() == "" {
+	if !w.started || w.gen.footer() == "" {
 		return nil
 	}
-	_, err := w.bw.WriteString(w.gen.footer())
+	_, err := io.WriteString(w.out, w.gen.footer())
 	return err
 }
 
 // End flushes and closes the underlying file.
 func (w *DefaultWriter) End() error {
-	if w.bw != nil {
-		if err := w.bw.Flush(); err != nil {
-			return err
-		}
-	}
-	if w.file != nil {
-		err := w.file.Close()
-		w.file = nil
-		return err
-	}
-	return nil
+	return w.sink.Close()
 }
 
 // Delete removes the output file if it exists.
 func (w *DefaultWriter) Delete() error {
-	if w.file != nil {
-		_ = w.file.Close()
-		w.file = nil
-	}
-	path := w.Filepath()
-	if path == "" {
-		return nil
-	}
-	if _, err := os.Stat(path); err != nil {
-		return nil // nothing to delete
-	}
-	return os.Remove(path)
-}
-
-func (w *DefaultWriter) createStream() error {
-	if w.gen.Filename() == "" {
-		return fmt.Errorf(`output filename is empty; set "filename"`)
-	}
-	f, err := os.OpenFile(w.Filepath(), os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0o777)
-	if err != nil {
-		return err
-	}
-	w.file = f
-	w.bw = bufio.NewWriter(f)
-	return nil
+	return w.sink.Delete()
 }

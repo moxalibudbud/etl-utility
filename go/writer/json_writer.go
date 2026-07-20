@@ -1,10 +1,8 @@
 package writer
 
 import (
-	"bufio"
 	"fmt"
 	"os"
-	"path/filepath"
 
 	"flatfile-go/line"
 )
@@ -12,17 +10,18 @@ import (
 // JSONWriter streams validated source lines into one local JSON document. It
 // deliberately does not de-duplicate rows: every valid row pushed by the ETL
 // orchestrator is serialized.
+//
+// JSONWriter composes the destination-independent jsonDocumentEncoder with a
+// Sink (an atomic LocalSink today, an AzureBlobSink once Phase 3 lands) — see
+// the design doc's "Destination abstraction" section.
 type JSONWriter struct {
-	opts        OutputConfig
-	filename    string
-	file        *os.File
-	bw          *bufio.Writer
-	encoder     *jsonDocumentEncoder
-	started     bool
-	finalized   bool
-	failed      bool
-	partialPath string
-	finalPath   string
+	opts      OutputConfig
+	sink      Sink
+	filename  string
+	encoder   *jsonDocumentEncoder
+	started   bool
+	finalized bool
+	failed    bool
 }
 
 func NewJSONWriter(opts OutputConfig) (*JSONWriter, error) {
@@ -38,7 +37,7 @@ func NewJSONWriter(opts OutputConfig) (*JSONWriter, error) {
 	if opts.Filename == "" {
 		return nil, fmt.Errorf(`output filename is empty; set "filename"`)
 	}
-	return &JSONWriter{opts: opts}, nil
+	return &JSONWriter{opts: opts, sink: NewAtomicLocalSink(opts.Path)}, nil
 }
 
 func (w *JSONWriter) Path() string { return w.opts.Path }
@@ -46,10 +45,10 @@ func (w *JSONWriter) Path() string { return w.opts.Path }
 func (w *JSONWriter) Filename() string { return w.filename }
 
 func (w *JSONWriter) Filepath() string {
-	if w.finalPath == "" && w.filename != "" {
-		return filepath.Join(w.opts.Path, w.filename)
+	if w.filename == "" {
+		return ""
 	}
-	return w.finalPath
+	return w.sink.Location(w.filename)
 }
 
 func (w *JSONWriter) Push(sl *line.SourceLine) error {
@@ -62,13 +61,13 @@ func (w *JSONWriter) Push(sl *line.SourceLine) error {
 	if !w.started {
 		if err := w.start(sl); err != nil {
 			w.failed = true
-			w.cleanupPartial()
+			_ = w.sink.Delete()
 			return err
 		}
 	}
 	if err := w.encoder.WriteRow(sl); err != nil {
 		w.failed = true
-		w.cleanupPartial()
+		_ = w.sink.Delete()
 		return err
 	}
 	return nil
@@ -83,25 +82,11 @@ func (w *JSONWriter) End() error {
 		return nil
 	}
 	if err := w.encoder.Finalize(); err != nil {
-		w.cleanupPartial()
+		_ = w.sink.Delete()
 		return err
 	}
-	if err := w.bw.Flush(); err != nil {
-		w.cleanupPartial()
-		return err
-	}
-	if err := w.file.Sync(); err != nil {
-		w.cleanupPartial()
-		return err
-	}
-	if err := w.file.Close(); err != nil {
-		w.file = nil
-		w.cleanupPartial()
-		return err
-	}
-	w.file = nil
-	if err := os.Rename(w.partialPath, w.finalPath); err != nil {
-		w.cleanupPartial()
+	if err := w.sink.Close(); err != nil {
+		_ = w.sink.Delete()
 		return err
 	}
 	w.finalized = true
@@ -109,14 +94,7 @@ func (w *JSONWriter) End() error {
 }
 
 func (w *JSONWriter) Delete() error {
-	w.cleanupPartial()
-	if w.finalPath == "" {
-		return nil
-	}
-	if err := os.Remove(w.finalPath); err != nil && !os.IsNotExist(err) {
-		return err
-	}
-	return nil
+	return w.sink.Delete()
 }
 
 func (w *JSONWriter) start(sl *line.SourceLine) error {
@@ -124,17 +102,13 @@ func (w *JSONWriter) start(sl *line.SourceLine) error {
 	if w.filename == "" {
 		return fmt.Errorf(`output filename is empty; set "filename"`)
 	}
-	w.finalPath = filepath.Join(w.opts.Path, w.filename)
-	w.partialPath = w.finalPath + ".partial"
 
-	f, err := os.OpenFile(w.partialPath, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0o666)
+	out, err := w.sink.Start(w.filename)
 	if err != nil {
 		return err
 	}
-	w.file = f
-	w.bw = bufio.NewWriter(f)
 
-	encoder, err := newJSONDocumentEncoder(w.opts, w.bw)
+	encoder, err := newJSONDocumentEncoder(w.opts, out)
 	if err != nil {
 		return err
 	}
@@ -144,17 +118,4 @@ func (w *JSONWriter) start(sl *line.SourceLine) error {
 	}
 	w.started = true
 	return nil
-}
-
-func (w *JSONWriter) cleanupPartial() {
-	if w.bw != nil {
-		_ = w.bw.Flush()
-	}
-	if w.file != nil {
-		_ = w.file.Close()
-		w.file = nil
-	}
-	if w.partialPath != "" {
-		_ = os.Remove(w.partialPath)
-	}
 }

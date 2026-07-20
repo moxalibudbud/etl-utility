@@ -6,7 +6,7 @@ path: /output-file-improvement/
 updated: 2026-07-20
 okf:
   generated_by: "@docmd/plugin-okf"
-  generated_at: "2026-07-20T07:39:39.034Z"
+  generated_at: "2026-07-20T11:55:03.379Z"
 ---
 # Output File Improvement Plan
 
@@ -49,7 +49,9 @@ Concretely, this plan's proposals were **not** followed as written:
   `AzureBlobWriter` implements the existing `Writer` interface directly, the
   same shape as `DefaultWriter`. The generation/storage separation exists but
   as an unexported `renderer` type (filename/header/row/footer templating and
-  `uniqueKey` de-duplication, no I/O) shared by both writers.
+  `uniqueKey` de-duplication, no I/O) shared by both delimited writers. Local
+  JSON output is implemented separately as a streaming JSON writer and does not
+  perform row de-duplication.
 - `DestinationConfig` is flatter than the `Local`/`S3`/`Azure` nested-pointer
   shape sketched in [Proposed Configuration](#proposed-configuration):
   `{Type, Path, URL, Auth}`, embedded in `OutputConfig` so the wire form stays
@@ -80,9 +82,9 @@ Concretely, this plan's proposals were **not** followed as written:
 - Error reports remain local-only, and `Writer.Path()` keeps returning a local
   staging directory (OS temp dir for blob output) so the orchestrator is
   unchanged.
-- S3, the JSON generator, `context.Context` threading, the `Result`
-  `outputLocation` fields, and upload tuning remain unimplemented — the phased
-  design below is still the reference for that future work.
+- S3, JSON output to cloud destinations, `context.Context` threading, the
+  `Result` `outputLocation` fields, and upload tuning remain unimplemented —
+  the phased design below is still the reference for that future work.
 
 ## Motivation
 
