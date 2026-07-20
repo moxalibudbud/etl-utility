@@ -33,7 +33,7 @@ and an **output writer**, it:
 
 ### Templating model (preserved in the port)
 
-- **`{field}`** → `replaceWithMap`: substitutes record values.
+- **`{path}`** → value substitution from row/output/metadata data.
 - **`[func arg ...]`** → `replaceWithFunction`: computed tokens —
   `[timestamp]`, `[dateTime YYYY-MM-DD]`, `[sanitizeString]`, `[removeWhiteSpaces]`,
   `[replaceString a b]`. `data.x.y` args resolve against a metadata object.
@@ -101,7 +101,7 @@ exercise identical core logic.
 
 ```
 go/
-  template/   {field} + [func] templating, sanitize helpers   (field.go, function.go, sanitize.go)
+  template/   {path} + [func] templating, sanitize helpers    (field.go, function.go, sanitize.go)
   line/       SourceLine: parse, validate, map projections    (options.go, sourceline.go, validator.go, mapping.go)
   reader/     Reader interface + local/Azure Blob streamers    (reader.go, filereader.go, blobreader.go, sourceconfig.go, azureauth.go)
   writer/     Writer interface + DefaultWriter + ErrorReport + Factory  (writer.go, default.go, errorreport.go)

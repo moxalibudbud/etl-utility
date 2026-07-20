@@ -17,7 +17,7 @@ const DefaultJSONArrayField = "lines"
 
 const renderedPreviewLimit = 200
 
-var jsonFieldTokenRe = regexp.MustCompile(`^\{(\w+)\}`)
+var jsonFieldTokenRe = regexp.MustCompile(`^\{([A-Za-z0-9_]+(?:\.[A-Za-z0-9_]+)*)\}`)
 
 type jsonDocumentEncoder struct {
 	opts        OutputConfig
@@ -222,7 +222,8 @@ func renderJSONTemplate(tpl string, sl *line.SourceLine, opts OutputConfig) stri
 
 	for i := 0; i < len(tpl); {
 		if match := jsonFieldTokenRe.FindStringSubmatch(tpl[i:]); match != nil {
-			out.WriteString(jsonTemplateValue(sl.JSONLine[match[1]], inString))
+			value, _ := template.ResolveValue(meta, match[1])
+			out.WriteString(jsonTemplateValue(value, inString))
 			i += len(match[0])
 			continue
 		}

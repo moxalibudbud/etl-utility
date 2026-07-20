@@ -23,11 +23,14 @@ func TestJSONWriterStreamsAndPromotesLocalFile(t *testing.T) {
 	w, err := NewJSONWriter(OutputConfig{
 		DestinationConfig: DestinationConfig{Path: dir},
 		FileGenerator:     "json-generator",
-		Filename:          "products_{LOC}.json",
-		Header:            `{"store":"{LOC}","region":"[removeWhiteSpaces data.metadata.region]"}`,
+		Filename:          "products_{metadata.store.code}.json",
+		Header:            `{"store":"{LOC}","region":"{metadata.region}"}`,
 		ArrayField:        "items",
-		Template:          `{"sku":"{SKU}","name":"{NAME}","qty":{QTY}}`,
-		Metadata:          map[string]any{"region": "Middle East"},
+		Template:          `{"sku":"{SKU}","name":"{NAME}","qty":{QTY},"store":"{data.metadata.store.code}"}`,
+		Metadata: map[string]any{
+			"region": "Middle East",
+			"store":  map[string]any{"code": "DXB01"},
+		},
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -37,13 +40,13 @@ func TestJSONWriterStreamsAndPromotesLocalFile(t *testing.T) {
 	if err := w.Push(first); err != nil {
 		t.Fatalf("first push: %v", err)
 	}
-	if w.Filename() != "products_1005.json" {
-		t.Fatalf("Filename = %q, want products_1005.json", w.Filename())
+	if w.Filename() != "products_DXB01.json" {
+		t.Fatalf("Filename = %q, want products_DXB01.json", w.Filename())
 	}
-	if _, err := os.Stat(filepath.Join(dir, "products_1005.json.partial")); err != nil {
+	if _, err := os.Stat(filepath.Join(dir, "products_DXB01.json.partial")); err != nil {
 		t.Fatalf("partial should exist before End: %v", err)
 	}
-	if _, err := os.Stat(filepath.Join(dir, "products_1005.json")); !os.IsNotExist(err) {
+	if _, err := os.Stat(filepath.Join(dir, "products_DXB01.json")); !os.IsNotExist(err) {
 		t.Fatalf("final file should not exist before End, stat err = %v", err)
 	}
 
@@ -69,13 +72,13 @@ func TestJSONWriterStreamsAndPromotesLocalFile(t *testing.T) {
 	if err := json.Unmarshal(content, &got); err != nil {
 		t.Fatalf("output is not valid JSON: %v\n%s", err, content)
 	}
-	if got.Store != "1005" || got.Region != "MiddleEast" {
+	if got.Store != "1005" || got.Region != "Middle East" {
 		t.Fatalf("root = %+v, want rendered store and region", got)
 	}
 	if len(got.Items) != 2 {
 		t.Fatalf("items length = %d, want duplicate rows preserved", len(got.Items))
 	}
-	if got.Items[0]["sku"] != `A"1` || got.Items[0]["name"] != `Widget \ Deluxe` || got.Items[0]["qty"] != float64(2) {
+	if got.Items[0]["sku"] != `A"1` || got.Items[0]["name"] != `Widget \ Deluxe` || got.Items[0]["qty"] != float64(2) || got.Items[0]["store"] != "DXB01" {
 		t.Fatalf("first item = %#v", got.Items[0])
 	}
 }

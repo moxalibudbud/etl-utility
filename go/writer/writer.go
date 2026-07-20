@@ -87,7 +87,7 @@ func (c *DestinationConfig) Validate() error {
 }
 
 // OutputConfig configures a Writer. Filename is always rendered through the
-// templating layers ({field} from the first pushed row, then [func ...]); a
+// templating layers ({path} from the first pushed row, then [func ...]); a
 // plain name contains no tokens and passes through unchanged. Template and
 // Separator select mutually exclusive row-building modes: when Template is
 // set, it takes precedence and Separator is ignored.

@@ -249,8 +249,8 @@ Validation that depends on source data occurs on the first row:
 
 On the first accepted row:
 
-1. Resolve the filename through field and function templates.
-2. Render `header` using both field replacement and function replacement.
+1. Resolve the filename through value and function templates.
+2. Render `header` using both value replacement and function replacement.
 3. Treat an empty header as `{}`.
 4. Decode the root into `map[string]json.RawMessage`.
 5. Reject an existing `arrayField`.
@@ -287,16 +287,17 @@ The preview must be truncated to avoid logging very large or sensitive input.
 
 ### Field escaping
 
-The ordinary text `ReplaceWithMap()` is insufficient for JSON templates. For
-example, a source value containing a quote breaks:
+The ordinary text value renderer is insufficient for JSON templates. For
+example, a source or metadata value containing a quote can break:
 
 ```json
-{"SKU":"{SKU}"}
+{"SKU":"{SKU}","Store":"{metadata.store.code}"}
 ```
 
 The JSON writer should use a dedicated JSON-aware field renderer:
 
-- Placeholders inside JSON strings receive JSON-escaped string contents.
+- `{path}` placeholders inside JSON strings receive JSON-escaped string
+  contents.
 - Raw placeholders outside JSON strings are inserted as raw text and must
   produce valid JSON after rendering.
 - The complete row is always validated by `encoding/json`.
@@ -304,7 +305,7 @@ The JSON writer should use a dedicated JSON-aware field renderer:
 This preserves common TypeScript templates such as:
 
 ```json
-{"SKU":"{SKU}","Quantity":{Quantity},"Received":true}
+{"SKU":"{SKU}","Store":"{metadata.store.code}","Quantity":{Quantity},"Received":true}
 ```
 
 A future structured template format may provide explicit string, number,
@@ -447,7 +448,7 @@ No `etl.go` changes should be required.
 ### Local writer tests
 
 - File is created only on the first accepted row
-- Filename field/function rendering
+- Filename value/function rendering
 - Complete valid document
 - Partial file promoted only after successful finalization
 - Partial file removed on failure
@@ -463,7 +464,7 @@ No `etl.go` changes should be required.
 - `rejectOnInvalidRow`
 - Empty and all-invalid input
 - Duplicate valid rows are emitted
-- Root and row metadata functions
+- Root and row value/function templates
 - Result output paths and filenames
 
 ### TypeScript compatibility fixtures

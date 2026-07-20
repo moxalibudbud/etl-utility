@@ -138,11 +138,11 @@ func TestMetadataAvailableToFilenameHeaderAndRowTemplates(t *testing.T) {
 	w := pushOne(t,
 		OutputConfig{
 			DestinationConfig: DestinationConfig{Path: dir},
-			Filename:          "[removeWhiteSpaces data.metadata.stores.0.code].txt",
-			Header:            "[sanitizeString data.metadata.count]",
-			Template:          "[sanitizeString data.metadata.active]",
+			Filename:          "{metadata.stores.0.code}.txt",
+			Header:            "{metadata.count}",
+			Template:          "{metadata.active}",
 			Metadata: map[string]any{
-				"stores": []any{map[string]any{"code": "DXB 01"}},
+				"stores": []any{map[string]any{"code": "DXB01"}},
 				"count":  42,
 				"active": true,
 			},

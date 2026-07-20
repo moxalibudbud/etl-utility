@@ -22,6 +22,40 @@ func TestReplaceWithMap(t *testing.T) {
 	}
 }
 
+func TestReplaceWithDataPaths(t *testing.T) {
+	data := map[string]any{
+		"SKU":  "ABC",
+		"name": "Widget",
+		"metadata": map[string]any{
+			"store":  map[string]any{"code": "DXB01"},
+			"active": true,
+			"count":  float64(42),
+			"empty":  nil,
+			"stores": []any{map[string]any{"code": "AUH02"}},
+		},
+	}
+	tests := []struct {
+		in   string
+		want string
+	}{
+		{"{SKU}-{name}", "ABC-Widget"},
+		{"{data.SKU}", "ABC"},
+		{"{metadata.store.code}", "DXB01"},
+		{"{data.metadata.store.code}", "DXB01"},
+		{"{metadata.stores.0.code}", "AUH02"},
+		{"{metadata.count}", "42"},
+		{"{metadata.active}", "true"},
+		{"missing_{metadata.missing}", "missing_"},
+		{"null_{metadata.empty}", "null_"},
+		{"container_{metadata.store}", "container_"},
+	}
+	for _, tt := range tests {
+		if got := ReplaceWithData(tt.in, data); got != tt.want {
+			t.Errorf("ReplaceWithData(%q) = %q, want %q", tt.in, got, tt.want)
+		}
+	}
+}
+
 func TestReplaceWithFunctionTimestamp(t *testing.T) {
 	got := ReplaceWithFunction("file_[timestamp].csv", nil)
 	if !strings.HasPrefix(got, "file_") || !strings.HasSuffix(got, ".csv") {

@@ -342,14 +342,14 @@ account and write to another.
 | `path` | `string` | ⬜ | Output directory for a local destination. Default: the OS temp dir. Must not be combined with `url`. |
 | `url` | `string` | ⬜ | Azure container/prefix URL for an `azure-blob` destination (required for that type). The rendered `filename` is appended to it. |
 | `auth` | `object` | ⬜ | Azure credentials for an `azure-blob` destination; same four shapes and precedence as the source `auth` (see the table in §4.1). |
-| `filename` | `string` | ✅ | Output filename, always rendered through the template layers from the **first pushed row** (supports `{field}` and `[func ...]`, see §5). A plain name contains no tokens and is used as-is. Also accepted for compatibility: the object form `{"template": "..."}` and the legacy `filenameTemplate` key (which keeps its old precedence if both are set). |
+| `filename` | `string` | ✅ | Output filename, always rendered through the template layers from the **first pushed row** (supports `{path}` value tokens and `[func ...]`, see §5). A plain name contains no tokens and is used as-is. Also accepted for compatibility: the object form `{"template": "..."}` and the legacy `filenameTemplate` key (which keeps its old precedence if both are set). |
 | `separator` | `string` | ⬜ | Output column separator when using the default writer's `outputMappings` projection. Default: `"\|"`. Unused by JSON output. |
 | `template` | `string` | ⬜ | Full row template (see §5). For the default writer, it takes precedence over the `outputMappings` projection. For JSON output, it must render one JSON object per row; when omitted, JSON rows are built from `outputMappings`. |
 | `header` | `string` | ⬜ | For the default writer, the first line of the output file, written once when the first row arrives. For JSON output, the root-object template; empty means `{}`. |
 | `footer` | `string` | ⬜ | Default writer only. Written raw at the end — **no leading newline**, so it concatenates onto the last row (`...WidgetEOF`). JSON output rejects `footer`. |
 | `arrayField` | `string` | ⬜ | JSON output only. Root array property name. Default: `"lines"`. |
 | `uniqueKey` | `string` | ⬜ | Default writer only. Source column name used to de-duplicate rows in-memory: rows whose value for this column was already written are skipped. JSON output rejects `uniqueKey`; deduplicate before writing JSON. |
-| `metadata` | `object` | ⬜ | Arbitrary JSON object exposed to filename, header, and row function templates under `data.metadata` (e.g. `[replaceString data.metadata.store.code - _]`). |
+| `metadata` | `object` | ⬜ | Arbitrary JSON object exposed to filename, header, and row templates under `metadata` / `data.metadata` (for example `{metadata.store.code}` or `[replaceString data.metadata.store.code - _]`). |
 
 ### 4.4 Ordered mappings — why arrays, not objects
 
@@ -376,13 +376,20 @@ For `identifierMappings`, `src` is a column lookup only.
 
 ## 5. Templating reference
 
-Two token kinds, usable in `template` and `filename` (`header` supports
-functions only):
+Two token kinds are available in `filename`, `header`, and `template`:
 
-### `{field}` — record substitution
+### `{path}` — value substitution
 
-Replaced with the current row's value for that column name.
+Replaced with a scalar value from row data, output-mapped data, or
+`output.metadata`.
+
 `"{SKU};{NAME}"` → `"A1;Widget"`.
+`"{metadata.store.code}"` → `"DXB01"`.
+`"{data.metadata.stores.0.code}"` → `"DXB01"`.
+
+The `data.` prefix is optional for value tokens. Numeric path segments index
+arrays. Missing paths, invalid indexes, nulls, and object/array leaves resolve
+to an empty string.
 
 ### `[func arg ...]` — computed tokens
 
@@ -394,8 +401,8 @@ Replaced with the current row's value for that column name.
 | `[removeWhiteSpaces <s>]` | Whitespace removed. |
 | `[replaceString <s> <a> <b>]` | `<s>` with `<a>` replaced by `<b>`. |
 
-Arguments starting with `data.` are resolved as dot-paths against the row data
-merged with the writer's `metadata` option — e.g.
+Function arguments starting with `data.` are resolved as dot-paths against the
+row data merged with the writer's `metadata` option — e.g.
 `[sanitizeString data.NAME]` or `[replaceString data.metadata.region - _]`.
 Nested metadata objects and arrays are supported; numeric path segments index
 arrays (for example `data.metadata.stores.0.code`). String, number, and boolean
