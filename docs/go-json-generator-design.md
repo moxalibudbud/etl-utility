@@ -18,6 +18,8 @@ The primary goals are:
 - Preserve the canonical configuration contract and common TypeScript JSON
   templates.
 - Retain lazy output creation: no valid source rows means no output file.
+- Do not handle row uniqueness in the JSON writer. The JSON writer serializes
+  every valid row it receives; deduplication must happen before rows reach it.
 
 The first implementation should support local JSON output. Azure Blob JSON
 output and a general destination refactor should follow after the local
@@ -53,9 +55,9 @@ End():
   flush and close
 ```
 
-This changes normal memory usage from `O(total output)` to approximately
-`O(current row + buffers)`. Exact `uniqueKey` deduplication remains an
-exception because it must retain distinct keys.
+This changes memory usage from `O(total output)` to approximately
+`O(current row + buffers)`. The JSON writer must not add a deduplication map or
+any other row-retention structure.
 
 ### Fragile sanitization
 
@@ -67,11 +69,13 @@ values correctly.
 Go should render a row, validate it with `encoding/json`, and only then write
 the validated JSON value.
 
-### Broken deduplication
+### Broken deduplication should not be ported
 
 The TypeScript `push()` method checks `rowReferences` but does not call
-`trackReference()` after accepting a row. The Go implementation must record a
-key only after its row is written successfully.
+`trackReference()` after accepting a row. The Go JSON implementation should not
+copy or repair that behavior. Uniqueness is outside the JSON writer boundary.
+If a pipeline requires unique rows, it should deduplicate upstream before
+calling `Writer.Push()`.
 
 ### Confusing lifecycle
 
@@ -98,7 +102,6 @@ ETL
      │   ├─ render root/header
      │   ├─ render and validate rows
      │   ├─ manage document state and commas
-     │   └─ deduplicate rows
      │
      └─ Destination
          ├─ local file
@@ -118,7 +121,6 @@ type JSONDocumentEncoder struct {
     started     bool
     finalized   bool
     rowsWritten int
-    rowRefs     map[string]struct{}
 }
 ```
 
@@ -206,7 +208,6 @@ type JSONConfig struct {
     Root       string
     Row        string
     ArrayField string
-    UniqueKey  string
     Metadata   map[string]any
 }
 ```
@@ -216,7 +217,9 @@ For wire compatibility:
 - `output.header` is the root-object template.
 - `output.template` is the row template.
 - `output.arrayField` identifies the root array property.
-- `output.uniqueKey` enables in-memory deduplication.
+- `output.uniqueKey` is not supported by the JSON writer. If it is configured
+  with `fileGenerator: "json-generator"`, return a clear configuration error:
+  deduplicate before writing JSON.
 - `output.footer` has no meaning for JSON and should be rejected when non-empty
   rather than silently ignored.
 - `output.separator` is unused by the JSON generator.
@@ -237,9 +240,6 @@ Validation that depends on source data occurs on the first row:
   silently overwriting configured data.
 - Every rendered row must be one JSON object. Arrays, scalars, and `null`
   should be rejected for parity with the intended line-object model.
-- A configured `uniqueKey` must exist in the source row. A missing key should
-  return an error instead of treating all missing keys as the empty-string
-  duplicate.
 
 ---
 
@@ -265,13 +265,15 @@ reproducible. JSON object property order remains semantically irrelevant.
 
 For every accepted row:
 
-1. Check the deduplication key.
-2. Render the configured row template.
-3. Validate that it is exactly one JSON object.
-4. Compact it with `json.Compact`.
-5. Write a comma only when at least one previous row was written.
-6. Write the compact object.
-7. Record the deduplication key after the write succeeds.
+1. Render the configured row template, or build an object from the configured
+   output mapping when no template is provided.
+2. Validate that it is exactly one JSON object.
+3. Compact it with `json.Compact`.
+4. Write a comma only when at least one previous row was written.
+5. Write the compact object.
+
+Duplicate source rows are written as duplicate JSON array entries. The writer
+does not inspect `uniqueKey`, track references, or skip rows.
 
 Errors should contain the source line number, operation, underlying JSON
 error, and a bounded preview of the rendered value:
@@ -354,34 +356,17 @@ behavior.
 
 ---
 
-## 7. Deduplication and performance
-
-Use:
-
-```go
-map[string]struct{}
-```
-
-for exact in-memory deduplication. The sequence must be:
-
-```text
-resolve key
-check key
-render and write row
-record key
-```
+## 7. Streaming performance
 
 Do not introduce row-rendering goroutines in version one. The output order is
-significant, deduplication is stateful, and buffered sequential output already
-provides backpressure with substantially less synchronization and error
-complexity.
+significant and buffered sequential output already provides backpressure with
+substantially less synchronization and error complexity.
 
 Azure's background upload goroutine remains appropriate because `io.Pipe`
 requires a concurrent reader and writer.
 
-For very large exact-dedup workloads, a later design may introduce a disk-backed
-index or external key store. A Bloom filter must only be considered when false
-positive row loss is explicitly acceptable.
+Any future deduplication feature should be designed as an upstream
+transformation or validation step, not as JSON writer behavior.
 
 ---
 
@@ -412,6 +397,7 @@ or writing must retain its original cause via `%w`.
 - Implement the destination-independent JSON document encoder.
 - Implement the local JSON writer with buffered, atomic output.
 - Register `json-generator` for local destinations in `writer.Factory`.
+- Reject `uniqueKey` when `fileGenerator` is `json-generator`.
 - Add encoder, writer, and ETL tests.
 - Update migration documentation to mark local JSON generation complete.
 
@@ -433,7 +419,6 @@ No `etl.go` changes should be required.
 ### Deferred features
 
 - Structured typed JSON templates
-- Disk-backed or external deduplication
 - Nested array paths
 - Multiple output arrays
 - Arbitrary JSON aggregation/grouping
@@ -456,8 +441,8 @@ No `etl.go` changes should be required.
 - Root/array-field collision
 - Finalize twice
 - Write after finalization
-- Duplicate keys
-- Missing configured unique key
+- Duplicate source rows are emitted
+- `uniqueKey` with JSON output is rejected
 
 ### Local writer tests
 
@@ -477,7 +462,7 @@ No `etl.go` changes should be required.
 - Invalid source row skipped while valid rows are emitted
 - `rejectOnInvalidRow`
 - Empty and all-invalid input
-- `uniqueKey` deduplication
+- Duplicate valid rows are emitted
 - Root and row metadata functions
 - Result output paths and filenames
 
@@ -495,13 +480,13 @@ The local Go JSON generator is complete when:
 
 - `fileGenerator: "json-generator"` is accepted for local output.
 - Existing common TypeScript header, row-template, filename, metadata,
-  `arrayField`, and `uniqueKey` behavior is supported.
+  and `arrayField` behavior is supported.
+- `uniqueKey` is rejected for JSON output with a clear error, and duplicate
+  valid rows are emitted unchanged.
 - Output is streamed and the complete row collection is never retained in
   memory.
 - No JSON-specific logic is added to the ETL orchestrator.
 - Special characters in source values cannot create malformed JSON.
 - Failed or invalid processing does not leave a final-looking partial document.
 - Empty/all-invalid input produces no output file.
-- Exact deduplication works and tracks keys only after successful writes.
 - `go test ./...`, `go vet ./...`, and `go build ./...` pass.
-

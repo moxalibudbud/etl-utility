@@ -337,17 +337,18 @@ account and write to another.
 
 | JSON key | Type | Required | Description |
 | --- | --- | --- | --- |
-| `fileGenerator` | `string` | ⬜ | Writer kind. `"default-generator"` (or empty) is the delimited/templated text writer. Other kinds (json/excel/dedup variants) return an explicit "not supported yet" error. |
+| `fileGenerator` | `string` | ⬜ | Writer kind. `"default-generator"` (or empty) is the delimited/templated text writer. `"json-generator"` is supported for local output only. Other kinds (Excel/dedup variants, and JSON to cloud destinations) return an explicit "not supported yet" error. |
 | `type` | `string` | ⬜ | Destination kind: `"local"` (default) or `"azure-blob"`. Empty is inferred: `url` set → `azure-blob`, otherwise `local`. **S3 is not yet supported** and is rejected with an explicit error. |
 | `path` | `string` | ⬜ | Output directory for a local destination. Default: the OS temp dir. Must not be combined with `url`. |
 | `url` | `string` | ⬜ | Azure container/prefix URL for an `azure-blob` destination (required for that type). The rendered `filename` is appended to it. |
 | `auth` | `object` | ⬜ | Azure credentials for an `azure-blob` destination; same four shapes and precedence as the source `auth` (see the table in §4.1). |
 | `filename` | `string` | ✅ | Output filename, always rendered through the template layers from the **first pushed row** (supports `{field}` and `[func ...]`, see §5). A plain name contains no tokens and is used as-is. Also accepted for compatibility: the object form `{"template": "..."}` and the legacy `filenameTemplate` key (which keeps its old precedence if both are set). |
-| `separator` | `string` | ⬜ | Output column separator when using the `outputMappings` projection. Default: `"\|"`. |
-| `template` | `string` | ⬜ | Full row template (see §5). When set, it takes precedence over the `outputMappings` projection. |
-| `header` | `string` | ⬜ | First line of the output file, written once when the first row arrives. Supports `[func ...]` tokens. |
-| `footer` | `string` | ⬜ | Written raw at the end — **no leading newline**, so it concatenates onto the last row (`...WidgetEOF`). This is intentional parity with the TypeScript `DefaultGenerator`; include a leading `\n` in the footer string if you want it on its own line. |
-| `uniqueKey` | `string` | ⬜ | Source column name used to de-duplicate rows in-memory: rows whose value for this column was already written are skipped. |
+| `separator` | `string` | ⬜ | Output column separator when using the default writer's `outputMappings` projection. Default: `"\|"`. Unused by JSON output. |
+| `template` | `string` | ⬜ | Full row template (see §5). For the default writer, it takes precedence over the `outputMappings` projection. For JSON output, it must render one JSON object per row; when omitted, JSON rows are built from `outputMappings`. |
+| `header` | `string` | ⬜ | For the default writer, the first line of the output file, written once when the first row arrives. For JSON output, the root-object template; empty means `{}`. |
+| `footer` | `string` | ⬜ | Default writer only. Written raw at the end — **no leading newline**, so it concatenates onto the last row (`...WidgetEOF`). JSON output rejects `footer`. |
+| `arrayField` | `string` | ⬜ | JSON output only. Root array property name. Default: `"lines"`. |
+| `uniqueKey` | `string` | ⬜ | Default writer only. Source column name used to de-duplicate rows in-memory: rows whose value for this column was already written are skipped. JSON output rejects `uniqueKey`; deduplicate before writing JSON. |
 | `metadata` | `object` | ⬜ | Arbitrary JSON object exposed to filename, header, and row function templates under `data.metadata` (e.g. `[replaceString data.metadata.store.code - _]`). |
 
 ### 4.4 Ordered mappings — why arrays, not objects
@@ -452,8 +453,9 @@ the invalid/error paths.
   concurrently, give each job a unique output `path` (or a `filename`
   with `[timestamp]`) and unique source filenames to avoid collisions.
 - **Large files**: the pipeline streams line by line with buffered writes, so
-  memory stays flat regardless of file size. `uniqueKey` de-duplication is the
-  exception — it keeps one map entry per distinct key value.
+  memory stays flat regardless of file size. Default-writer `uniqueKey`
+  de-duplication is the exception — it keeps one map entry per distinct key
+  value. JSON output does not de-duplicate rows.
 - **Output row endings**: rows are newline-*prefixed* (the header is not), and
   the footer is appended raw. The output has no trailing newline.
 - **Azure Blob output**: rows stream to the destination as they're pushed
@@ -473,8 +475,9 @@ the invalid/error paths.
   to stray partials, verify the destination after a failed run (the blob URL
   is deterministic: `url` + rendered `filename`).
 - **Not yet supported** (explicit errors, planned per the design doc): S3
-  sources and destinations, JSON/Excel writers, `PushIfExist`/file-index dedup
-  variants, custom JS template functions, and flags-only CLI mode.
+  sources and destinations, JSON output to cloud destinations, Excel writers,
+  `PushIfExist`/file-index dedup variants, custom JS template functions, and
+  flags-only CLI mode.
 
 ---
 

@@ -29,10 +29,7 @@ func (r *renderer) Filename() string { return r.filename }
 
 // setFilename renders the filename template against the first pushed row.
 func (r *renderer) setFilename(sl *line.SourceLine) {
-	r.filename = template.ReplaceWithFunction(
-		template.ReplaceWithMap(r.opts.Filename, sl.JSONLine),
-		r.buildMeta(sl),
-	)
+	r.filename = renderFilename(r.opts, sl)
 }
 
 // header renders the templated header, or "" when none is configured.
@@ -40,7 +37,7 @@ func (r *renderer) header(sl *line.SourceLine) string {
 	if r.opts.Header == "" {
 		return ""
 	}
-	return template.ReplaceWithFunction(r.opts.Header, r.buildMeta(sl))
+	return template.ReplaceWithFunction(r.opts.Header, buildTemplateMeta(r.opts, sl))
 }
 
 // row renders a data row. The ETL orchestrator filters source header rows
@@ -50,7 +47,7 @@ func (r *renderer) row(sl *line.SourceLine) string {
 	if r.opts.Template != "" {
 		row = template.ReplaceWithFunction(
 			template.ReplaceWithMap(r.opts.Template, sl.JSONLine),
-			r.buildMeta(sl),
+			buildTemplateMeta(r.opts, sl),
 		)
 	} else {
 		row = buildLineFromOutput(sl.Output(), r.opts.Separator)
@@ -63,12 +60,19 @@ func (r *renderer) row(sl *line.SourceLine) string {
 // templated.
 func (r *renderer) footer() string { return r.opts.Footer }
 
-func (r *renderer) buildMeta(sl *line.SourceLine) map[string]any {
+func renderFilename(opts OutputConfig, sl *line.SourceLine) string {
+	return template.ReplaceWithFunction(
+		template.ReplaceWithMap(opts.Filename, sl.JSONLine),
+		buildTemplateMeta(opts, sl),
+	)
+}
+
+func buildTemplateMeta(opts OutputConfig, sl *line.SourceLine) map[string]any {
 	meta := make(map[string]any, len(sl.AllData())+1)
 	for k, v := range sl.AllData() {
 		meta[k] = v
 	}
-	meta["metadata"] = r.opts.Metadata
+	meta["metadata"] = opts.Metadata
 	return meta
 }
 

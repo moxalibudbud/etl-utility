@@ -100,6 +100,7 @@ type OutputConfig struct {
 	Header        string         `json:"header"`
 	Footer        string         `json:"footer"`
 	Template      string         `json:"template"`
+	ArrayField    string         `json:"arrayField"`
 	UniqueKey     string         `json:"uniqueKey"`
 	Metadata      map[string]any `json:"metadata"`
 }
@@ -171,6 +172,8 @@ func newLocalWriter(opts OutputConfig) (Writer, error) {
 	switch opts.FileGenerator {
 	case "default-generator", "":
 		return NewDefaultWriter(opts), nil
+	case "json-generator":
+		return NewJSONWriter(opts)
 	default:
 		return nil, fmt.Errorf("writer type %q is not supported in the Go core yet", opts.FileGenerator)
 	}

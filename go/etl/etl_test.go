@@ -1,6 +1,7 @@
 package etl
 
 import (
+	"encoding/json"
 	"os"
 	"path/filepath"
 	"strings"
@@ -148,5 +149,49 @@ func TestProcessNoErrorsDeletesErrorReport(t *testing.T) {
 	}
 	if _, err := os.Stat(res.LocalErrorReportFile); !os.IsNotExist(err) {
 		t.Error("error report should be deleted when there are zero errors")
+	}
+}
+
+func TestProcessJSONGeneratorLocalOutput(t *testing.T) {
+	outDir := t.TempDir()
+	src := writeFixture(t,
+		"BARCODE,SKU,NAME\n"+
+			"111,AAA,Widget A\n"+
+			",BBB,Widget B\n"+
+			"333,AAA,Widget A Duplicate\n",
+	)
+
+	cfg := baseConfig(src, outDir)
+	cfg.Output.FileGenerator = "json-generator"
+	cfg.Output.Filename = "products.json"
+	cfg.Output.Header = `{"kind":"products"}`
+	cfg.Output.Footer = ""
+	cfg.Output.ArrayField = "items"
+	cfg.Output.Template = ""
+
+	res, err := Run(cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !res.Valid || !res.WithErrors || res.TotalErrors != 1 {
+		t.Fatalf("result = %+v, want valid with one skipped invalid row", res)
+	}
+
+	content, err := os.ReadFile(res.LocalOutputFile)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var got struct {
+		Kind  string              `json:"kind"`
+		Items []map[string]string `json:"items"`
+	}
+	if err := json.Unmarshal(content, &got); err != nil {
+		t.Fatalf("output is not valid JSON: %v\n%s", err, content)
+	}
+	if got.Kind != "products" || len(got.Items) != 2 {
+		t.Fatalf("decoded output = %+v", got)
+	}
+	if got.Items[0]["sku"] != "AAA" || got.Items[1]["sku"] != "AAA" {
+		t.Fatalf("duplicate valid rows should both be emitted: %#v", got.Items)
 	}
 }

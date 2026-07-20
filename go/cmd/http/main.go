@@ -63,8 +63,9 @@ func handleETL(w http.ResponseWriter, r *http.Request) {
 		// Log the detailed internal error, while returning a stable HTTP response.
 		log.Printf("ETL run failed: %v", err)
 		writeJSON(w, http.StatusInternalServerError, errorResponse{
-			Error: "ETL run failed",
+			Error: err.Error(),
 		})
+
 		return
 	}
 

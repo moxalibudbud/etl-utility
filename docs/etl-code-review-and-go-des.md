@@ -207,13 +207,15 @@ runnable configs under [`samples/`](../samples).
 
 ### Deferred (out of current core scope)
 
-S3 reader; Azure Blob + S3 output destinations (writers); Excel (`ExcelJS`);
-`JSONGenerator`; the `PushIfExist` / `FileIndexGenerator` dedup variants; the
-JS-eval `customFunction` template fallback; `indexFile` external dedup; and
+S3 reader; S3 output; JSON output to cloud destinations; Excel (`ExcelJS`);
+the `PushIfExist` / `FileIndexGenerator` dedup variants; the JS-eval
+`customFunction` template fallback; `indexFile` external dedup; and
 `context.Context` threading through the reader (Azure calls currently use
-`context.Background()`). In-memory `uniqueKey` deduplication is supported by
-the default writer. The `Reader` / `Writer` interfaces + factory are shaped so
-these slot in **without touching `etl.go`**.
+`context.Background()`). Local streaming `JSONGenerator` output is implemented.
+In-memory `uniqueKey` deduplication is supported by the default writer only; the
+JSON writer rejects `uniqueKey` and serializes every valid row it receives. The
+`Reader` / `Writer` interfaces + factory are shaped so these slot in **without
+touching `etl.go`**.
 
 ---
 

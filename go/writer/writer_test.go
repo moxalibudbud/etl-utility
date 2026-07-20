@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"os"
 	"regexp"
+	"strings"
 	"testing"
 
 	"flatfile-go/azureauth"
@@ -216,11 +217,31 @@ func TestFactoryDispatchesOnDestinationType(t *testing.T) {
 		t.Fatalf("Factory(azure-blob) = %T, want *AzureBlobWriter", w)
 	}
 
+	w, err = Factory(OutputConfig{
+		DestinationConfig: DestinationConfig{Path: t.TempDir()},
+		FileGenerator:     "json-generator",
+		Filename:          "out.json",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, ok := w.(*JSONWriter); !ok {
+		t.Fatalf("Factory(local json-generator) = %T, want *JSONWriter", w)
+	}
+
 	if _, err := Factory(OutputConfig{
 		DestinationConfig: DestinationConfig{URL: "https://x"},
-		FileGenerator:     "json",
+		FileGenerator:     "json-generator",
 	}); err == nil {
 		t.Fatal("expected error for unsupported generator on azure-blob destination")
+	}
+
+	if _, err := Factory(OutputConfig{
+		FileGenerator: "json-generator",
+		Filename:      "out.json",
+		UniqueKey:     "SKU",
+	}); err == nil || !strings.Contains(err.Error(), "uniqueKey") {
+		t.Fatalf("Factory(json-generator with uniqueKey) error = %v, want uniqueKey error", err)
 	}
 }
 

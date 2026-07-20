@@ -4,8 +4,9 @@ Tracking log for porting the streaming flat-file ETL pipeline from
 [`typescript/`](typescript/) to [`go/`](go/) (module `flatfile-go`, Go 1.26).
 
 **Status:** Core pipeline complete and verified. Azure Blob source reader
-implemented. S3 reader, cloud (Azure/S3) output destinations, and
-Excel/JSON/dedup writers deferred.
+implemented. Azure Blob output for the default writer and local streaming JSON
+output are implemented. S3 reader, S3 output, JSON cloud output, and
+Excel/dedup writers are deferred.
 
 For the architectural rationale, code-review details, and TS→Go type mapping, see
 [etl-code-review-and-go-design.md](etl-code-review-and-go-design.md).
@@ -125,9 +126,9 @@ go test ./...    # ok: template, line, reader, etl
 ## 5. Deferred (not yet migrated)
 
 - S3 reader
-- Azure Blob + S3 writers (output destinations)
+- S3 writer (output destination)
+- JSON output to cloud destinations
 - Excel writer (`ExcelJS`)
-- `JSONGenerator` (nested JSON output)
 - `PushIfExist` / `FileIndexGenerator` dedup variants and `indexFile`
   (`uniqueKey` in-memory deduplication is supported by the default writer)
 - JS-eval `customFunction` template fallback
