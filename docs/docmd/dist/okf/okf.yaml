@@ -1,0 +1,192 @@
+okf_version: 0.8.16
+bundle:
+  name: documentation
+  title: Documentation
+  description: ""
+  url: ""
+  generated_by: "@docmd/plugin-okf"
+  generated_at: "2026-07-20T13:03:11.509Z"
+  default_type: concept
+stats:
+  concepts: 22
+  by_type:
+    concept: 22
+  locales: 
+  versions: 
+concepts:
+  - id: agents
+    type: concept
+    title: "Agent Instructions: Documentation Scope"
+    path: /AGENTS/
+    file: concepts/agents.md
+    locale: ""
+    version: ""
+    tags: 
+  - id: backlogs
+    type: concept
+    title: Backlog
+    path: /backlogs/
+    file: concepts/backlogs.md
+    locale: ""
+    version: ""
+    tags: 
+  - id: deployment-guide
+    type: concept
+    title: "Deployment Guide — ETL Utility"
+    path: /deployment-guide/
+    file: concepts/deployment-guide.md
+    locale: ""
+    version: ""
+    tags: 
+  - id: docmd
+    type: concept
+    title: Untitled
+    path: /docmd/
+    file: concepts/docmd.md
+    locale: ""
+    version: ""
+    tags: 
+  - id: docmd-okf-concepts-agents
+    type: concept
+    title: "Agent Instructions: Documentation Scope"
+    path: /docmd/okf/concepts/agents/
+    file: concepts/docmd-okf-concepts-agents.md
+    locale: ""
+    version: ""
+    tags: 
+  - id: docmd-okf-concepts-backlogs
+    type: concept
+    title: Backlog
+    path: /docmd/okf/concepts/backlogs/
+    file: concepts/docmd-okf-concepts-backlogs.md
+    locale: ""
+    version: ""
+    tags: 
+  - id: docmd-okf-concepts-deployment-guide
+    type: concept
+    title: "Deployment Guide — ETL Utility"
+    path: /docmd/okf/concepts/deployment-guide/
+    file: concepts/docmd-okf-concepts-deployment-guide.md
+    locale: ""
+    version: ""
+    tags: 
+  - id: docmd-okf-concepts-etl-code-review-and-go-des
+    type: concept
+    title: "ETL Utility — Code Review & Go Implementation Design"
+    path: /docmd/okf/concepts/etl-code-review-and-go-des/
+    file: concepts/docmd-okf-concepts-etl-code-review-and-go-des.md
+    locale: ""
+    version: ""
+    tags: 
+  - id: docmd-okf-concepts-go-json-generator-design
+    type: concept
+    title: "Go JSON Generator — Recommended Design"
+    path: /docmd/okf/concepts/go-json-generator-design/
+    file: concepts/docmd-okf-concepts-go-json-generator-design.md
+    locale: ""
+    version: ""
+    tags: 
+  - id: docmd-okf-concepts-migration-process
+    type: concept
+    title: "Migration Process — TypeScript ETL → Go"
+    path: /docmd/okf/concepts/migration-process/
+    file: concepts/docmd-okf-concepts-migration-process.md
+    locale: ""
+    version: ""
+    tags: 
+  - id: docmd-okf-concepts-output-file-improvement
+    type: concept
+    title: "Output File Improvement Plan"
+    path: /docmd/okf/concepts/output-file-improvement/
+    file: concepts/docmd-okf-concepts-output-file-improvement.md
+    locale: ""
+    version: ""
+    tags: 
+  - id: docmd-okf-concepts-root
+    type: concept
+    title: Documentation
+    path: /docmd/okf/concepts/root/
+    file: concepts/docmd-okf-concepts-root.md
+    locale: ""
+    version: ""
+    tags: 
+  - id: docmd-okf-concepts-source-file-improvement
+    type: concept
+    title: "Source File Improvement Plan"
+    path: /docmd/okf/concepts/source-file-improvement/
+    file: concepts/docmd-okf-concepts-source-file-improvement.md
+    locale: ""
+    version: ""
+    tags: 
+  - id: docmd-okf-concepts-usage
+    type: concept
+    title: "Usage Guide — Integrating the ETL Utility (Go)"
+    path: /docmd/okf/concepts/usage/
+    file: concepts/docmd-okf-concepts-usage.md
+    locale: ""
+    version: ""
+    tags: 
+  - id: docmd-okf
+    type: concept
+    title: ". — Knowledge Catalog"
+    path: /docmd/okf/
+    file: concepts/docmd-okf.md
+    locale: ""
+    version: ""
+    tags: 
+  - id: etl-code-review-and-go-des
+    type: concept
+    title: "ETL Utility — Code Review & Go Implementation Design"
+    path: /etl-code-review-and-go-des/
+    file: concepts/etl-code-review-and-go-des.md
+    locale: ""
+    version: ""
+    tags: 
+  - id: go-json-generator-design
+    type: concept
+    title: "Go JSON Generator — Recommended Design"
+    path: /go-json-generator-design/
+    file: concepts/go-json-generator-design.md
+    locale: ""
+    version: ""
+    tags: 
+  - id: root
+    type: concept
+    title: Documentation
+    path: /
+    file: concepts/root.md
+    locale: ""
+    version: ""
+    tags: 
+  - id: migration-process
+    type: concept
+    title: "Migration Process — TypeScript ETL → Go"
+    path: /migration-process/
+    file: concepts/migration-process.md
+    locale: ""
+    version: ""
+    tags: 
+  - id: output-file-improvement
+    type: concept
+    title: "Output File Improvement Plan"
+    path: /output-file-improvement/
+    file: concepts/output-file-improvement.md
+    locale: ""
+    version: ""
+    tags: 
+  - id: source-file-improvement
+    type: concept
+    title: "Source File Improvement Plan"
+    path: /source-file-improvement/
+    file: concepts/source-file-improvement.md
+    locale: ""
+    version: ""
+    tags: 
+  - id: usage
+    type: concept
+    title: "Usage Guide — Integrating the ETL Utility (Go)"
+    path: /usage/
+    file: concepts/usage.md
+    locale: ""
+    version: ""
+    tags: 

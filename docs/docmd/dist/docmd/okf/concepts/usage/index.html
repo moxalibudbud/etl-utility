@@ -1,0 +1,2002 @@
+<!--
+  ---------------------------------------------------------------
+  docmd : the zero-config documentation engine.
+  @website https://docmd.io
+  [docmd-source] - Please do not remove this header.
+  ---------------------------------------------------------------
+-->
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="generator" content="docmd v0.8.16">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script>/**
+ * --------------------------------------------------------------------
+ * docmd : the zero-config documentation engine.
+ *
+ * @package     @docmd/core (and ecosystem)
+ * @website     https://docmd.io
+ * @repository  https://github.com/docmd-io/docmd
+ * @license     MIT
+ * @copyright   Copyright (c) 2025-present docmd.io
+ *
+ * [docmd-source] - Please do not remove this header.
+ * --------------------------------------------------------------------
+ */
+
+(function () {
+  try {
+    // 1. Determine Theme
+    //
+    // Resolve from three sources, in priority order:
+    //   1. localStorage explicit user choice (light / dark)
+    //   2. window.DOCMD_APPEARANCE  (current canonical name, set by EJS templates)
+    //   3. window.DOCMD_DEFAULT_MODE (legacy alias kept for pre-0.8.7 outputs)
+    //   4. 'light' as the final fallback
+    //
+    // Note: localStorage is only honoured when it holds an explicit
+    // 'light' or 'dark' value. A stored 'system' value (from a prior
+    // session where the user picked "follow system") must NOT win over
+    // a freshly resolved config value — the resolved value will itself
+    // be 'system' in that case and the OS preference check below takes
+    // over, so this is a no-op for the in-session behaviour but keeps
+    // any future storage migration simple.
+    var localValue = localStorage.getItem('docmd-theme');
+    var configValue = window.DOCMD_APPEARANCE
+      || window.DOCMD_DEFAULT_MODE
+      || 'light';
+    var theme = (localValue === 'light' || localValue === 'dark')
+      ? localValue
+      : configValue;
+
+    if (theme === 'system') {
+      theme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    }
+
+    // 2. Apply to Root
+    document.documentElement.setAttribute('data-theme', theme);
+
+    // 3. Highlight.js Toggle Strategy
+    var lightLink = document.getElementById('hljs-light');
+    var darkLink = document.getElementById('hljs-dark');
+
+    if (lightLink && darkLink) {
+      if (theme === 'dark') {
+        lightLink.disabled = true;
+        darkLink.disabled = false;
+      } else {
+        lightLink.disabled = false;
+        darkLink.disabled = true;
+      }
+    }
+
+    document.documentElement.style.visibility = "visible";
+  } catch (e) {
+    document.documentElement.style.visibility = "visible";
+    console.error('Theme init failed', e);
+  }
+})();</script>
+    <style>
+      html {
+        visibility: hidden;
+      }
+    </style>
+    
+    <script>
+      var root = "../../../../";
+      if (root && !root.endsWith('/')) root += '/';
+      if (root === '') root = './';
+      window.DOCMD_ROOT = root;
+
+      window.DOCMD_SITE_ROOT = "/";
+
+      window.DOCMD_APPEARANCE = "system";
+      window.DOCMD_VERSION_ROOT = "/";
+      window.DOCMD_BASE = "/";
+      window.DOCMD_LOCALE = "";
+      window.DOCMD_DEFAULT_LOCALE = "";
+    </script>
+    <title>
+      Usage Guide — Integrating the ETL Utility (Go) : Documentation
+    </title>
+    
+    
+
+    <link id="site-favicon" rel="icon" href="../../../../assets/favicon.ico?v=mrt8jbbm">
+    <link rel="stylesheet" href="../../../../assets/css/docmd-main.css?v=mrt8jbbm">
+    
+    <link rel="stylesheet" href="../../../../assets/css/docmd-highlight-light.css?v=mrt8jbbm" id="hljs-light" >
+    <link rel="stylesheet" href="../../../../assets/css/docmd-highlight-dark.css?v=mrt8jbbm" id="hljs-dark" disabled>
+    
+    
+<meta name="description" content="">
+<meta property="og:title" content="Usage Guide — Integrating the ETL Utility (Go) - Documentation">
+<meta property="og:description" content="">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Usage Guide — Integrating the ETL Utility (Go) - Documentation">
+<meta name="twitter:description" content="">
+
+
+
+<link rel="stylesheet" href="../../../../assets/css/docmd-git.css?v=mrt8jbbm" >
+<link rel="stylesheet" href="../../../../assets/css/docmd-openapi.css?v=mrt8jbbm" >
+
+    
+    <script>/**
+ * --------------------------------------------------------------------
+ * docmd : the zero-config documentation engine.
+ *
+ * @package     @docmd/core (and ecosystem)
+ * @website     https://docmd.io
+ * @repository  https://github.com/docmd-io/docmd
+ * @license     MIT
+ * @copyright   Copyright (c) 2025-present docmd.io
+ *
+ * [docmd-source] - Please do not remove this header.
+ * --------------------------------------------------------------------
+ */
+
+(function () {
+  try {
+    // 1. Determine Theme
+    //
+    // Resolve from three sources, in priority order:
+    //   1. localStorage explicit user choice (light / dark)
+    //   2. window.DOCMD_APPEARANCE  (current canonical name, set by EJS templates)
+    //   3. window.DOCMD_DEFAULT_MODE (legacy alias kept for pre-0.8.7 outputs)
+    //   4. 'light' as the final fallback
+    //
+    // Note: localStorage is only honoured when it holds an explicit
+    // 'light' or 'dark' value. A stored 'system' value (from a prior
+    // session where the user picked "follow system") must NOT win over
+    // a freshly resolved config value — the resolved value will itself
+    // be 'system' in that case and the OS preference check below takes
+    // over, so this is a no-op for the in-session behaviour but keeps
+    // any future storage migration simple.
+    var localValue = localStorage.getItem('docmd-theme');
+    var configValue = window.DOCMD_APPEARANCE
+      || window.DOCMD_DEFAULT_MODE
+      || 'light';
+    var theme = (localValue === 'light' || localValue === 'dark')
+      ? localValue
+      : configValue;
+
+    if (theme === 'system') {
+      theme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    }
+
+    // 2. Apply to Root
+    document.documentElement.setAttribute('data-theme', theme);
+
+    // 3. Highlight.js Toggle Strategy
+    var lightLink = document.getElementById('hljs-light');
+    var darkLink = document.getElementById('hljs-dark');
+
+    if (lightLink && darkLink) {
+      if (theme === 'dark') {
+        lightLink.disabled = true;
+        darkLink.disabled = false;
+      } else {
+        lightLink.disabled = false;
+        darkLink.disabled = true;
+      }
+    }
+
+    document.documentElement.style.visibility = "visible";
+  } catch (e) {
+    document.documentElement.style.visibility = "visible";
+    console.error('Theme init failed', e);
+  }
+})();</script>
+  </head>
+  <body
+    class="sidebar-collapsible"
+    data-default-collapsed="false"
+    data-copy-code-enabled="true" data-spa-enabled="true" data-source-file="okf/concepts/usage.md">
+
+    <a href="#main-content" class="skip-link">Skip to main content</a>
+
+    
+    
+      <aside class="sidebar">
+        <div class="sidebar-header">
+          
+<h1><a href="../../../../">
+                Documentation
+              </a></h1>
+          
+          <span class="mobile-view sidebar-menu-button float-right">
+            
+<svg class="lucide-icon icon-menu " width="1em" height="1em" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"
+  class="lucide lucide-menu"
+  xmlns="http://www.w3.org/2000/svg"
+  width="24"
+  height="24"
+  viewBox="0 0 24 24"
+  fill="none"
+  stroke="currentColor"
+  stroke-width="2"
+  stroke-linecap="round"
+  stroke-linejoin="round"
+>
+  <path d="M4 5h16" />
+  <path d="M4 12h16" />
+  <path d="M4 19h16" />
+</svg>
+
+          </span>
+        </div>
+        <div class="sidebar-top-group">
+          
+          
+          
+          
+        </div>
+        
+
+<nav class="sidebar-nav" aria-label="Main Navigation">
+  <ul>
+    
+      <li class="" >
+      
+        <a href="../../../../" class=" "
+          >
+          
+          <span class="nav-item-title">
+            Documentation
+            </span>
+          
+          
+        </a>
+        
+
+        
+      </li>
+    
+      <li class="" >
+      
+        <a href="../../../../AGENTS/" class=" "
+          >
+          
+          <span class="nav-item-title">
+            Agent Instructions: Documentation Scope
+            </span>
+          
+          
+        </a>
+        
+
+        
+      </li>
+    
+      <li class="" >
+      
+        <a href="../../../../backlogs/" class=" "
+          >
+          
+          <span class="nav-item-title">
+            Backlog
+            </span>
+          
+          
+        </a>
+        
+
+        
+      </li>
+    
+      <li class="" >
+      
+        <a href="../../../../deployment-guide/" class=" "
+          >
+          
+          <span class="nav-item-title">
+            Deployment Guide — ETL Utility
+            </span>
+          
+          
+        </a>
+        
+
+        
+      </li>
+    
+      <li class="" >
+      
+        <a href="../../../../etl-code-review-and-go-des/" class=" "
+          >
+          
+          <span class="nav-item-title">
+            ETL Utility — Code Review &amp; Go Implementation Design
+            </span>
+          
+          
+        </a>
+        
+
+        
+      </li>
+    
+      <li class="" >
+      
+        <a href="../../../../go-json-generator-design/" class=" "
+          >
+          
+          <span class="nav-item-title">
+            Go JSON Generator — Recommended Design
+            </span>
+          
+          
+        </a>
+        
+
+        
+      </li>
+    
+      <li class="" >
+      
+        <a href="../../../../migration-process/" class=" "
+          >
+          
+          <span class="nav-item-title">
+            Migration Process — TypeScript ETL → Go
+            </span>
+          
+          
+        </a>
+        
+
+        
+      </li>
+    
+      <li class="" >
+      
+        <a href="../../../../output-file-improvement/" class=" "
+          >
+          
+          <span class="nav-item-title">
+            Output File Improvement Plan
+            </span>
+          
+          
+        </a>
+        
+
+        
+      </li>
+    
+      <li class="" >
+      
+        <a href="../../../../source-file-improvement/" class=" "
+          >
+          
+          <span class="nav-item-title">
+            Source File Improvement Plan
+            </span>
+          
+          
+        </a>
+        
+
+        
+      </li>
+    
+      <li class="" >
+      
+        <a href="../../../../usage/" class=" "
+          >
+          
+          <span class="nav-item-title">
+            Usage Guide — Integrating the ETL Utility (Go)
+            </span>
+          
+          
+        </a>
+        
+
+        
+      </li>
+    
+      <li class="active-parent collapsible expanded nav-group"  aria-expanded="true" >
+      
+        <span class="nav-label nav-group">
+          
+          <span class="nav-item-title">
+            Docmd
+          </span>
+          
+            <span class="collapse-icon-wrapper">
+<svg class="lucide-icon icon-chevron-right collapse-icon" width="1em" height="1em" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"
+  class="lucide lucide-chevron-right"
+  xmlns="http://www.w3.org/2000/svg"
+  width="24"
+  height="24"
+  viewBox="0 0 24 24"
+  fill="none"
+  stroke="currentColor"
+  stroke-width="2"
+  stroke-linecap="round"
+  stroke-linejoin="round"
+>
+  <path d="m9 18 6-6-6-6" />
+</svg>
+</span>
+          
+        </span>
+        
+
+        
+          <ul class="submenu">
+            
+      <li class="" >
+      
+        <a href="../../../../docmd" class=" "
+          >
+          
+          <span class="nav-item-title">
+            README
+            </span>
+          
+          
+        </a>
+        
+
+        
+      </li>
+    
+      <li class="active-parent collapsible expanded nav-group"  aria-expanded="true" >
+      
+        <span class="nav-label nav-group">
+          
+          <span class="nav-item-title">
+            Okf
+          </span>
+          
+            <span class="collapse-icon-wrapper">
+<svg class="lucide-icon icon-chevron-right collapse-icon" width="1em" height="1em" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"
+  class="lucide lucide-chevron-right"
+  xmlns="http://www.w3.org/2000/svg"
+  width="24"
+  height="24"
+  viewBox="0 0 24 24"
+  fill="none"
+  stroke="currentColor"
+  stroke-width="2"
+  stroke-linecap="round"
+  stroke-linejoin="round"
+>
+  <path d="m9 18 6-6-6-6" />
+</svg>
+</span>
+          
+        </span>
+        
+
+        
+          <ul class="submenu">
+            
+      <li class="" >
+      
+        <a href="../../../../docmd/okf" class=" "
+          >
+          
+          <span class="nav-item-title">
+            . — Knowledge Catalog
+            </span>
+          
+          
+        </a>
+        
+
+        
+      </li>
+    
+      <li class="active-parent collapsible expanded nav-group"  aria-expanded="true" >
+      
+        <span class="nav-label nav-group">
+          
+          <span class="nav-item-title">
+            Concepts
+          </span>
+          
+            <span class="collapse-icon-wrapper">
+<svg class="lucide-icon icon-chevron-right collapse-icon" width="1em" height="1em" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"
+  class="lucide lucide-chevron-right"
+  xmlns="http://www.w3.org/2000/svg"
+  width="24"
+  height="24"
+  viewBox="0 0 24 24"
+  fill="none"
+  stroke="currentColor"
+  stroke-width="2"
+  stroke-linecap="round"
+  stroke-linejoin="round"
+>
+  <path d="m9 18 6-6-6-6" />
+</svg>
+</span>
+          
+        </span>
+        
+
+        
+          <ul class="submenu">
+            
+      <li class="" >
+      
+        <a href="../../../../docmd/okf/concepts/agents/" class=" "
+          >
+          
+          <span class="nav-item-title">
+            Agent Instructions: Documentation Scope
+            </span>
+          
+          
+        </a>
+        
+
+        
+      </li>
+    
+      <li class="" >
+      
+        <a href="../../../../docmd/okf/concepts/backlogs/" class=" "
+          >
+          
+          <span class="nav-item-title">
+            Backlog
+            </span>
+          
+          
+        </a>
+        
+
+        
+      </li>
+    
+      <li class="" >
+      
+        <a href="../../../../docmd/okf/concepts/deployment-guide/" class=" "
+          >
+          
+          <span class="nav-item-title">
+            Deployment Guide — ETL Utility
+            </span>
+          
+          
+        </a>
+        
+
+        
+      </li>
+    
+      <li class="" >
+      
+        <a href="../../../../docmd/okf/concepts/root/" class=" "
+          >
+          
+          <span class="nav-item-title">
+            Documentation
+            </span>
+          
+          
+        </a>
+        
+
+        
+      </li>
+    
+      <li class="" >
+      
+        <a href="../../../../docmd/okf/concepts/etl-code-review-and-go-des/" class=" "
+          >
+          
+          <span class="nav-item-title">
+            ETL Utility — Code Review &amp; Go Implementation Design
+            </span>
+          
+          
+        </a>
+        
+
+        
+      </li>
+    
+      <li class="" >
+      
+        <a href="../../../../docmd/okf/concepts/go-json-generator-design/" class=" "
+          >
+          
+          <span class="nav-item-title">
+            Go JSON Generator — Recommended Design
+            </span>
+          
+          
+        </a>
+        
+
+        
+      </li>
+    
+      <li class="" >
+      
+        <a href="../../../../docmd/okf/concepts/migration-process/" class=" "
+          >
+          
+          <span class="nav-item-title">
+            Migration Process — TypeScript ETL → Go
+            </span>
+          
+          
+        </a>
+        
+
+        
+      </li>
+    
+      <li class="" >
+      
+        <a href="../../../../docmd/okf/concepts/output-file-improvement/" class=" "
+          >
+          
+          <span class="nav-item-title">
+            Output File Improvement Plan
+            </span>
+          
+          
+        </a>
+        
+
+        
+      </li>
+    
+      <li class="" >
+      
+        <a href="../../../../docmd/okf/concepts/source-file-improvement/" class=" "
+          >
+          
+          <span class="nav-item-title">
+            Source File Improvement Plan
+            </span>
+          
+          
+        </a>
+        
+
+        
+      </li>
+    
+      <li class="active" >
+      
+        <a href="../../../../docmd/okf/concepts/usage/" class="active "
+          >
+          
+          <span class="nav-item-title">
+            Usage Guide — Integrating the ETL Utility (Go)
+            </span>
+          
+          
+        </a>
+        
+
+        
+      </li>
+    
+          </ul>
+        
+      </li>
+    
+          </ul>
+        
+      </li>
+    
+          </ul>
+        
+      </li>
+    
+  </ul>
+</nav>
+        <div class="sidebar-bottom-group mt-auto">
+          
+          
+          
+          
+        </div>
+      </aside>
+      
+      
+      
+      <div class="main-content-wrapper">
+        
+        
+          <header class="page-header">
+            <div class="header-left">
+              
+                <button id="sidebar-toggle-button" class="sidebar-toggle-button"
+                  aria-label="Toggle Sidebar">
+                  
+<svg class="lucide-icon icon-chevron-left " width="1em" height="1em" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"
+  class="lucide lucide-chevron-left"
+  xmlns="http://www.w3.org/2000/svg"
+  width="24"
+  height="24"
+  viewBox="0 0 24 24"
+  fill="none"
+  stroke="currentColor"
+  stroke-width="2"
+  stroke-linecap="round"
+  stroke-linejoin="round"
+>
+  <path d="m15 18-6-6 6-6" />
+</svg>
+
+                </button>
+              
+              <div class="header-titles-wrapper">
+                <span class="header-title">
+                  Usage Guide — Integrating the ETL Utility (Go)
+                </span>
+              </div>
+            </div>
+            <div class="header-right">
+              
+                
+
+
+<div class="docmd-options-menu">
+    
+    <button class="docmd-search-trigger" aria-label="Search">
+        
+<svg class="lucide-icon icon-search " width="1em" height="1em" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"
+  class="lucide lucide-search"
+  xmlns="http://www.w3.org/2000/svg"
+  width="24"
+  height="24"
+  viewBox="0 0 24 24"
+  fill="none"
+  stroke="currentColor"
+  stroke-width="2"
+  stroke-linecap="round"
+  stroke-linejoin="round"
+>
+  <path d="m21 21-4.34-4.34" />
+  <circle cx="11" cy="11" r="8" />
+</svg>
+
+        <span class="search-label">Search</span>
+        <span class="search-keys"><kbd class="docmd-kbd">⌘</kbd><kbd class="docmd-kbd">K</kbd></span>
+    </button>
+    
+
+    
+
+    
+
+    
+    <button class="theme-toggle-button" aria-label="Toggle theme">
+        
+<svg class="lucide-icon icon-sun icon-sun" width="1em" height="1em" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"
+  class="lucide lucide-sun"
+  xmlns="http://www.w3.org/2000/svg"
+  width="24"
+  height="24"
+  viewBox="0 0 24 24"
+  fill="none"
+  stroke="currentColor"
+  stroke-width="2"
+  stroke-linecap="round"
+  stroke-linejoin="round"
+>
+  <circle cx="12" cy="12" r="4" />
+  <path d="M12 2v2" />
+  <path d="M12 20v2" />
+  <path d="m4.93 4.93 1.41 1.41" />
+  <path d="m17.66 17.66 1.41 1.41" />
+  <path d="M2 12h2" />
+  <path d="M20 12h2" />
+  <path d="m6.34 17.66-1.41 1.41" />
+  <path d="m19.07 4.93-1.41 1.41" />
+</svg>
+ 
+<svg class="lucide-icon icon-moon icon-moon" width="1em" height="1em" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"
+  class="lucide lucide-moon"
+  xmlns="http://www.w3.org/2000/svg"
+  width="24"
+  height="24"
+  viewBox="0 0 24 24"
+  fill="none"
+  stroke="currentColor"
+  stroke-width="2"
+  stroke-linecap="round"
+  stroke-linejoin="round"
+>
+  <path d="M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401" />
+</svg>
+
+    </button>
+    
+
+    
+</div>
+
+              
+            </div>
+          </header>
+        
+        <div class="content-theme-cover">
+          <main class="content-area" id="main-content">
+            <div class="content-layout">
+              <div class="main-content">
+                <div class="docmd-breadcrumbs-row">
+                  <div id="docmd-raw-markdown" data-content="---%0Atype%3A%20concept%0Atitle%3A%20%22Usage%20Guide%20%E2%80%94%20Integrating%20the%20ETL%20Utility%20(Go)%22%0Asource%3A%20%2Fusage%2F%0Apath%3A%20%2Fusage%2F%0Aupdated%3A%202026-07-20%0Aokf%3A%0A%20%20generated_by%3A%20%22%40docmd%2Fplugin-okf%22%0A%20%20generated_at%3A%20%222026-07-20T12%3A58%3A26.434Z%22%0A---%0A%23%20Usage%20Guide%20%E2%80%94%20Integrating%20the%20ETL%20Utility%20(Go)%0A%0AHow%20to%20use%20the%20flat-file%20ETL%20core%20from%20an%20**external%20application**%20%E2%80%94%20for%20example%2C%20a%0Aweb%20application%20that%20accepts%20a%20source%20file%20upload%20and%20needs%20it%20validated%20and%0Atransformed%20into%20a%20delimited%20output%20file.%0A%0AFor%20the%20internal%20design%20and%20TS%E2%86%92Go%20migration%20rationale%2C%20see%0A%5Betl-code-review-and-go-design.md%5D(etl-code-review-and-go-design.md).%0A%0AFor%20build%20and%20hosting%20instructions%2C%20see%0A%5Bdeployment-guide.md%5D(deployment-guide.md).%0A%0A---%0A%0A%23%23%201.%20What%20it%20does%0A%0AYou%20give%20the%20pipeline%20three%20things%3A%0A%0A1.%20**A%20source%20file**%20%E2%80%94%20a%20local%20path%20or%20an%20Azure%20blob%20URL%20to%20a%20delimited%20text%0A%20%20%20file%20(CSV%2C%20%60%3B%60-separated%2C%20etc.).%0A2.%20**Line%20rules**%20%E2%80%94%20column%20names%2C%20which%20fields%20are%20mandatory%2C%20the%20separator%2C%20whether%0A%20%20%20line%201%20is%20a%20header.%0A3.%20**An%20output%20definition**%20%E2%80%94%20where%20to%20write%2C%20the%20filename%2C%20and%20how%20each%20row%20is%0A%20%20%20projected%20(ordered%20mappings%20or%20a%20template%20string).%0A%0AIt%20streams%20the%20source%20line%20by%20line%20and%20produces%3A%0A%0A-%20An%20**output%20file**%20containing%20every%20valid%2C%20non-header%20row%20(created%20lazily%20%E2%80%94%20an%0A%20%20empty%20or%20all-invalid%20source%20produces%20**no**%20output%20file).%0A-%20Optionally%2C%20an%20**error%20report**%20(%60%3Csource-filename%3E.error.txt%60)%20listing%20invalid%0A%20%20rows%20%E2%80%94%20opt-in%20via%20%60output.options.errorReport%60%20(%C2%A74.3.1)%2C%20and%20even%20then%20only%0A%20%20kept%20when%20at%20least%20one%20row%20failed%20validation.%20Invalid%20rows%20are%20always%20counted%0A%20%20in%20the%20result%20whether%20or%20not%20the%20file%20is%20written.%0A-%20A%20JSON%20**result**%20summarizing%20validity%2C%20error%20counts%2C%20file%20locations%2C%20and%0A%20%20metadata%20sampled%20from%20the%20first%20valid%20row.%0A%0AAll%20integration%20surfaces%20funnel%20through%20one%20function%2C%20%60etl.Run(Config)%60%2C%20so%20the%0Abehavior%20is%20identical%20whether%20you%20call%20it%20in-process%20or%20spawn%20the%20binary.%0A%0A---%0A%0A%23%23%202.%20Integration%20surfaces%0A%0A%7C%20Surface%20%7C%20How%20you%20pass%20parameters%20%7C%20Status%20%7C%0A%7C%20---%20%7C%20---%20%7C%20---%20%7C%0A%7C%20**In-process%20(Go)**%20%7C%20Import%20%60flatfile-go%2Fetl%60%2C%20build%20an%20%60etl.Config%60%20struct%2C%20call%20%60etl.Run(cfg)%60%20%7C%20%E2%9C%85%20Available%20%7C%0A%7C%20**Spawned%20binary%20(any%20language)**%20%7C%20%60etl%20-config%20%3Cconfig.json%3E%60%3B%20read%20the%20JSON%20result%20from%20stdout.%20%60-source%20%3Cpath-or-url%3E%60%20may%20override%20%60source%60%20from%20the%20config.%20%7C%20%E2%9C%85%20Available%20%7C%0A%7C%20**JSON%20config%20via%20stdin**%20(%60-config%20-%60)%20%7C%20Pipe%20the%20same%20canonical%20config%20JSON%20to%20the%20process%20%7C%20%E2%9C%85%20Available%20%7C%0A%7C%20**HTTP%20server**%20%7C%20Run%20%60cmd%2Fhttp%60%3B%20%60POST%20%2Fetl%60%20with%20canonical%20config%20JSON%20in%20the%20request%20body%20%7C%20%E2%9C%85%20Available%20%7C%0A%7C%20**AWS%20Lambda%20Function%20URL**%20%7C%20Deploy%20%60cmd%2Flambda%60%3B%20%60POST%20%2F%60%20or%20%60POST%20%2Fetl%60%20with%20canonical%20config%20JSON%20in%20the%20request%20body%20%7C%20%E2%9C%85%20Available%20%7C%0A%7C%20**Flags-only%20terminal%20run**%20(%60-columns%60%2C%20%60-mandatory%60%2C%20%E2%80%A6)%20%7C%20Individual%20CLI%20flags%20%7C%20%F0%9F%94%9C%20Planned%20%7C%0A%0A%3E%20**Note%20for%20binary%20integrators%3A**%20the%20CLI%20reads%20the%20same%20%60etl.Config%60%20JSON%20shape%0A%3E%20used%20in-process%3A%20%60source%60%2C%20%60output%60%2C%20and%20%60options%60.%20The%20optional%20%60-source%60%0A%3E%20flag%20overrides%20%60source%60%20from%20the%20JSON%20for%20callers%20that%20keep%20the%20file%20path%0A%3E%20outside%20the%20config%20payload.%20The%20flag%20accepts%20either%20a%20local%20path%20or%20an%0A%3E%20Azure%20blob%20URL%20%E2%80%94%20whichever%20it%20is%20set%20to%20always%20replaces%20%60source%60%20**as%20the%0A%3E%20legacy%20string%20form**%20(see%20%C2%A74.1)%3B%20to%20override%20with%20the%20typed%20object%20form%0A%3E%20(e.g.%20to%20pass%20Azure%20auth)%2C%20set%20%60source%60%20in%20the%20config%20JSON%20instead.%0A%0A---%0A%0A%23%23%203.%20Quick%20start%0A%0A%23%23%23%203.1%20In-process%20from%20a%20Go%20web%20application%0A%0AA%20handler%20that%20accepts%20an%20uploaded%20file%2C%20saves%20it%20to%20a%20temp%20path%2C%20and%20runs%20the%0Apipeline%3A%0A%0A%60%60%60go%0Apackage%20main%0A%0Aimport%20(%0A%09%22encoding%2Fjson%22%0A%09%22io%22%0A%09%22net%2Fhttp%22%0A%09%22os%22%0A%09%22path%2Ffilepath%22%0A%0A%09%22flatfile-go%2Fetl%22%0A%09%22flatfile-go%2Fline%22%0A%09%22flatfile-go%2Fwriter%22%0A)%0A%0Afunc%20handleUpload(w%20http.ResponseWriter%2C%20r%20*http.Request)%20%7B%0A%09%2F%2F%201.%20Persist%20the%20uploaded%20file%20locally%20%E2%80%94%20the%20reader%20needs%20a%20local%20path.%0A%09src%2C%20header%2C%20err%20%3A%3D%20r.FormFile(%22file%22)%0A%09if%20err%20!%3D%20nil%20%7B%0A%09%09http.Error(w%2C%20err.Error()%2C%20http.StatusBadRequest)%0A%09%09return%0A%09%7D%0A%09defer%20src.Close()%0A%0A%09tmpPath%20%3A%3D%20filepath.Join(os.TempDir()%2C%20header.Filename)%0A%09dst%2C%20err%20%3A%3D%20os.Create(tmpPath)%0A%09if%20err%20!%3D%20nil%20%7B%0A%09%09http.Error(w%2C%20err.Error()%2C%20http.StatusInternalServerError)%0A%09%09return%0A%09%7D%0A%09if%20_%2C%20err%20%3A%3D%20io.Copy(dst%2C%20src)%3B%20err%20!%3D%20nil%20%7B%0A%09%09dst.Close()%0A%09%09http.Error(w%2C%20err.Error()%2C%20http.StatusInternalServerError)%0A%09%09return%0A%09%7D%0A%09dst.Close()%0A%0A%09%2F%2F%202.%20Build%20the%20Config%20%E2%80%94%20this%20is%20where%20all%20required%20params%20are%20passed.%0A%09cfg%20%3A%3D%20etl.Config%7B%0A%09%09Source%3A%20tmpPath%2C%0A%09%09Output%3A%20writer.OutputConfig%7B%0A%09%09%09FileGenerator%3A%20%22default-generator%22%2C%0A%09%09%09Path%3A%20%20%20%20%20%20%20%20%20%20%22%2Fvar%2Fdata%2Fout%22%2C%0A%09%09%09Filename%3A%20%20%20%20%20%20%22products.txt%22%2C%0A%09%09%09Separator%3A%20%20%20%20%20%22%3B%22%2C%0A%09%09%09Header%3A%20%20%20%20%20%20%20%20%22sku%3Bname%22%2C%0A%09%09%09Footer%3A%20%20%20%20%20%20%20%20%22EOF%22%2C%0A%09%09%7D%2C%0A%09%09Options%3A%20etl.Options%7B%0A%09%09%09Line%3A%20line.LineConfig%7B%0A%09%09%09%09Columns%3A%20%20%20%20%20%20%20%20%20%5B%5Dstring%7B%22BARCODE%22%2C%20%22SKU%22%2C%20%22NAME%22%7D%2C%0A%09%09%09%09MandatoryFields%3A%20%5B%5Dstring%7B%22BARCODE%22%2C%20%22SKU%22%7D%2C%0A%09%09%09%09Separator%3A%20%20%20%20%20%20%20%22%2C%22%2C%0A%09%09%09%09WithHeader%3A%20%20%20%20%20%20true%2C%0A%09%09%09%09OutputMappings%3A%20%5B%5Dline.Mapping%7B%0A%09%09%09%09%09%7BOut%3A%20%22sku%22%2C%20Src%3A%20%22SKU%22%7D%2C%0A%09%09%09%09%09%7BOut%3A%20%22name%22%2C%20Src%3A%20%22NAME%22%7D%2C%0A%09%09%09%09%7D%2C%0A%09%09%09%09IdentifierMappings%3A%20%5B%5Dline.Mapping%7B%0A%09%09%09%09%09%7BOut%3A%20%22barcode%22%2C%20Src%3A%20%22BARCODE%22%7D%2C%0A%09%09%09%09%7D%2C%0A%09%09%09%7D%2C%0A%09%09%09RejectOnInvalidRow%3A%20false%2C%0A%09%09%7D%2C%0A%09%7D%0A%0A%09%2F%2F%203.%20Run%20and%20return%20the%20result.%0A%09result%2C%20err%20%3A%3D%20etl.Run(cfg)%0A%09if%20err%20!%3D%20nil%20%7B%0A%09%09http.Error(w%2C%20err.Error()%2C%20http.StatusInternalServerError)%0A%09%09return%0A%09%7D%0A%09json.NewEncoder(w).Encode(result)%0A%7D%0A%60%60%60%0A%0A%23%23%23%203.2%20Spawning%20the%20binary%20(Node.js%20example)%0A%0AFor%20non-Go%20applications%20(an%20Express%2FNest%20web%20app%2C%20a%20BullMQ%20worker)%2C%20write%20the%0Aconfig%20to%20a%20JSON%20file%20and%20spawn%20the%20binary%3A%0A%0A%60%60%60js%0Aimport%20%7B%20execFile%20%7D%20from%20%22node%3Achild_process%22%3B%0Aimport%20%7B%20writeFile%20%7D%20from%20%22node%3Afs%2Fpromises%22%3B%0Aimport%20os%20from%20%22node%3Aos%22%3B%0Aimport%20path%20from%20%22node%3Apath%22%3B%0A%0Aasync%20function%20runEtl(sourcePath)%20%7B%0A%20%20const%20config%20%3D%20%7B%0A%20%20%20%20source%3A%20sourcePath%2C%0A%20%20%20%20output%3A%20%7B%0A%20%20%20%20%20%20fileGenerator%3A%20%22default-generator%22%2C%0A%20%20%20%20%20%20path%3A%20%22%2Fvar%2Fdata%2Fout%22%2C%0A%20%20%20%20%20%20filename%3A%20%22products.txt%22%2C%0A%20%20%20%20%20%20separator%3A%20%22%3B%22%2C%0A%20%20%20%20%20%20header%3A%20%22sku%3Bname%22%2C%0A%20%20%20%20%20%20footer%3A%20%22EOF%22%2C%0A%20%20%20%20%7D%2C%0A%20%20%20%20options%3A%20%7B%0A%20%20%20%20%20%20line%3A%20%7B%0A%20%20%20%20%20%20%20%20columns%3A%20%5B%22BARCODE%22%2C%20%22SKU%22%2C%20%22NAME%22%5D%2C%0A%20%20%20%20%20%20%20%20mandatoryFields%3A%20%5B%22BARCODE%22%2C%20%22SKU%22%5D%2C%0A%20%20%20%20%20%20%20%20separator%3A%20%22%2C%22%2C%0A%20%20%20%20%20%20%20%20withHeader%3A%20true%2C%0A%20%20%20%20%20%20%20%20outputMappings%3A%20%5B%0A%20%20%20%20%20%20%20%20%20%20%7B%20out%3A%20%22sku%22%2C%20src%3A%20%22SKU%22%20%7D%2C%0A%20%20%20%20%20%20%20%20%20%20%7B%20out%3A%20%22name%22%2C%20src%3A%20%22NAME%22%20%7D%2C%0A%20%20%20%20%20%20%20%20%5D%2C%0A%20%20%20%20%20%20%20%20identifierMappings%3A%20%5B%7B%20out%3A%20%22barcode%22%2C%20src%3A%20%22BARCODE%22%20%7D%5D%2C%0A%20%20%20%20%20%20%7D%2C%0A%20%20%20%20%20%20rejectOnInvalidRow%3A%20false%2C%0A%20%20%20%20%7D%2C%0A%20%20%7D%3B%0A%0A%20%20const%20configPath%20%3D%20path.join(os.tmpdir()%2C%20%60etl-job-%24%7BDate.now()%7D.json%60)%3B%0A%20%20await%20writeFile(configPath%2C%20JSON.stringify(config))%3B%0A%0A%20%20return%20new%20Promise((resolve%2C%20reject)%20%3D%3E%20%7B%0A%20%20%20%20execFile(%22etl%22%2C%20%5B%22-config%22%2C%20configPath%5D%2C%0A%20%20%20%20%20%20(err%2C%20stdout%2C%20stderr)%20%3D%3E%20%7B%0A%20%20%20%20%20%20%20%20if%20(err)%20return%20reject(new%20Error(stderr%20%7C%7C%20err.message))%3B%0A%20%20%20%20%20%20%20%20resolve(JSON.parse(stdout))%3B%20%2F%2F%20the%20Result%20object%2C%20see%20%C2%A76%0A%20%20%20%20%20%20%7D)%3B%0A%20%20%7D)%3B%0A%7D%0A%60%60%60%0A%0ABuild%20the%20binary%20once%20with%20%60cd%20go%20%26%26%20go%20build%20-o%20.%2Fbin%2Fetl%20.%2Fcmd%60.%0A%0A%23%23%23%203.3%20CLI%20config%20file%20shape%0A%0AThe%20JSON%20file%20passed%20to%20%60-config%60%20is%20the%20canonical%20%60etl.Config%60%20shape%3A%0A%0A%60%60%60json%0A%7B%0A%20%20%22source%22%3A%20%22%2Fvar%2Fdata%2Fin%2Fproducts.csv%22%2C%0A%20%20%22output%22%3A%20%7B%0A%20%20%20%20%22fileGenerator%22%3A%20%22default-generator%22%2C%0A%20%20%20%20%22path%22%3A%20%22%2Fvar%2Fdata%2Fout%22%2C%0A%20%20%20%20%22filename%22%3A%20%22products.txt%22%2C%0A%20%20%20%20%22separator%22%3A%20%22%3B%22%2C%0A%20%20%20%20%22header%22%3A%20%22sku%3Bname%22%2C%0A%20%20%20%20%22footer%22%3A%20%22EOF%22%0A%20%20%7D%2C%0A%20%20%22options%22%3A%20%7B%0A%20%20%20%20%22line%22%3A%20%7B%0A%20%20%20%20%20%20%22columns%22%3A%20%5B%22BARCODE%22%2C%20%22SKU%22%2C%20%22NAME%22%5D%2C%0A%20%20%20%20%20%20%22mandatoryFields%22%3A%20%5B%22BARCODE%22%2C%20%22SKU%22%5D%2C%0A%20%20%20%20%20%20%22separator%22%3A%20%22%2C%22%2C%0A%20%20%20%20%20%20%22withHeader%22%3A%20true%2C%0A%20%20%20%20%20%20%22outputMappings%22%3A%20%5B%0A%20%20%20%20%20%20%20%20%7B%20%22out%22%3A%20%22sku%22%2C%20%22src%22%3A%20%22SKU%22%20%7D%2C%0A%20%20%20%20%20%20%20%20%7B%20%22out%22%3A%20%22name%22%2C%20%22src%22%3A%20%22NAME%22%20%7D%0A%20%20%20%20%20%20%5D%2C%0A%20%20%20%20%20%20%22identifierMappings%22%3A%20%5B%7B%20%22out%22%3A%20%22barcode%22%2C%20%22src%22%3A%20%22BARCODE%22%20%7D%5D%0A%20%20%20%20%7D%2C%0A%20%20%20%20%22rejectOnInvalidRow%22%3A%20false%0A%20%20%7D%0A%7D%0A%60%60%60%0A%0A%60etl%20-source%20%2Foverride.csv%20-config%20job.json%60%20is%20also%20allowed%3B%20the%20flag%20replaces%0Athe%20JSON%20%60source%60%20value%20after%20the%20file%20is%20parsed.%20%60-source%60%20also%20accepts%20an%0AAzure%20blob%20URL%20(e.g.%20%60-source%20https%3A%2F%2Facct.blob.core.windows.net%2Fc%2Fp.csv%60)%3B%20for%0Aauthenticated%20blobs%2C%20put%20%60source%60%20in%20the%20config%20JSON%20instead%20so%20you%20can%20attach%0A%60auth%60%20(see%20%C2%A74.1).%0A%0A---%0A%0A%23%23%204.%20Parameter%20reference%0A%0A%23%23%23%204.1%20Source%0A%0A%60Config.Source%60%20(%60reader.SourceConfig%60)%20accepts%20two%20JSON%20forms.%20The%20legacy%0Aplain%20string%20still%20works%20and%20is%20inferred%20as%20local-vs-Azure%20by%20shape%3A%0A%0A%60%60%60json%0A%22source%22%3A%20%22%2Fvar%2Fdata%2Fin%2Fproducts.csv%22%0A%22source%22%3A%20%22https%3A%2F%2Facct.blob.core.windows.net%2Fcontainer%2Fproducts.csv%22%0A%60%60%60%0A%0AThe%20typed%20object%20form%20is%20required%20when%20a%20cloud%20source%20needs%20credentials%3A%0A%0A%60%60%60json%0A%22source%22%3A%20%7B%0A%20%20%22type%22%3A%20%22local%22%2C%0A%20%20%22path%22%3A%20%22%2Fvar%2Fdata%2Fin%2Fproducts.csv%22%0A%7D%0A%60%60%60%0A%0A%60%60%60json%0A%22source%22%3A%20%7B%0A%20%20%22type%22%3A%20%22azure-blob%22%2C%0A%20%20%22url%22%3A%20%22https%3A%2F%2Facct.blob.core.windows.net%2Fcontainer%2Fdaily%2Fproducts.csv%22%2C%0A%20%20%22auth%22%3A%20%7B%20%22accountName%22%3A%20%22acct%22%2C%20%22accountKey%22%3A%20%22%3Ckey%3E%22%20%7D%0A%7D%0A%60%60%60%0A%0A%7C%20Param%20%7C%20CLI%20%7C%20In-process%20%7C%20Notes%20%7C%0A%7C%20---%20%7C%20---%20%7C%20---%20%7C%20---%20%7C%0A%7C%20Source%20%7C%20%60-source%20%3Cpath-or-url%3E%60%20flag%20%7C%20%60Config.Source%60%20%7C%20Local%20file%20path%20or%20Azure%20blob%20URL.%20The%20flag%20always%20sets%20the%20legacy%20string%20form%20%E2%80%94%20use%20the%20JSON%20%60source%60%20object%20for%20Azure%20auth.%20**S3%20is%20not%20yet%20supported**%20and%20is%20rejected%20with%20an%20explicit%20error.%20%7C%0A%0A%60auth%60%20is%20optional%20and%20has%20four%20mutually%20exclusive%20shapes%20(checked%20in%20this%0Aprecedence%20order%20%E2%80%94%20see%20%60reader.AzureAuth.Type()%60)%3A%0A%0A%7C%20%60auth%60%20shape%20%7C%20Mode%20%7C%0A%7C%20---%20%7C%20---%20%7C%0A%7C%20_omitted_%20%7C%20%60DefaultAzureCredential%60%20chain%20(managed%20identity%2C%20%60az%20login%60%2C%20environment%20service%20principal).%20If%20%60url%60%20already%20has%20a%20%60sig%3D%60%20query%20parameter%2C%20that%20embedded%20SAS%20is%20used%20instead%20of%20requesting%20a%20token.%20%7C%0A%7C%20%60%7B%22connectionString%22%3A%20%22...%22%7D%60%20%7C%20Storage%20account%20connection%20string.%20Takes%20precedence%20over%20shared%20key%20%2F%20SAS%20if%20more%20than%20one%20is%20set.%20%7C%0A%7C%20%60%7B%22accountName%22%3A%20%22...%22%2C%20%22accountKey%22%3A%20%22...%22%7D%60%20%7C%20Shared%20key.%20Both%20fields%20are%20required%20together%20%E2%80%94%20one%20without%20the%20other%20is%20a%20validation%20error.%20%7C%0A%7C%20%60%7B%22sasToken%22%3A%20%22...%22%7D%60%20%7C%20SAS%20query%20string%20(leading%20%60%3F%60%20optional)%2C%20appended%20to%20%60url%60.%20%7C%0A%0ARunnable%20examples%20for%20every%20mode%20are%20under%0A%5B%60samples%2Fazure-blob%60%5D(..%2Fsamples%2Fazure-blob)%20and%0A%5B%60samples%2Flocal%60%5D(..%2Fsamples%2Flocal).%0A%0AFor%20a%20local%20source%2C%20your%20application%20is%20responsible%20for%20getting%20the%20file%20onto%0Alocal%20disk%20first%20(e.g.%20saving%20an%20HTTP%20upload).%20For%20an%20Azure%20blob%20source%2C%20the%0Apipeline%20streams%20the%20blob%20directly%20%E2%80%94%20no%20local%20download%20step%20or%20%60%2Ftmp%60%20usage.%0A%0A%23%23%23%204.2%20Line%20rules%20%E2%80%94%20%60line%60%20%2F%20%60line.LineConfig%60%0A%0AControls%20how%20each%20source%20line%20is%20parsed%20and%20validated.%0A%0A%7C%20JSON%20key%20%7C%20Type%20%7C%20Required%20%7C%20Description%20%7C%0A%7C%20---%20%7C%20---%20%7C%20---%20%7C%20---%20%7C%0A%7C%20%60columns%60%20%7C%20%60string%5B%5D%60%20%7C%20%E2%9C%85%20%7C%20Ordered%20names%20for%20the%20source%20columns.%20Each%20line%20is%20split%20on%20%60separator%60%20and%20zipped%20with%20these%20names.%20Missing%20trailing%20columns%20become%20%60%22%22%60.%20%7C%0A%7C%20%60mandatoryFields%60%20%7C%20%60string%5B%5D%60%20%7C%20%E2%9C%85%20(for%20validation)%20%7C%20Column%20names%20that%20must%20be%20non-empty.%20An%20empty%20mandatory%20field%20makes%20the%20row%20invalid%3A%20%60ERROR%20AT%20LINE%20%3Cn%3E%3A%20Invalid%20%3Cfield%3E%20value%20of%20%22%3Cvalue%3E%22%60.%20%7C%0A%7C%20%60separator%60%20%7C%20%60string%60%20%7C%20%E2%AC%9C%20%7C%20Source%20field%20separator.%20Default%3A%20%60%22%3B%22%60.%20%7C%0A%7C%20%60withHeader%60%20%7C%20%60bool%60%20%7C%20%E2%AC%9C%20%7C%20When%20%60true%60%2C%20line%201%20is%20treated%20as%20a%20header%3A%20it%20is%20never%20written%20to%20the%20output.%20A%20header-only%20file%20counts%20as%20**empty**%20(invalid%20result).%20%7C%0A%7C%20%60outputMappings%60%20%7C%20%60%5B%7Bout%2C%20src%7D%5D%60%20%7C%20%E2%AC%9C%20%7C%20**Ordered**%20projection%20of%20the%20output%20row%20(see%20%C2%A74.4).%20Order%20defines%20the%20column%20order%20in%20the%20output%20file.%20%7C%0A%7C%20%60identifierMappings%60%20%7C%20%60%5B%7Bout%2C%20src%7D%5D%60%20%7C%20%E2%AC%9C%20%7C%20Keyed%20lookups%20captured%20from%20the%20**first%20valid%20row**%20and%20returned%20in%20%60result.metadata%60%20(identifiers%20win%20on%20key%20collision).%20Use%20this%20to%20surface%20e.g.%20a%20batch%20id%20or%20barcode%20back%20to%20your%20application.%20%7C%0A%0AField%20parsing%20matches%20the%20TypeScript%20original%3A%20values%20are%20split%20on%20the%0Aseparator%20and%20**one**%20leading%20plus%20**one**%20trailing%20double%20quote%20is%20stripped%0A(%60%22ABC%22%60%20%E2%86%92%20%60ABC%60).%20Lines%20with%20CRLF%20endings%20are%20handled%20(%60%5Cr%60%20is%20dropped).%0A%0A%23%23%23%204.3%20Output%20definition%20%E2%80%94%20%60output%60%20%2F%20%60writer.OutputConfig%60%0A%0AThe%20output%20destination%20mirrors%20the%20source%20(%C2%A74.1)%3A%20local%20disk%20by%20default%2C%20or%0AAzure%20Blob%20Storage%20when%20%60type%60%2F%60url%60%20are%20set.%20The%20destination%20fields%20sit%20flat%0Ainside%20%60output%60%2C%20so%20existing%20local-only%20configs%20are%20unchanged%3A%0A%0A%60%60%60json%0A%22output%22%3A%20%7B%0A%20%20%22filename%22%3A%20%22products_%7BLOC%7D.csv%22%2C%0A%20%20%22path%22%3A%20%22%2Fvar%2Fdata%2Fout%22%0A%7D%0A%60%60%60%0A%0A%60%60%60json%0A%22output%22%3A%20%7B%0A%20%20%22type%22%3A%20%22azure-blob%22%2C%0A%20%20%22url%22%3A%20%22https%3A%2F%2Facct.blob.core.windows.net%2Fexports%2Fdaily%22%2C%0A%20%20%22auth%22%3A%20%7B%20%22accountName%22%3A%20%22acct%22%2C%20%22accountKey%22%3A%20%22%3Ckey%3E%22%20%7D%2C%0A%20%20%22filename%22%3A%20%22products_%7BLOC%7D.csv%22%0A%7D%0A%60%60%60%0A%0AUnlike%20the%20source%20%60url%60%20(which%20names%20the%20exact%20blob%20to%20read)%2C%20the%20output%20%60url%60%0Ais%20a%20**container%2Fprefix**%3A%20the%20rendered%20%60filename%60%20is%20appended%20to%20it%2C%20the%20same%0Away%20%60path%60%20%2B%20%60filename%60%20are%20joined%20for%20local%20output.%20The%20rendered%20output%20is%0Astreamed%20to%20a%20block%20blob%20as%20rows%20are%20pushed%20(an%20%60io.Pipe%60%20feeds%20the%20SDK&#039;s%0A%60UploadStream%60%2C%20so%20memory%20use%20isn&#039;t%20proportional%20to%20output%20size)%3B%20nothing%20is%0Auploaded%20when%20no%20valid%20row%20was%20produced%2C%20and%20the%20blob%20is%20only%20committed%20%E2%80%94%0Avisible%20to%20readers%20%E2%80%94%20once%20the%20run%20ends%20without%20error.%20Error%20reports%20always%0Astay%20on%20local%20disk%20(under%20%60path%60&#039;s%20default%2C%20the%20OS%20temp%20dir).%20Source%20and%0Aoutput%20each%20carry%20their%20own%20%60auth%60%2C%20so%20a%20run%20can%20read%20from%20one%20storage%0Aaccount%20and%20write%20to%20another.%0A%0A%7C%20JSON%20key%20%7C%20Type%20%7C%20Required%20%7C%20Description%20%7C%0A%7C%20---%20%7C%20---%20%7C%20---%20%7C%20---%20%7C%0A%7C%20%60fileGenerator%60%20%7C%20%60string%60%20%7C%20%E2%AC%9C%20%7C%20Writer%20kind.%20%60%22default-generator%22%60%20(or%20empty)%20is%20the%20delimited%2Ftemplated%20text%20writer.%20%60%22json-generator%22%60%20is%20supported%20for%20local%20output%20only.%20Other%20kinds%20(Excel%2Fdedup%20variants%2C%20and%20JSON%20to%20cloud%20destinations)%20return%20an%20explicit%20%22not%20supported%20yet%22%20error.%20%7C%0A%7C%20%60type%60%20%7C%20%60string%60%20%7C%20%E2%AC%9C%20%7C%20Destination%20kind%3A%20%60%22local%22%60%20(default)%20or%20%60%22azure-blob%22%60.%20Empty%20is%20inferred%3A%20%60url%60%20set%20%E2%86%92%20%60azure-blob%60%2C%20otherwise%20%60local%60.%20**S3%20is%20not%20yet%20supported**%20and%20is%20rejected%20with%20an%20explicit%20error.%20%7C%0A%7C%20%60path%60%20%7C%20%60string%60%20%7C%20%E2%AC%9C%20%7C%20Output%20directory%20for%20a%20local%20destination.%20Default%3A%20the%20OS%20temp%20dir.%20Must%20not%20be%20combined%20with%20%60url%60.%20%7C%0A%7C%20%60url%60%20%7C%20%60string%60%20%7C%20%E2%AC%9C%20%7C%20Azure%20container%2Fprefix%20URL%20for%20an%20%60azure-blob%60%20destination%20(required%20for%20that%20type).%20The%20rendered%20%60filename%60%20is%20appended%20to%20it.%20%7C%0A%7C%20%60auth%60%20%7C%20%60object%60%20%7C%20%E2%AC%9C%20%7C%20Azure%20credentials%20for%20an%20%60azure-blob%60%20destination%3B%20same%20four%20shapes%20and%20precedence%20as%20the%20source%20%60auth%60%20(see%20the%20table%20in%20%C2%A74.1).%20%7C%0A%7C%20%60filename%60%20%7C%20%60string%60%20%7C%20%E2%9C%85%20%7C%20Output%20filename%2C%20always%20rendered%20through%20the%20template%20layers%20from%20the%20**first%20pushed%20row**%20(supports%20%60%7Bpath%7D%60%20value%20tokens%20and%20%60%5Bfunc%20...%5D%60%2C%20see%20%C2%A75).%20A%20plain%20name%20contains%20no%20tokens%20and%20is%20used%20as-is.%20Also%20accepted%20for%20compatibility%3A%20the%20object%20form%20%60%7B%22template%22%3A%20%22...%22%7D%60%20and%20the%20legacy%20%60filenameTemplate%60%20key%20(which%20keeps%20its%20old%20precedence%20if%20both%20are%20set).%20%7C%0A%7C%20%60separator%60%20%7C%20%60string%60%20%7C%20%E2%AC%9C%20%7C%20Output%20column%20separator%20when%20using%20the%20default%20writer&#039;s%20%60outputMappings%60%20projection.%20Default%3A%20%60%22%5C%7C%22%60.%20Unused%20by%20JSON%20output.%20%7C%0A%7C%20%60template%60%20%7C%20%60string%60%20%7C%20%E2%AC%9C%20%7C%20Full%20row%20template%20(see%20%C2%A75).%20For%20the%20default%20writer%2C%20it%20takes%20precedence%20over%20the%20%60outputMappings%60%20projection.%20For%20JSON%20output%2C%20it%20must%20render%20one%20JSON%20object%20per%20row%3B%20when%20omitted%2C%20JSON%20rows%20are%20built%20from%20%60outputMappings%60.%20%7C%0A%7C%20%60header%60%20%7C%20%60string%60%20%7C%20%E2%AC%9C%20%7C%20For%20the%20default%20writer%2C%20the%20first%20line%20of%20the%20output%20file%2C%20written%20once%20when%20the%20first%20row%20arrives.%20For%20JSON%20output%2C%20the%20root-object%20template%3B%20empty%20means%20%60%7B%7D%60.%20%7C%0A%7C%20%60footer%60%20%7C%20%60string%60%20%7C%20%E2%AC%9C%20%7C%20Default%20writer%20only.%20Written%20raw%20at%20the%20end%20%E2%80%94%20**no%20leading%20newline**%2C%20so%20it%20concatenates%20onto%20the%20last%20row%20(%60...WidgetEOF%60).%20JSON%20output%20rejects%20%60footer%60.%20%7C%0A%7C%20%60arrayField%60%20%7C%20%60string%60%20%7C%20%E2%AC%9C%20%7C%20JSON%20output%20only.%20Root%20array%20property%20name.%20Default%3A%20%60%22lines%22%60.%20%7C%0A%7C%20%60uniqueKey%60%20%7C%20%60string%60%20%7C%20%E2%AC%9C%20%7C%20Default%20writer%20only.%20Source%20column%20name%20used%20to%20de-duplicate%20rows%20in-memory%3A%20rows%20whose%20value%20for%20this%20column%20was%20already%20written%20are%20skipped.%20JSON%20output%20rejects%20%60uniqueKey%60%3B%20deduplicate%20before%20writing%20JSON.%20%7C%0A%7C%20%60metadata%60%20%7C%20%60object%60%20%7C%20%E2%AC%9C%20%7C%20Arbitrary%20JSON%20object%20exposed%20to%20filename%2C%20header%2C%20and%20row%20templates%20under%20%60metadata%60%20%2F%20%60data.metadata%60%20(for%20example%20%60%7Bmetadata.store.code%7D%60%20or%20%60%5BreplaceString%20data.metadata.store.code%20-%20_%5D%60).%20%7C%0A%7C%20%60options%60%20%7C%20%60object%60%20%7C%20%E2%AC%9C%20%7C%20Writer%20behavior%20toggles%20that%20are%20not%20part%20of%20the%20output%20format.%20See%20%C2%A74.3.1.%20%7C%0A%0A%23%23%23%23%204.3.1%20Writer%20toggles%20%E2%80%94%20%60output.options%60%0A%0ABehavior%20toggles%20live%20in%20their%20own%20map%20so%20new%20ones%20can%20be%20added%20without%20a%20wire%0Achange.%20A%20missing%20key%20%E2%80%94%20or%20a%20value%20of%20the%20wrong%20type%20%E2%80%94%20falls%20back%20to%20the%0Adefault%20rather%20than%20failing%20the%20run.%0A%0A%7C%20Option%20%7C%20Type%20%7C%20Default%20%7C%20Description%20%7C%0A%7C%20---%20%7C%20---%20%7C%20---%20%7C%20---%20%7C%0A%7C%20%60errorReport%60%20%7C%20%60bool%60%20%7C%20%60false%60%20%7C%20Write%20the%20%60%3Csource%3E.error.txt%60%20report%20file%20next%20to%20%60path%60.%20%7C%0A%0A%60%60%60json%0A%22output%22%3A%20%7B%0A%20%20%22filename%22%3A%20%22products.json%22%2C%0A%20%20%22options%22%3A%20%7B%20%22errorReport%22%3A%20true%20%7D%0A%7D%0A%60%60%60%0A%0A%3E%20Note%20this%20is%20%60output.options%60%2C%20which%20is%20**not**%20the%20same%20as%20the%20top-level%0A%3E%20%60options%60%20carrying%20the%20line%20rules%20and%20%60rejectOnInvalidRow%60%20(%C2%A74.5).%20Both%20can%0A%3E%20appear%20in%20the%20same%20config.%0A%0A%60errorReport%60%20defaults%20to%20**off**%20because%20the%20utility%20is%20built%20to%20run%20in%0Aserverless%20workers%2C%20where%20the%20writable%20filesystem%20is%20a%20small%20ephemeral%20scratch%0Aspace%20reused%20across%20warm%20invocations%20%E2%80%94%20a%20report%20file%20nobody%20collects%0Aaccumulates%20until%20unrelated%20runs%20start%20failing.%0A%0ATurning%20it%20off%20suppresses%20only%20the%20*file*.%20Invalid%20rows%20are%20still%20counted%2C%20so%0A%60totalErrors%60%2C%20%60withErrors%60%2C%20and%20%60rejectOnInvalidRow%60%20behave%20identically%20either%0Away.%20When%20it%20is%20off%2C%20%60localErrorReportFile%60%20and%20%60localErrorReportFilename%60%20in%0Athe%20result%20are%20empty%20strings%20rather%20than%20naming%20a%20file%20that%20was%20never%20written%20%E2%80%94%0Aso%20check%20for%20a%20non-empty%20path%20before%20trying%20to%20read%20the%20report.%0A%0A%23%23%23%204.4%20Ordered%20mappings%20%E2%80%94%20why%20arrays%2C%20not%20objects%0A%0A%60outputMappings%60%20and%20%60identifierMappings%60%20are%20**arrays**%20of%20%60%7Bout%2C%20src%7D%60%20pairs%0Ainstead%20of%20plain%20objects%3A%20Go%20maps%20and%20JSON%20objects%20have%20no%20guaranteed%20key%0Aorder%2C%20and%20the%20output%20column%20order%20must%20be%20deterministic.%20Keep%20them%20as%20arrays%0Ain%20your%20integration.%0A%0AFor%20%60outputMappings%60%2C%20each%20%60src%60%20is%20resolved%20as%3A%0A%0A1.%20A%20**source%20column%20name**%20%E2%86%92%20the%20row&#039;s%20value%20for%20that%20column.%0A2.%20A%20**%60%5Bfunc%20...%5D%60%20template**%20%E2%86%92%20evaluated%20(see%20%C2%A75).%0A3.%20Anything%20else%20%E2%86%92%20used%20as%20a%20**literal%20default**%20value.%0A%0AFor%20%60identifierMappings%60%2C%20%60src%60%20is%20a%20column%20lookup%20only.%0A%0A%23%23%23%204.5%20Run%20behavior%20%E2%80%94%20%60options%60%20%2F%20%60etl.Options%60%0A%0A%7C%20JSON%20key%20%7C%20Type%20%7C%20Default%20%7C%20Description%20%7C%0A%7C%20---%20%7C%20---%20%7C%20---%20%7C%20---%20%7C%0A%7C%20%60rejectOnInvalidRow%60%20%7C%20%60bool%60%20%7C%20%60false%60%20%7C%20%60false%60%3A%20invalid%20rows%20are%20skipped%20(logged%20to%20the%20error%20report)%20and%20the%20run%20stays%20%60valid%60.%20%60true%60%3A%20any%20invalid%20row%20marks%20the%20**whole%20result**%20invalid%2C%20and%20the%20output%20file%20is%20deleted.%20Settable%20in-process%20and%20through%20CLI%20JSON%20under%20%60options.rejectOnInvalidRow%60.%20%7C%0A%0A---%0A%0A%23%23%205.%20Templating%20reference%0A%0ATwo%20token%20kinds%20are%20available%20in%20%60filename%60%2C%20%60header%60%2C%20and%20%60template%60%3A%0A%0A%23%23%23%20%60%7Bpath%7D%60%20%E2%80%94%20value%20substitution%0A%0AReplaced%20with%20a%20scalar%20value%20from%20row%20data%2C%20output-mapped%20data%2C%20or%0A%60output.metadata%60.%0A%0A%60%22%7BSKU%7D%3B%7BNAME%7D%22%60%20%E2%86%92%20%60%22A1%3BWidget%22%60.%0A%60%22%7Bmetadata.store.code%7D%22%60%20%E2%86%92%20%60%22DXB01%22%60.%0A%60%22%7Bdata.metadata.stores.0.code%7D%22%60%20%E2%86%92%20%60%22DXB01%22%60.%0A%0AThe%20%60data.%60%20prefix%20is%20optional%20for%20value%20tokens.%20Numeric%20path%20segments%20index%0Aarrays.%20Missing%20paths%2C%20invalid%20indexes%2C%20nulls%2C%20and%20object%2Farray%20leaves%20resolve%0Ato%20an%20empty%20string.%0A%0A%23%23%23%20%60%5Bfunc%20arg%20...%5D%60%20%E2%80%94%20computed%20tokens%0A%0A%7C%20Token%20%7C%20Result%20%7C%0A%7C%20---%20%7C%20---%20%7C%0A%7C%20%60%5Btimestamp%5D%60%20%7C%20Milliseconds%20since%20epoch.%20%7C%0A%7C%20%60%5BdateTime%20%3Cformat%3E%20%3Ctz%3E%5D%60%20%7C%20Current%20time%2C%20moment-style%20tokens%20(%60YYYY%60%2C%20%60MM%60%2C%20%60DD%60%2C%20%60HH%60%2C%20%60mm%60%2C%20%60ss%60%2C%20%60SSS%60%2C%20%60A%60%2C%20%60Z%60%2C%20%E2%80%A6).%20Defaults%3A%20%60YYYY-MM-DDTHH%3Amm%3AssZ%60%2C%20%60UTC%60.%20Format%20args%20cannot%20contain%20spaces%20(same%20limitation%20as%20the%20TS%20original).%20%7C%0A%7C%20%60%5BsanitizeString%20%3Cs%3E%5D%60%20%7C%20Sanitized%20string.%20%7C%0A%7C%20%60%5BremoveWhiteSpaces%20%3Cs%3E%5D%60%20%7C%20Whitespace%20removed.%20%7C%0A%7C%20%60%5BreplaceString%20%3Cs%3E%20%3Ca%3E%20%3Cb%3E%5D%60%20%7C%20%60%3Cs%3E%60%20with%20%60%3Ca%3E%60%20replaced%20by%20%60%3Cb%3E%60.%20%7C%0A%0AFunction%20arguments%20starting%20with%20%60data.%60%20are%20resolved%20as%20dot-paths%20against%20the%0Arow%20data%20merged%20with%20the%20writer&#039;s%20%60metadata%60%20option%20%E2%80%94%20e.g.%0A%60%5BsanitizeString%20data.NAME%5D%60%20or%20%60%5BreplaceString%20data.metadata.region%20-%20_%5D%60.%0ANested%20metadata%20objects%20and%20arrays%20are%20supported%3B%20numeric%20path%20segments%20index%0Aarrays%20(for%20example%20%60data.metadata.stores.0.code%60).%20String%2C%20number%2C%20and%20boolean%0Aleaves%20are%20passed%20to%20template%20functions%20as%20strings.%20Missing%20paths%2C%20invalid%0Aindexes%2C%20nulls%2C%20and%20object%2Farray%20leaves%20retain%20the%20literal%20%60data...%60%20argument%0Arather%20than%20being%20serialized.%0AUnknown%20function%20names%20are%20left%20in%20place%20untouched%20(the%20TS%20JS-eval%0A%60customFunction%60%20fallback%20is%20intentionally%20not%20ported).%0A%0A---%0A%0A%23%23%206.%20The%20result%0A%0A%60etl.Run%60%20returns%20(and%20the%20CLI%20prints%20to%20stdout)%20a%20JSON%20%60Result%60%3A%0A%0A%60%60%60json%0A%7B%0A%20%20%22valid%22%3A%20true%2C%0A%20%20%22withErrors%22%3A%20true%2C%0A%20%20%22totalErrors%22%3A%201%2C%0A%20%20%22localOutputFile%22%3A%20%22%2Fvar%2Fdata%2Fout%2Fproducts.txt%22%2C%0A%20%20%22localOutputFilename%22%3A%20%22products.txt%22%2C%0A%20%20%22localErrorReportFile%22%3A%20%22%2Ftmp%2Fin.csv.error.txt%22%2C%0A%20%20%22localErrorReportFilename%22%3A%20%22in.csv.error.txt%22%2C%0A%20%20%22metadata%22%3A%20%7B%20%22BARCODE%22%3A%20%22123%22%2C%20%22SKU%22%3A%20%22A1%22%2C%20%22NAME%22%3A%20%22Widget%22%2C%20%22barcode%22%3A%20%22123%22%20%7D%0A%7D%0A%60%60%60%0A%0A%7C%20Field%20%7C%20Meaning%20%7C%0A%7C%20---%20%7C%20---%20%7C%0A%7C%20%60valid%60%20%7C%20The%20run%20produced%20a%20usable%20output.%20%60false%60%20when%20the%20file%20was%20empty%20(or%20header-only)%2C%20or%20when%20%60rejectOnInvalidRow%60%20is%20set%20and%20any%20row%20failed.%20When%20%60false%60%2C%20the%20output%20file%20has%20been%20**deleted**%20%E2%80%94%20don&#039;t%20try%20to%20read%20it.%20%7C%0A%7C%20%60withErrors%60%20%7C%20At%20least%20one%20row%20failed%20validation.%20%E2%9A%A0%EF%B8%8F%20Independent%20of%20%60valid%60%3A%20a%20run%20can%20be%20%60valid%3A%20true%2C%20withErrors%3A%20true%60%20(bad%20rows%20were%20skipped%2C%20good%20rows%20were%20written).%20%7C%0A%7C%20%60totalErrors%60%20%7C%20Count%20of%20invalid%20rows.%20%7C%0A%7C%20%60localOutputFile%60%20%2F%20%60localOutputFilename%60%20%7C%20Absolute%20path%20%2F%20bare%20name%20of%20the%20output%20file.%20Empty%20if%20no%20row%20was%20ever%20written%20(lazy%20writer).%20%7C%0A%7C%20%60localErrorReportFile%60%20%2F%20%60localErrorReportFilename%60%20%7C%20Path%20%2F%20name%20of%20the%20error%20report.%20**Empty%20strings%20unless%20%60output.options.errorReport%60%20is%20enabled**%20(%C2%A74.3.1)%20%E2%80%94%20the%20report%20is%20opt-in.%20When%20enabled%2C%20the%20file%20only%20**exists%20on%20disk**%20when%20%60totalErrors%20%3E%200%60%20(it%20is%20deleted%20when%20there%20were%20zero%20errors).%20%7C%0A%7C%20%60metadata%60%20%7C%20The%20first%20valid%20row&#039;s%20parsed%20record%20merged%20with%20the%20%60identifierMappings%60%20projection%20(identifiers%20win%20on%20key%20collisions).%20Use%20it%20to%20correlate%20the%20file%20with%20entities%20in%20your%20application.%20%7C%0A%0A**Errors%20vs.%20invalid%20results%3A**%20validation%20failures%20do%20**not**%20return%20a%20Go%0Aerror%20%2F%20non-zero%20exit%20%E2%80%94%20they%20are%20reported%20through%20%60Result%60.%20A%20Go%20error%20(or%20a%0Anon-zero%20exit%20with%20a%20message%20on%20stderr)%20means%20the%20run%20itself%20failed%3A%20local%0Afile%20or%20blob%20not%20found%2C%20invalid%2Fincomplete%20Azure%20auth%2C%20an%20S3%20source%20(not%20yet%0Asupported)%2C%20unsupported%20writer%20kind%2C%20I%2FO%20failure.%20On%20that%20path%20both%20the%0Aoutput%20and%20error-report%20files%20are%20force-deleted.%0A%0A%23%23%23%206.1%20Routing%20failures%20%E2%80%94%20%60writer.ErrorKind%60%0A%0AErrors%20returned%20from%20%60etl.Run%60%20are%20classified%20so%20a%20worker%20can%20decide%20what%20to%20do%0Awithout%20parsing%20error%20text.%20In-process%2C%20read%20it%20with%20%60writer.KindOf(err)%60%3A%0A%0A%7C%20Kind%20%7C%20Meaning%20%7C%20What%20to%20do%20%7C%0A%7C%20---%20%7C%20---%20%7C%20---%20%7C%0A%7C%20%60KindPermanent%60%20%7C%20Retrying%20the%20same%20input%20fails%20identically%3A%20bad%20config%2C%20unrenderable%20template%2C%20malformed%20row%2C%20rejected%20request.%20%7C%20Dead-letter.%20Don&#039;t%20spend%20retries.%20%7C%0A%7C%20%60KindTransient%60%20%7C%20Could%20succeed%20on%20retry%3A%20throttling%2C%205xx%2C%20dropped%20connection%2C%20deadline.%20Nothing%20was%20committed.%20%7C%20Retry%20with%20backoff.%20%7C%0A%7C%20%60KindUnresolved%60%20%7C%20The%20run%20failed%20**and**%20cleanup%20could%20not%20guarantee%20the%20destination%20was%20left%20clean.%20%7C%20Reconcile%20%2F%20alert.%20**Do%20not%20retry%20unattended.**%20%7C%0A%0A%60%60%60go%0Ares%2C%20err%20%3A%3D%20etl.Run(cfg)%0Aif%20err%20!%3D%20nil%20%7B%0A%20%20%20%20switch%20writer.KindOf(err)%20%7B%0A%20%20%20%20case%20writer.KindTransient%3A%20%20%2F%2F%20requeue%20with%20backoff%0A%20%20%20%20case%20writer.KindUnresolved%3A%20%2F%2F%20inspect%20the%20destination%20before%20retrying%0A%20%20%20%20default%3A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%2F%2F%20dead-letter%0A%20%20%20%20%7D%0A%7D%0A%60%60%60%0A%0A%60writer.IsRetryable(err)%60%20is%20shorthand%20for%20the%20%60KindTransient%60%20case.%20Note%20it%0Areturns%20%60false%60%20for%20%60KindUnresolved%60%3A%20that%20failure%20is%20*not*%20permanent%2C%20but%0Aretrying%20it%20blind%20risks%20a%20duplicate%20or%20half-replaced%20document%2C%20so%20it%20needs%20a%0Ahuman%20or%20a%20reconciliation%20pass.%0A%0AAn%20error%20carrying%20no%20explicit%20kind%20is%20classified%20from%20its%20cause%2C%20and%20anything%0Aunrecognized%20reports%20%60KindPermanent%60%20%E2%80%94%20an%20unknown%20failure%20isn&#039;t%20proven%20safe%20to%0Aretry.%0A%0AYour%20application%20is%20responsible%20for%20consuming%20and%20then%20removing%20the%20produced%0Afiles%20(uploading%20them%2C%20moving%20them%2C%20etc.)%20%E2%80%94%20the%20pipeline%20only%20deletes%20files%20on%0Athe%20invalid%2Ferror%20paths.%0A%0A---%0A%0A%23%23%207.%20Operational%20notes%20for%20integrators%0A%0A-%20**Concurrency**%3A%20each%20run%20writes%20%60filename%60%20into%20%60path%60%20(plus%0A%20%20%60%3Csource-filename%3E.error.txt%60%20next%20to%20it%20when%20%60errorReport%60%20is%20enabled).%20If%0A%20%20your%20web%20app%20processes%20uploads%20concurrently%2C%20give%20each%20job%20a%20unique%20output%0A%20%20%60path%60%20(or%20a%20%60filename%60%20with%20%60%5Btimestamp%5D%60)%20and%20unique%20source%20filenames%20to%0A%20%20avoid%20collisions.%0A-%20**Large%20files**%3A%20the%20pipeline%20streams%20line%20by%20line%20with%20buffered%20writes%2C%20so%0A%20%20memory%20stays%20flat%20regardless%20of%20file%20size.%20Default-writer%20%60uniqueKey%60%0A%20%20de-duplication%20is%20the%20exception%20%E2%80%94%20it%20keeps%20one%20map%20entry%20per%20distinct%20key%0A%20%20value.%20JSON%20output%20does%20not%20de-duplicate%20rows.%0A-%20**Output%20row%20endings**%3A%20rows%20are%20newline-*prefixed*%20(the%20header%20is%20not)%2C%20and%0A%20%20the%20footer%20is%20appended%20raw.%20The%20output%20has%20no%20trailing%20newline.%0A-%20**Azure%20Blob%20output**%3A%20rows%20stream%20to%20the%20destination%20as%20they&#039;re%20pushed%0A%20%20(via%20%60io.Pipe%60%20into%20the%20SDK&#039;s%20block-blob%20%60UploadStream%60)%2C%20symmetric%20with%0A%20%20the%20streaming%20blob%20*source*%20%E2%80%94%20output%20size%20isn&#039;t%20bounded%20by%20memory.%20The%20blob%0A%20%20is%20only%20committed%20(visible%20to%20readers)%20when%20the%20run%20ends%3B%20a%20run%20that%20fails%0A%20%20before%20then%20leaves%20nothing%20visible%20at%20the%20destination.%0A-%20**Cleanup%20failures%20are%20surfaced%2C%20not%20swallowed**%3A%20when%20a%20run%20fails%0A%20%20mid-stream%20(e.g.%20the%20source%20connection%20drops)%2C%20the%20orchestrator&#039;s%20forced%0A%20%20cleanup%20calls%20the%20writer&#039;s%20%60End()%60%20*before*%20%60Delete()%60%20%E2%80%94%20so%20the%20partial%0A%20%20output%20is%20first%20committed%2C%20then%20deleted%2C%20rather%20than%20aborted%20in-flight.%20Every%0A%20%20cleanup%20step%20runs%20even%20if%20an%20earlier%20one%20failed%2C%20and%20all%20failures%20are%20joined%0A%20%20into%20the%20returned%20error.%20In%20the%20case%20where%20the%20commit%20succeeds%20and%20the%0A%20%20follow-up%20delete%20then%20fails%2C%20a%20stray%20blob%20remains%20at%20the%20destination%20**and**%0A%20%20the%20run%20reports%20%60KindUnresolved%60%20(%C2%A76.1)%20%E2%80%94%20so%20route%20that%20kind%20to%0A%20%20reconciliation%20rather%20than%20a%20blind%20retry%2C%20which%20would%20write%20a%20second%20document%0A%20%20alongside%20the%20one%20that%20could%20not%20be%20removed.%20The%20blob%20URL%20is%20deterministic%3A%0A%20%20%60url%60%20%2B%20rendered%20%60filename%60.%0A-%20**Serverless%20deployments**%3A%20the%20process%20is%20typically%20frozen%20or%20destroyed%0A%20%20right%20after%20a%20run%20returns%2C%20so%20there%20is%20no%20later%20pass%20to%20tidy%20up.%20Two%0A%20%20consequences%3A%20leave%20%60output.options.errorReport%60%20off%20(the%20default)%20unless%20you%0A%20%20actually%20collect%20the%20file%2C%20since%20warm%20containers%20share%20a%20small%20capped%20%60%2Ftmp%60%0A%20%20across%20invocations%3B%20and%20treat%20%60KindUnresolved%60%20as%20an%20alert%20rather%20than%20a%0A%20%20retry%2C%20because%20nothing%20else%20will%20clean%20up%20after%20it.%0A-%20**Not%20yet%20supported**%20(explicit%20errors%2C%20planned%20per%20the%20design%20doc)%3A%20S3%0A%20%20sources%20and%20destinations%2C%20JSON%20output%20to%20cloud%20destinations%2C%20Excel%20writers%2C%0A%20%20%60PushIfExist%60%2Ffile-index%20dedup%20variants%2C%20custom%20JS%20template%20functions%2C%20and%0A%20%20flags-only%20CLI%20mode.%0A%0A---%0A%0A%23%23%208.%20Testing%20your%20integration%0A%0A%60%60%60bash%0Acd%20go%0Ago%20build%20.%2F...%20%20%20%23%20build%20everything%0Ago%20test%20.%2F...%20%20%20%20%23%20unit%20%2B%20e2e%20pipeline%20tests%0A%0A%23%20Smoke-test%20the%20binary%20with%20your%20own%20config%3A%0Ago%20build%20-o%20.%2Fbin%2Fetl%20.%2Fcmd%0Aprintf%20&#039;BARCODE%2CSKU%2CNAME%5Cn123%2CA1%2CWidget%5Cn&#039;%20%3E%20%2Ftmp%2Fin.csv%0A.%2Fetl%20-source%20%2Ftmp%2Fin.csv%20-config%20your-config.json%0A%60%60%60%0A%0ARunnable%20reference%20configs%20(local%20object%20form%20and%20every%20Azure%20Blob%20auth%20mode)%0Aare%20under%20%5B%60samples%2F%60%5D(..%2Fsamples)%20at%20the%20repo%20root%20%E2%80%94%20see%0A%5B%60samples%2FREADME.md%60%5D(..%2Fsamples%2FREADME.md).%0A%0AFor%20deployment-specific%20commands%2C%20including%20Lambda%20zip%20packaging%2C%20running%20the%0AHTTP%20server%2C%20and%20compiling%20the%20CLI%20binary%2C%20see%0A%5Bdeployment-guide.md%5D(deployment-guide.md).%0A" style="display: none;"></div>
+                  
+                    <nav aria-label="breadcrumb" class="docmd-breadcrumbs">
+                      <ol>
+                        
+                        
+                          <li class="breadcrumb-item " >
+                            
+                              <span>Docmd</span>
+                            
+                            
+                              <span class="breadcrumb-separator">
+<svg class="lucide-icon icon-chevron-right " width="1em" height="1em" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"
+  class="lucide lucide-chevron-right"
+  xmlns="http://www.w3.org/2000/svg"
+  width="24"
+  height="24"
+  viewBox="0 0 24 24"
+  fill="none"
+  stroke="currentColor"
+  stroke-width="2"
+  stroke-linecap="round"
+  stroke-linejoin="round"
+>
+  <path d="m9 18 6-6-6-6" />
+</svg>
+</span>
+                            
+                          </li>
+                        
+                          <li class="breadcrumb-item " >
+                            
+                              <span>Okf</span>
+                            
+                            
+                              <span class="breadcrumb-separator">
+<svg class="lucide-icon icon-chevron-right " width="1em" height="1em" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"
+  class="lucide lucide-chevron-right"
+  xmlns="http://www.w3.org/2000/svg"
+  width="24"
+  height="24"
+  viewBox="0 0 24 24"
+  fill="none"
+  stroke="currentColor"
+  stroke-width="2"
+  stroke-linecap="round"
+  stroke-linejoin="round"
+>
+  <path d="m9 18 6-6-6-6" />
+</svg>
+</span>
+                            
+                          </li>
+                        
+                          <li class="breadcrumb-item " >
+                            
+                              <span>Concepts</span>
+                            
+                            
+                              <span class="breadcrumb-separator">
+<svg class="lucide-icon icon-chevron-right " width="1em" height="1em" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"
+  class="lucide lucide-chevron-right"
+  xmlns="http://www.w3.org/2000/svg"
+  width="24"
+  height="24"
+  viewBox="0 0 24 24"
+  fill="none"
+  stroke="currentColor"
+  stroke-width="2"
+  stroke-linecap="round"
+  stroke-linejoin="round"
+>
+  <path d="m9 18 6-6-6-6" />
+</svg>
+</span>
+                            
+                          </li>
+                        
+                          <li class="breadcrumb-item active" aria-current=&quot;page&quot;>
+                            
+                              <span>Usage Guide — Integrating the ETL Utility (Go)</span>
+                            
+                            
+                          </li>
+                        
+                      </ol>
+                    </nav>
+                  
+
+                  
+                    <div class="docmd-copy-widgets">
+                      
+                        <button class="docmd-copy-btn docmd-copy-raw-btn" data-copied="Copied!" title="Copy Markdown" aria-label="Copy Markdown">
+                          <span class="docmd-btn-icon">
+<svg class="lucide-icon icon-copy " width="1em" height="1em" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"
+  class="lucide lucide-copy"
+  xmlns="http://www.w3.org/2000/svg"
+  width="24"
+  height="24"
+  viewBox="0 0 24 24"
+  fill="none"
+  stroke="currentColor"
+  stroke-width="2"
+  stroke-linecap="round"
+  stroke-linejoin="round"
+>
+  <rect width="14" height="14" x="8" y="8" rx="2" ry="2" />
+  <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" />
+</svg>
+</span>
+                        </button>
+                      
+                      
+                        <button class="docmd-copy-btn docmd-copy-context-btn" data-copied="Copied!" title="Copy Context">
+                          <span class="docmd-btn-icon">
+<svg class="lucide-icon icon-message-square " width="1em" height="1em" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"
+  class="lucide lucide-message-square"
+  xmlns="http://www.w3.org/2000/svg"
+  width="24"
+  height="24"
+  viewBox="0 0 24 24"
+  fill="none"
+  stroke="currentColor"
+  stroke-width="2"
+  stroke-linecap="round"
+  stroke-linejoin="round"
+>
+  <path d="M22 17a2 2 0 0 1-2 2H6.828a2 2 0 0 0-1.414.586l-2.202 2.202A.71.71 0 0 1 2 21.286V5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2z" />
+</svg>
+</span>
+                          <span class="docmd-btn-text">Copy Context</span>
+                        </button>
+                      
+                    </div>
+                  
+                </div>
+                
+                <h1 id="usage-guide-integrating-the-etl-utility-go" class="docmd-heading"><a href="#usage-guide-integrating-the-etl-utility-go" class="heading-anchor" aria-label="Permalink to this section"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-link2-icon lucide-link-2"><path d="M9 17H7A5 5 0 0 1 7 7h2m6 0h2a5 5 0 1 1 0 10h-2m-7-5h8"/></svg></a>Usage Guide — Integrating the ETL Utility (Go)</h1>
+<p>How to use the flat-file ETL core from an <strong>external application</strong> — for example, a<br>
+web application that accepts a source file upload and needs it validated and<br>
+transformed into a delimited output file.</p>
+<p>For the internal design and TS→Go migration rationale, see<br>
+<a href="../../../../../etl-code-review-and-go-design/">etl-code-review-and-go-design.md</a>.</p>
+<p>For build and hosting instructions, see<br>
+<a href="../../../../../deployment-guide/">deployment-guide.md</a>.</p>
+<hr>
+<h2 id="usage-guide-integrating-the-etl-utility-go-1-what-it-does" class="docmd-heading"><a href="#usage-guide-integrating-the-etl-utility-go-1-what-it-does" class="heading-anchor" aria-label="Permalink to this section"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-link2-icon lucide-link-2"><path d="M9 17H7A5 5 0 0 1 7 7h2m6 0h2a5 5 0 1 1 0 10h-2m-7-5h8"/></svg></a>1. What it does</h2>
+<p>You give the pipeline three things:</p>
+<ol>
+<li><strong>A source file</strong> — a local path or an Azure blob URL to a delimited text<br>
+file (CSV, <code>;</code>-separated, etc.).</li>
+<li><strong>Line rules</strong> — column names, which fields are mandatory, the separator, whether<br>
+line 1 is a header.</li>
+<li><strong>An output definition</strong> — where to write, the filename, and how each row is<br>
+projected (ordered mappings or a template string).</li>
+</ol>
+<p>It streams the source line by line and produces:</p>
+<ul>
+<li>An <strong>output file</strong> containing every valid, non-header row (created lazily — an<br>
+empty or all-invalid source produces <strong>no</strong> output file).</li>
+<li>Optionally, an <strong>error report</strong> (<code>&lt;source-filename&gt;.error.txt</code>) listing invalid<br>
+rows — opt-in via <code>output.options.errorReport</code> (§4.3.1), and even then only<br>
+kept when at least one row failed validation. Invalid rows are always counted<br>
+in the result whether or not the file is written.</li>
+<li>A JSON <strong>result</strong> summarizing validity, error counts, file locations, and<br>
+metadata sampled from the first valid row.</li>
+</ul>
+<p>All integration surfaces funnel through one function, <code>etl.Run(Config)</code>, so the<br>
+behavior is identical whether you call it in-process or spawn the binary.</p>
+<hr>
+<h2 id="usage-guide-integrating-the-etl-utility-go-2-integration-surfaces" class="docmd-heading"><a href="#usage-guide-integrating-the-etl-utility-go-2-integration-surfaces" class="heading-anchor" aria-label="Permalink to this section"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-link2-icon lucide-link-2"><path d="M9 17H7A5 5 0 0 1 7 7h2m6 0h2a5 5 0 1 1 0 10h-2m-7-5h8"/></svg></a>2. Integration surfaces</h2>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>Surface</th>
+<th>How you pass parameters</th>
+<th>Status</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>In-process (Go)</strong></td>
+<td>Import <code>flatfile-go/etl</code>, build an <code>etl.Config</code> struct, call <code>etl.Run(cfg)</code></td>
+<td>✅ Available</td>
+</tr>
+<tr>
+<td><strong>Spawned binary (any language)</strong></td>
+<td><code>etl -config &lt;config.json&gt;</code>; read the JSON result from stdout. <code>-source &lt;path-or-url&gt;</code> may override <code>source</code> from the config.</td>
+<td>✅ Available</td>
+</tr>
+<tr>
+<td><strong>JSON config via stdin</strong> (<code>-config -</code>)</td>
+<td>Pipe the same canonical config JSON to the process</td>
+<td>✅ Available</td>
+</tr>
+<tr>
+<td><strong>HTTP server</strong></td>
+<td>Run <code>cmd/http</code>; <code>POST /etl</code> with canonical config JSON in the request body</td>
+<td>✅ Available</td>
+</tr>
+<tr>
+<td><strong>AWS Lambda Function URL</strong></td>
+<td>Deploy <code>cmd/lambda</code>; <code>POST /</code> or <code>POST /etl</code> with canonical config JSON in the request body</td>
+<td>✅ Available</td>
+</tr>
+<tr>
+<td><strong>Flags-only terminal run</strong> (<code>-columns</code>, <code>-mandatory</code>, …)</td>
+<td>Individual CLI flags</td>
+<td>🔜 Planned</td>
+</tr>
+</tbody>
+</table>
+</div><blockquote>
+<p><strong>Note for binary integrators:</strong> the CLI reads the same <code>etl.Config</code> JSON shape<br>
+used in-process: <code>source</code>, <code>output</code>, and <code>options</code>. The optional <code>-source</code><br>
+flag overrides <code>source</code> from the JSON for callers that keep the file path<br>
+outside the config payload. The flag accepts either a local path or an<br>
+Azure blob URL — whichever it is set to always replaces <code>source</code> <strong>as the<br>
+legacy string form</strong> (see §4.1); to override with the typed object form<br>
+(e.g. to pass Azure auth), set <code>source</code> in the config JSON instead.</p>
+</blockquote>
+<hr>
+<h2 id="usage-guide-integrating-the-etl-utility-go-3-quick-start" class="docmd-heading"><a href="#usage-guide-integrating-the-etl-utility-go-3-quick-start" class="heading-anchor" aria-label="Permalink to this section"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-link2-icon lucide-link-2"><path d="M9 17H7A5 5 0 0 1 7 7h2m6 0h2a5 5 0 1 1 0 10h-2m-7-5h8"/></svg></a>3. Quick start</h2>
+<h3 id="usage-guide-integrating-the-etl-utility-go-3-quick-start-31-in-process-from-a-go-web-application" class="docmd-heading"><a href="#usage-guide-integrating-the-etl-utility-go-3-quick-start-31-in-process-from-a-go-web-application" class="heading-anchor" aria-label="Permalink to this section"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-link2-icon lucide-link-2"><path d="M9 17H7A5 5 0 0 1 7 7h2m6 0h2a5 5 0 1 1 0 10h-2m-7-5h8"/></svg></a>3.1 In-process from a Go web application</h3>
+<p>A handler that accepts an uploaded file, saves it to a temp path, and runs the<br>
+pipeline:</p>
+<pre class="hljs"><code class="language-go">package main
+
+<span class="hljs-keyword">import</span> (
+	<span class="hljs-string">&quot;encoding/json&quot;</span>
+	<span class="hljs-string">&quot;io&quot;</span>
+	<span class="hljs-string">&quot;net/http&quot;</span>
+	<span class="hljs-string">&quot;os&quot;</span>
+	<span class="hljs-string">&quot;path/filepath&quot;</span>
+
+	<span class="hljs-string">&quot;flatfile-go/etl&quot;</span>
+	<span class="hljs-string">&quot;flatfile-go/line&quot;</span>
+	<span class="hljs-string">&quot;flatfile-go/writer&quot;</span>
+)
+
+<span class="hljs-keyword">func</span> <span class="hljs-title function_">handleUpload</span>(w http.<span class="hljs-attr">ResponseWriter</span>, r <span class="hljs-punctuation">*</span>http.<span class="hljs-attr">Request</span>) {
+	<span class="hljs-comment">// 1. Persist the uploaded file locally — the reader needs a local path.</span>
+	src, header, err <span class="hljs-punctuation">:=</span> r.<span class="hljs-title function_">FormFile</span>(<span class="hljs-string">&quot;file&quot;</span>)
+	<span class="hljs-keyword">if</span> err <span class="hljs-punctuation">!=</span> nil {
+		http.<span class="hljs-title function_">Error</span>(w, err.<span class="hljs-title function_">Error</span>(), http.<span class="hljs-attr">StatusBadRequest</span>)
+		<span class="hljs-keyword">return</span>
+	}
+	<span class="hljs-keyword">defer</span> src.<span class="hljs-title function_">Close</span>()
+
+	tmpPath <span class="hljs-punctuation">:=</span> filepath.<span class="hljs-title function_">Join</span>(os.<span class="hljs-title function_">TempDir</span>(), header.<span class="hljs-attr">Filename</span>)
+	dst, err <span class="hljs-punctuation">:=</span> os.<span class="hljs-title function_">Create</span>(tmpPath)
+	<span class="hljs-keyword">if</span> err <span class="hljs-punctuation">!=</span> nil {
+		http.<span class="hljs-title function_">Error</span>(w, err.<span class="hljs-title function_">Error</span>(), http.<span class="hljs-attr">StatusInternalServerError</span>)
+		<span class="hljs-keyword">return</span>
+	}
+	<span class="hljs-keyword">if</span> _, err <span class="hljs-punctuation">:=</span> io.<span class="hljs-title function_">Copy</span>(dst, src); err <span class="hljs-punctuation">!=</span> nil {
+		dst.<span class="hljs-title function_">Close</span>()
+		http.<span class="hljs-title function_">Error</span>(w, err.<span class="hljs-title function_">Error</span>(), http.<span class="hljs-attr">StatusInternalServerError</span>)
+		<span class="hljs-keyword">return</span>
+	}
+	dst.<span class="hljs-title function_">Close</span>()
+
+	<span class="hljs-comment">// 2. Build the Config — this is where all required params are passed.</span>
+	cfg <span class="hljs-punctuation">:=</span> etl.<span class="hljs-attr">Config</span>{
+		Source<span class="hljs-punctuation">:</span> tmpPath,
+		Output<span class="hljs-punctuation">:</span> writer.<span class="hljs-attr">OutputConfig</span>{
+			FileGenerator<span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;default-generator&quot;</span>,
+			Path<span class="hljs-punctuation">:</span>          <span class="hljs-string">&quot;/var/data/out&quot;</span>,
+			Filename<span class="hljs-punctuation">:</span>      <span class="hljs-string">&quot;products.txt&quot;</span>,
+			Separator<span class="hljs-punctuation">:</span>     <span class="hljs-string">&quot;;&quot;</span>,
+			Header<span class="hljs-punctuation">:</span>        <span class="hljs-string">&quot;sku;name&quot;</span>,
+			Footer<span class="hljs-punctuation">:</span>        <span class="hljs-string">&quot;EOF&quot;</span>,
+		},
+		Options<span class="hljs-punctuation">:</span> etl.<span class="hljs-attr">Options</span>{
+			Line<span class="hljs-punctuation">:</span> line.<span class="hljs-attr">LineConfig</span>{
+				Columns<span class="hljs-punctuation">:</span>         []string{<span class="hljs-string">&quot;BARCODE&quot;</span>, <span class="hljs-string">&quot;SKU&quot;</span>, <span class="hljs-string">&quot;NAME&quot;</span>},
+				MandatoryFields<span class="hljs-punctuation">:</span> []string{<span class="hljs-string">&quot;BARCODE&quot;</span>, <span class="hljs-string">&quot;SKU&quot;</span>},
+				Separator<span class="hljs-punctuation">:</span>       <span class="hljs-string">&quot;,&quot;</span>,
+				WithHeader<span class="hljs-punctuation">:</span>      <span class="hljs-keyword">true</span>,
+				OutputMappings<span class="hljs-punctuation">:</span> []line.<span class="hljs-attr">Mapping</span>{
+					{Out<span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;sku&quot;</span>, Src<span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;SKU&quot;</span>},
+					{Out<span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;name&quot;</span>, Src<span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;NAME&quot;</span>},
+				},
+				IdentifierMappings<span class="hljs-punctuation">:</span> []line.<span class="hljs-attr">Mapping</span>{
+					{Out<span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;barcode&quot;</span>, Src<span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;BARCODE&quot;</span>},
+				},
+			},
+			RejectOnInvalidRow<span class="hljs-punctuation">:</span> <span class="hljs-keyword">false</span>,
+		},
+	}
+
+	<span class="hljs-comment">// 3. Run and return the result.</span>
+	result, err <span class="hljs-punctuation">:=</span> etl.<span class="hljs-title function_">Run</span>(cfg)
+	<span class="hljs-keyword">if</span> err <span class="hljs-punctuation">!=</span> nil {
+		http.<span class="hljs-title function_">Error</span>(w, err.<span class="hljs-title function_">Error</span>(), http.<span class="hljs-attr">StatusInternalServerError</span>)
+		<span class="hljs-keyword">return</span>
+	}
+	json.<span class="hljs-title function_">NewEncoder</span>(w).<span class="hljs-title function_">Encode</span>(result)
+}
+</code></pre>
+<h3 id="usage-guide-integrating-the-etl-utility-go-3-quick-start-32-spawning-the-binary-nodejs-example" class="docmd-heading"><a href="#usage-guide-integrating-the-etl-utility-go-3-quick-start-32-spawning-the-binary-nodejs-example" class="heading-anchor" aria-label="Permalink to this section"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-link2-icon lucide-link-2"><path d="M9 17H7A5 5 0 0 1 7 7h2m6 0h2a5 5 0 1 1 0 10h-2m-7-5h8"/></svg></a>3.2 Spawning the binary (Node.js example)</h3>
+<p>For non-Go applications (an Express/Nest web app, a BullMQ worker), write the<br>
+config to a JSON file and spawn the binary:</p>
+<pre class="hljs"><code class="language-js"><span class="hljs-keyword">import</span> { execFile } <span class="hljs-keyword">from</span> <span class="hljs-string">&quot;node:child_process&quot;</span>;
+<span class="hljs-keyword">import</span> { writeFile } <span class="hljs-keyword">from</span> <span class="hljs-string">&quot;node:fs/promises&quot;</span>;
+<span class="hljs-keyword">import</span> os <span class="hljs-keyword">from</span> <span class="hljs-string">&quot;node:os&quot;</span>;
+<span class="hljs-keyword">import</span> path <span class="hljs-keyword">from</span> <span class="hljs-string">&quot;node:path&quot;</span>;
+
+<span class="hljs-keyword">async</span> <span class="hljs-keyword">function</span> <span class="hljs-title function_">runEtl</span>(sourcePath) {
+  <span class="hljs-keyword">const</span> config <span class="hljs-punctuation">=</span> {
+    <span class="hljs-keyword">source</span><span class="hljs-punctuation">:</span> sourcePath,
+    output<span class="hljs-punctuation">:</span> {
+      fileGenerator<span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;default-generator&quot;</span>,
+      path<span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;/var/data/out&quot;</span>,
+      filename<span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;products.txt&quot;</span>,
+      separator<span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;;&quot;</span>,
+      header<span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;sku;name&quot;</span>,
+      footer<span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;EOF&quot;</span>,
+    },
+    options<span class="hljs-punctuation">:</span> {
+      line<span class="hljs-punctuation">:</span> {
+        columns<span class="hljs-punctuation">:</span> [<span class="hljs-string">&quot;BARCODE&quot;</span>, <span class="hljs-string">&quot;SKU&quot;</span>, <span class="hljs-string">&quot;NAME&quot;</span>],
+        mandatoryFields<span class="hljs-punctuation">:</span> [<span class="hljs-string">&quot;BARCODE&quot;</span>, <span class="hljs-string">&quot;SKU&quot;</span>],
+        separator<span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;,&quot;</span>,
+        withHeader<span class="hljs-punctuation">:</span> <span class="hljs-keyword">true</span>,
+        outputMappings<span class="hljs-punctuation">:</span> [
+          { out<span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;sku&quot;</span>, src<span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;SKU&quot;</span> },
+          { out<span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;name&quot;</span>, src<span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;NAME&quot;</span> },
+        ],
+        identifierMappings<span class="hljs-punctuation">:</span> [{ out<span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;barcode&quot;</span>, src<span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;BARCODE&quot;</span> }],
+      },
+      rejectOnInvalidRow<span class="hljs-punctuation">:</span> <span class="hljs-keyword">false</span>,
+    },
+  };
+
+  <span class="hljs-keyword">const</span> configPath <span class="hljs-punctuation">=</span> path.<span class="hljs-title function_">join</span>(os.<span class="hljs-title function_">tmpdir</span>(), <span class="hljs-string">`etl-job-${Date.now()}.json`</span>);
+  <span class="hljs-keyword">await</span> <span class="hljs-title function_">writeFile</span>(configPath, JSON.<span class="hljs-title function_">stringify</span>(config));
+
+  <span class="hljs-keyword">return</span> <span class="hljs-keyword">new</span> <span class="hljs-title function_">Promise</span>((resolve, reject) <span class="hljs-punctuation">=&gt;</span> {
+    <span class="hljs-title function_">execFile</span>(<span class="hljs-string">&quot;etl&quot;</span>, [<span class="hljs-string">&quot;-config&quot;</span>, configPath],
+      (err, stdout, stderr) <span class="hljs-punctuation">=&gt;</span> {
+        <span class="hljs-keyword">if</span> (err) <span class="hljs-keyword">return</span> <span class="hljs-title function_">reject</span>(<span class="hljs-keyword">new</span> <span class="hljs-title function_">Error</span>(stderr <span class="hljs-punctuation">||</span> err.<span class="hljs-attr">message</span>));
+        <span class="hljs-title function_">resolve</span>(JSON.<span class="hljs-title function_">parse</span>(stdout)); <span class="hljs-comment">// the Result object, see §6</span>
+      });
+  });
+}
+</code></pre>
+<p>Build the binary once with <code>cd go &amp;&amp; go build -o ./bin/etl ./cmd</code>.</p>
+<h3 id="usage-guide-integrating-the-etl-utility-go-3-quick-start-33-cli-config-file-shape" class="docmd-heading"><a href="#usage-guide-integrating-the-etl-utility-go-3-quick-start-33-cli-config-file-shape" class="heading-anchor" aria-label="Permalink to this section"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-link2-icon lucide-link-2"><path d="M9 17H7A5 5 0 0 1 7 7h2m6 0h2a5 5 0 1 1 0 10h-2m-7-5h8"/></svg></a>3.3 CLI config file shape</h3>
+<p>The JSON file passed to <code>-config</code> is the canonical <code>etl.Config</code> shape:</p>
+<pre class="hljs"><code class="language-json">{
+  <span class="hljs-string">&quot;source&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;/var/data/in/products.csv&quot;</span>,
+  <span class="hljs-string">&quot;output&quot;</span><span class="hljs-punctuation">:</span> {
+    <span class="hljs-string">&quot;fileGenerator&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;default-generator&quot;</span>,
+    <span class="hljs-string">&quot;path&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;/var/data/out&quot;</span>,
+    <span class="hljs-string">&quot;filename&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;products.txt&quot;</span>,
+    <span class="hljs-string">&quot;separator&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;;&quot;</span>,
+    <span class="hljs-string">&quot;header&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;sku;name&quot;</span>,
+    <span class="hljs-string">&quot;footer&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;EOF&quot;</span>
+  },
+  <span class="hljs-string">&quot;options&quot;</span><span class="hljs-punctuation">:</span> {
+    <span class="hljs-string">&quot;line&quot;</span><span class="hljs-punctuation">:</span> {
+      <span class="hljs-string">&quot;columns&quot;</span><span class="hljs-punctuation">:</span> [<span class="hljs-string">&quot;BARCODE&quot;</span>, <span class="hljs-string">&quot;SKU&quot;</span>, <span class="hljs-string">&quot;NAME&quot;</span>],
+      <span class="hljs-string">&quot;mandatoryFields&quot;</span><span class="hljs-punctuation">:</span> [<span class="hljs-string">&quot;BARCODE&quot;</span>, <span class="hljs-string">&quot;SKU&quot;</span>],
+      <span class="hljs-string">&quot;separator&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;,&quot;</span>,
+      <span class="hljs-string">&quot;withHeader&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-keyword">true</span>,
+      <span class="hljs-string">&quot;outputMappings&quot;</span><span class="hljs-punctuation">:</span> [
+        { <span class="hljs-string">&quot;out&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;sku&quot;</span>, <span class="hljs-string">&quot;src&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;SKU&quot;</span> },
+        { <span class="hljs-string">&quot;out&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;name&quot;</span>, <span class="hljs-string">&quot;src&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;NAME&quot;</span> }
+      ],
+      <span class="hljs-string">&quot;identifierMappings&quot;</span><span class="hljs-punctuation">:</span> [{ <span class="hljs-string">&quot;out&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;barcode&quot;</span>, <span class="hljs-string">&quot;src&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;BARCODE&quot;</span> }]
+    },
+    <span class="hljs-string">&quot;rejectOnInvalidRow&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-keyword">false</span>
+  }
+}
+</code></pre>
+<p><code>etl -source /override.csv -config job.json</code> is also allowed; the flag replaces<br>
+the JSON <code>source</code> value after the file is parsed. <code>-source</code> also accepts an<br>
+Azure blob URL (e.g. <code>-source https://acct.blob.core.windows.net/c/p.csv</code>); for<br>
+authenticated blobs, put <code>source</code> in the config JSON instead so you can attach<br>
+<code>auth</code> (see §4.1).</p>
+<hr>
+<h2 id="usage-guide-integrating-the-etl-utility-go-4-parameter-reference" class="docmd-heading"><a href="#usage-guide-integrating-the-etl-utility-go-4-parameter-reference" class="heading-anchor" aria-label="Permalink to this section"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-link2-icon lucide-link-2"><path d="M9 17H7A5 5 0 0 1 7 7h2m6 0h2a5 5 0 1 1 0 10h-2m-7-5h8"/></svg></a>4. Parameter reference</h2>
+<h3 id="usage-guide-integrating-the-etl-utility-go-4-parameter-reference-41-source" class="docmd-heading"><a href="#usage-guide-integrating-the-etl-utility-go-4-parameter-reference-41-source" class="heading-anchor" aria-label="Permalink to this section"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-link2-icon lucide-link-2"><path d="M9 17H7A5 5 0 0 1 7 7h2m6 0h2a5 5 0 1 1 0 10h-2m-7-5h8"/></svg></a>4.1 Source</h3>
+<p><code>Config.Source</code> (<code>reader.SourceConfig</code>) accepts two JSON forms. The legacy<br>
+plain string still works and is inferred as local-vs-Azure by shape:</p>
+<pre class="hljs"><code class="language-json"><span class="hljs-string">&quot;source&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;/var/data/in/products.csv&quot;</span>
+<span class="hljs-string">&quot;source&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;https://acct.blob.core.windows.net/container/products.csv&quot;</span>
+</code></pre>
+<p>The typed object form is required when a cloud source needs credentials:</p>
+<pre class="hljs"><code class="language-json"><span class="hljs-string">&quot;source&quot;</span><span class="hljs-punctuation">:</span> {
+  <span class="hljs-string">&quot;type&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;local&quot;</span>,
+  <span class="hljs-string">&quot;path&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;/var/data/in/products.csv&quot;</span>
+}
+</code></pre>
+<pre class="hljs"><code class="language-json"><span class="hljs-string">&quot;source&quot;</span><span class="hljs-punctuation">:</span> {
+  <span class="hljs-string">&quot;type&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;azure-blob&quot;</span>,
+  <span class="hljs-string">&quot;url&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;https://acct.blob.core.windows.net/container/daily/products.csv&quot;</span>,
+  <span class="hljs-string">&quot;auth&quot;</span><span class="hljs-punctuation">:</span> { <span class="hljs-string">&quot;accountName&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;acct&quot;</span>, <span class="hljs-string">&quot;accountKey&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;&lt;key&gt;&quot;</span> }
+}
+</code></pre>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>Param</th>
+<th>CLI</th>
+<th>In-process</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Source</td>
+<td><code>-source &lt;path-or-url&gt;</code> flag</td>
+<td><code>Config.Source</code></td>
+<td>Local file path or Azure blob URL. The flag always sets the legacy string form — use the JSON <code>source</code> object for Azure auth. <strong>S3 is not yet supported</strong> and is rejected with an explicit error.</td>
+</tr>
+</tbody>
+</table>
+</div><p><code>auth</code> is optional and has four mutually exclusive shapes (checked in this<br>
+precedence order — see <code>reader.AzureAuth.Type()</code>):</p>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th><code>auth</code> shape</th>
+<th>Mode</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><em>omitted</em></td>
+<td><code>DefaultAzureCredential</code> chain (managed identity, <code>az login</code>, environment service principal). If <code>url</code> already has a <code>sig=</code> query parameter, that embedded SAS is used instead of requesting a token.</td>
+</tr>
+<tr>
+<td><code>{&quot;connectionString&quot;: &quot;...&quot;}</code></td>
+<td>Storage account connection string. Takes precedence over shared key / SAS if more than one is set.</td>
+</tr>
+<tr>
+<td><code>{&quot;accountName&quot;: &quot;...&quot;, &quot;accountKey&quot;: &quot;...&quot;}</code></td>
+<td>Shared key. Both fields are required together — one without the other is a validation error.</td>
+</tr>
+<tr>
+<td><code>{&quot;sasToken&quot;: &quot;...&quot;}</code></td>
+<td>SAS query string (leading <code>?</code> optional), appended to <code>url</code>.</td>
+</tr>
+</tbody>
+</table>
+</div><p>Runnable examples for every mode are under<br>
+<a href="../../../../../../samples/azure-blob/"><code>samples/azure-blob</code></a> and<br>
+<a href="../../../../../../samples/local/"><code>samples/local</code></a>.</p>
+<p>For a local source, your application is responsible for getting the file onto<br>
+local disk first (e.g. saving an HTTP upload). For an Azure blob source, the<br>
+pipeline streams the blob directly — no local download step or <code>/tmp</code> usage.</p>
+<h3 id="usage-guide-integrating-the-etl-utility-go-4-parameter-reference-42-line-rules-line-linelineconfig" class="docmd-heading"><a href="#usage-guide-integrating-the-etl-utility-go-4-parameter-reference-42-line-rules-line-linelineconfig" class="heading-anchor" aria-label="Permalink to this section"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-link2-icon lucide-link-2"><path d="M9 17H7A5 5 0 0 1 7 7h2m6 0h2a5 5 0 1 1 0 10h-2m-7-5h8"/></svg></a>4.2 Line rules — <code>line</code> / <code>line.LineConfig</code></h3>
+<p>Controls how each source line is parsed and validated.</p>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>JSON key</th>
+<th>Type</th>
+<th>Required</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>columns</code></td>
+<td><code>string[]</code></td>
+<td>✅</td>
+<td>Ordered names for the source columns. Each line is split on <code>separator</code> and zipped with these names. Missing trailing columns become <code>&quot;&quot;</code>.</td>
+</tr>
+<tr>
+<td><code>mandatoryFields</code></td>
+<td><code>string[]</code></td>
+<td>✅ (for validation)</td>
+<td>Column names that must be non-empty. An empty mandatory field makes the row invalid: <code>ERROR AT LINE &lt;n&gt;: Invalid &lt;field&gt; value of &quot;&lt;value&gt;&quot;</code>.</td>
+</tr>
+<tr>
+<td><code>separator</code></td>
+<td><code>string</code></td>
+<td>⬜</td>
+<td>Source field separator. Default: <code>&quot;;&quot;</code>.</td>
+</tr>
+<tr>
+<td><code>withHeader</code></td>
+<td><code>bool</code></td>
+<td>⬜</td>
+<td>When <code>true</code>, line 1 is treated as a header: it is never written to the output. A header-only file counts as <strong>empty</strong> (invalid result).</td>
+</tr>
+<tr>
+<td><code>outputMappings</code></td>
+<td><code>[{out, src}]</code></td>
+<td>⬜</td>
+<td><strong>Ordered</strong> projection of the output row (see §4.4). Order defines the column order in the output file.</td>
+</tr>
+<tr>
+<td><code>identifierMappings</code></td>
+<td><code>[{out, src}]</code></td>
+<td>⬜</td>
+<td>Keyed lookups captured from the <strong>first valid row</strong> and returned in <code>result.metadata</code> (identifiers win on key collision). Use this to surface e.g. a batch id or barcode back to your application.</td>
+</tr>
+</tbody>
+</table>
+</div><p>Field parsing matches the TypeScript original: values are split on the<br>
+separator and <strong>one</strong> leading plus <strong>one</strong> trailing double quote is stripped<br>
+(<code>&quot;ABC&quot;</code> → <code>ABC</code>). Lines with CRLF endings are handled (<code>\r</code> is dropped).</p>
+<h3 id="usage-guide-integrating-the-etl-utility-go-4-parameter-reference-43-output-definition-output-writeroutputconfig" class="docmd-heading"><a href="#usage-guide-integrating-the-etl-utility-go-4-parameter-reference-43-output-definition-output-writeroutputconfig" class="heading-anchor" aria-label="Permalink to this section"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-link2-icon lucide-link-2"><path d="M9 17H7A5 5 0 0 1 7 7h2m6 0h2a5 5 0 1 1 0 10h-2m-7-5h8"/></svg></a>4.3 Output definition — <code>output</code> / <code>writer.OutputConfig</code></h3>
+<p>The output destination mirrors the source (§4.1): local disk by default, or<br>
+Azure Blob Storage when <code>type</code>/<code>url</code> are set. The destination fields sit flat<br>
+inside <code>output</code>, so existing local-only configs are unchanged:</p>
+<pre class="hljs"><code class="language-json"><span class="hljs-string">&quot;output&quot;</span><span class="hljs-punctuation">:</span> {
+  <span class="hljs-string">&quot;filename&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;products_{LOC}.csv&quot;</span>,
+  <span class="hljs-string">&quot;path&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;/var/data/out&quot;</span>
+}
+</code></pre>
+<pre class="hljs"><code class="language-json"><span class="hljs-string">&quot;output&quot;</span><span class="hljs-punctuation">:</span> {
+  <span class="hljs-string">&quot;type&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;azure-blob&quot;</span>,
+  <span class="hljs-string">&quot;url&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;https://acct.blob.core.windows.net/exports/daily&quot;</span>,
+  <span class="hljs-string">&quot;auth&quot;</span><span class="hljs-punctuation">:</span> { <span class="hljs-string">&quot;accountName&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;acct&quot;</span>, <span class="hljs-string">&quot;accountKey&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;&lt;key&gt;&quot;</span> },
+  <span class="hljs-string">&quot;filename&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;products_{LOC}.csv&quot;</span>
+}
+</code></pre>
+<p>Unlike the source <code>url</code> (which names the exact blob to read), the output <code>url</code><br>
+is a <strong>container/prefix</strong>: the rendered <code>filename</code> is appended to it, the same<br>
+way <code>path</code> + <code>filename</code> are joined for local output. The rendered output is<br>
+streamed to a block blob as rows are pushed (an <code>io.Pipe</code> feeds the SDK’s<br>
+<code>UploadStream</code>, so memory use isn’t proportional to output size); nothing is<br>
+uploaded when no valid row was produced, and the blob is only committed —<br>
+visible to readers — once the run ends without error. Error reports always<br>
+stay on local disk (under <code>path</code>’s default, the OS temp dir). Source and<br>
+output each carry their own <code>auth</code>, so a run can read from one storage<br>
+account and write to another.</p>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>JSON key</th>
+<th>Type</th>
+<th>Required</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>fileGenerator</code></td>
+<td><code>string</code></td>
+<td>⬜</td>
+<td>Writer kind. <code>&quot;default-generator&quot;</code> (or empty) is the delimited/templated text writer. <code>&quot;json-generator&quot;</code> is supported for local output only. Other kinds (Excel/dedup variants, and JSON to cloud destinations) return an explicit “not supported yet” error.</td>
+</tr>
+<tr>
+<td><code>type</code></td>
+<td><code>string</code></td>
+<td>⬜</td>
+<td>Destination kind: <code>&quot;local&quot;</code> (default) or <code>&quot;azure-blob&quot;</code>. Empty is inferred: <code>url</code> set → <code>azure-blob</code>, otherwise <code>local</code>. <strong>S3 is not yet supported</strong> and is rejected with an explicit error.</td>
+</tr>
+<tr>
+<td><code>path</code></td>
+<td><code>string</code></td>
+<td>⬜</td>
+<td>Output directory for a local destination. Default: the OS temp dir. Must not be combined with <code>url</code>.</td>
+</tr>
+<tr>
+<td><code>url</code></td>
+<td><code>string</code></td>
+<td>⬜</td>
+<td>Azure container/prefix URL for an <code>azure-blob</code> destination (required for that type). The rendered <code>filename</code> is appended to it.</td>
+</tr>
+<tr>
+<td><code>auth</code></td>
+<td><code>object</code></td>
+<td>⬜</td>
+<td>Azure credentials for an <code>azure-blob</code> destination; same four shapes and precedence as the source <code>auth</code> (see the table in §4.1).</td>
+</tr>
+<tr>
+<td><code>filename</code></td>
+<td><code>string</code></td>
+<td>✅</td>
+<td>Output filename, always rendered through the template layers from the <strong>first pushed row</strong> (supports <code>{path}</code> value tokens and <code>[func ...]</code>, see §5). A plain name contains no tokens and is used as-is. Also accepted for compatibility: the object form <code>{&quot;template&quot;: &quot;...&quot;}</code> and the legacy <code>filenameTemplate</code> key (which keeps its old precedence if both are set).</td>
+</tr>
+<tr>
+<td><code>separator</code></td>
+<td><code>string</code></td>
+<td>⬜</td>
+<td>Output column separator when using the default writer’s <code>outputMappings</code> projection. Default: <code>&quot;|&quot;</code>. Unused by JSON output.</td>
+</tr>
+<tr>
+<td><code>template</code></td>
+<td><code>string</code></td>
+<td>⬜</td>
+<td>Full row template (see §5). For the default writer, it takes precedence over the <code>outputMappings</code> projection. For JSON output, it must render one JSON object per row; when omitted, JSON rows are built from <code>outputMappings</code>.</td>
+</tr>
+<tr>
+<td><code>header</code></td>
+<td><code>string</code></td>
+<td>⬜</td>
+<td>For the default writer, the first line of the output file, written once when the first row arrives. For JSON output, the root-object template; empty means <code>{}</code>.</td>
+</tr>
+<tr>
+<td><code>footer</code></td>
+<td><code>string</code></td>
+<td>⬜</td>
+<td>Default writer only. Written raw at the end — <strong>no leading newline</strong>, so it concatenates onto the last row (<code>...WidgetEOF</code>). JSON output rejects <code>footer</code>.</td>
+</tr>
+<tr>
+<td><code>arrayField</code></td>
+<td><code>string</code></td>
+<td>⬜</td>
+<td>JSON output only. Root array property name. Default: <code>&quot;lines&quot;</code>.</td>
+</tr>
+<tr>
+<td><code>uniqueKey</code></td>
+<td><code>string</code></td>
+<td>⬜</td>
+<td>Default writer only. Source column name used to de-duplicate rows in-memory: rows whose value for this column was already written are skipped. JSON output rejects <code>uniqueKey</code>; deduplicate before writing JSON.</td>
+</tr>
+<tr>
+<td><code>metadata</code></td>
+<td><code>object</code></td>
+<td>⬜</td>
+<td>Arbitrary JSON object exposed to filename, header, and row templates under <code>metadata</code> / <code>data.metadata</code> (for example <code>{metadata.store.code}</code> or <code>[replaceString data.metadata.store.code - _]</code>).</td>
+</tr>
+<tr>
+<td><code>options</code></td>
+<td><code>object</code></td>
+<td>⬜</td>
+<td>Writer behavior toggles that are not part of the output format. See §4.3.1.</td>
+</tr>
+</tbody>
+</table>
+</div><h4 id="usage-guide-integrating-the-etl-utility-go-4-parameter-reference-43-output-definition-output-writeroutputconfig-431-writer-toggles-outputoptions" class="docmd-heading"><a href="#usage-guide-integrating-the-etl-utility-go-4-parameter-reference-43-output-definition-output-writeroutputconfig-431-writer-toggles-outputoptions" class="heading-anchor" aria-label="Permalink to this section"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-link2-icon lucide-link-2"><path d="M9 17H7A5 5 0 0 1 7 7h2m6 0h2a5 5 0 1 1 0 10h-2m-7-5h8"/></svg></a>4.3.1 Writer toggles — <code>output.options</code></h4>
+<p>Behavior toggles live in their own map so new ones can be added without a wire<br>
+change. A missing key — or a value of the wrong type — falls back to the<br>
+default rather than failing the run.</p>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>Option</th>
+<th>Type</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>errorReport</code></td>
+<td><code>bool</code></td>
+<td><code>false</code></td>
+<td>Write the <code>&lt;source&gt;.error.txt</code> report file next to <code>path</code>.</td>
+</tr>
+</tbody>
+</table>
+</div><pre class="hljs"><code class="language-json"><span class="hljs-string">&quot;output&quot;</span><span class="hljs-punctuation">:</span> {
+  <span class="hljs-string">&quot;filename&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;products.json&quot;</span>,
+  <span class="hljs-string">&quot;options&quot;</span><span class="hljs-punctuation">:</span> { <span class="hljs-string">&quot;errorReport&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-keyword">true</span> }
+}
+</code></pre>
+<blockquote>
+<p>Note this is <code>output.options</code>, which is <strong>not</strong> the same as the top-level<br>
+<code>options</code> carrying the line rules and <code>rejectOnInvalidRow</code> (§4.5). Both can<br>
+appear in the same config.</p>
+</blockquote>
+<p><code>errorReport</code> defaults to <strong>off</strong> because the utility is built to run in<br>
+serverless workers, where the writable filesystem is a small ephemeral scratch<br>
+space reused across warm invocations — a report file nobody collects<br>
+accumulates until unrelated runs start failing.</p>
+<p>Turning it off suppresses only the <em>file</em>. Invalid rows are still counted, so<br>
+<code>totalErrors</code>, <code>withErrors</code>, and <code>rejectOnInvalidRow</code> behave identically either<br>
+way. When it is off, <code>localErrorReportFile</code> and <code>localErrorReportFilename</code> in<br>
+the result are empty strings rather than naming a file that was never written —<br>
+so check for a non-empty path before trying to read the report.</p>
+<h3 id="usage-guide-integrating-the-etl-utility-go-4-parameter-reference-44-ordered-mappings-why-arrays-not-objects" class="docmd-heading"><a href="#usage-guide-integrating-the-etl-utility-go-4-parameter-reference-44-ordered-mappings-why-arrays-not-objects" class="heading-anchor" aria-label="Permalink to this section"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-link2-icon lucide-link-2"><path d="M9 17H7A5 5 0 0 1 7 7h2m6 0h2a5 5 0 1 1 0 10h-2m-7-5h8"/></svg></a>4.4 Ordered mappings — why arrays, not objects</h3>
+<p><code>outputMappings</code> and <code>identifierMappings</code> are <strong>arrays</strong> of <code>{out, src}</code> pairs<br>
+instead of plain objects: Go maps and JSON objects have no guaranteed key<br>
+order, and the output column order must be deterministic. Keep them as arrays<br>
+in your integration.</p>
+<p>For <code>outputMappings</code>, each <code>src</code> is resolved as:</p>
+<ol>
+<li>A <strong>source column name</strong> → the row’s value for that column.</li>
+<li>A <strong><code>[func ...]</code> template</strong> → evaluated (see §5).</li>
+<li>Anything else → used as a <strong>literal default</strong> value.</li>
+</ol>
+<p>For <code>identifierMappings</code>, <code>src</code> is a column lookup only.</p>
+<h3 id="usage-guide-integrating-the-etl-utility-go-4-parameter-reference-45-run-behavior-options-etloptions" class="docmd-heading"><a href="#usage-guide-integrating-the-etl-utility-go-4-parameter-reference-45-run-behavior-options-etloptions" class="heading-anchor" aria-label="Permalink to this section"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-link2-icon lucide-link-2"><path d="M9 17H7A5 5 0 0 1 7 7h2m6 0h2a5 5 0 1 1 0 10h-2m-7-5h8"/></svg></a>4.5 Run behavior — <code>options</code> / <code>etl.Options</code></h3>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>JSON key</th>
+<th>Type</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>rejectOnInvalidRow</code></td>
+<td><code>bool</code></td>
+<td><code>false</code></td>
+<td><code>false</code>: invalid rows are skipped (logged to the error report) and the run stays <code>valid</code>. <code>true</code>: any invalid row marks the <strong>whole result</strong> invalid, and the output file is deleted. Settable in-process and through CLI JSON under <code>options.rejectOnInvalidRow</code>.</td>
+</tr>
+</tbody>
+</table>
+</div><hr>
+<h2 id="usage-guide-integrating-the-etl-utility-go-5-templating-reference" class="docmd-heading"><a href="#usage-guide-integrating-the-etl-utility-go-5-templating-reference" class="heading-anchor" aria-label="Permalink to this section"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-link2-icon lucide-link-2"><path d="M9 17H7A5 5 0 0 1 7 7h2m6 0h2a5 5 0 1 1 0 10h-2m-7-5h8"/></svg></a>5. Templating reference</h2>
+<p>Two token kinds are available in <code>filename</code>, <code>header</code>, and <code>template</code>:</p>
+<h3 id="usage-guide-integrating-the-etl-utility-go-5-templating-reference-path-value-substitution" class="docmd-heading"><a href="#usage-guide-integrating-the-etl-utility-go-5-templating-reference-path-value-substitution" class="heading-anchor" aria-label="Permalink to this section"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-link2-icon lucide-link-2"><path d="M9 17H7A5 5 0 0 1 7 7h2m6 0h2a5 5 0 1 1 0 10h-2m-7-5h8"/></svg></a><code>{path}</code> — value substitution</h3>
+<p>Replaced with a scalar value from row data, output-mapped data, or<br>
+<code>output.metadata</code>.</p>
+<p><code>&quot;{SKU};{NAME}&quot;</code> → <code>&quot;A1;Widget&quot;</code>.<br>
+<code>&quot;{metadata.store.code}&quot;</code> → <code>&quot;DXB01&quot;</code>.<br>
+<code>&quot;{data.metadata.stores.0.code}&quot;</code> → <code>&quot;DXB01&quot;</code>.</p>
+<p>The <code>data.</code> prefix is optional for value tokens. Numeric path segments index<br>
+arrays. Missing paths, invalid indexes, nulls, and object/array leaves resolve<br>
+to an empty string.</p>
+<h3 id="usage-guide-integrating-the-etl-utility-go-5-templating-reference-func-arg-computed-tokens" class="docmd-heading"><a href="#usage-guide-integrating-the-etl-utility-go-5-templating-reference-func-arg-computed-tokens" class="heading-anchor" aria-label="Permalink to this section"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-link2-icon lucide-link-2"><path d="M9 17H7A5 5 0 0 1 7 7h2m6 0h2a5 5 0 1 1 0 10h-2m-7-5h8"/></svg></a><code>[func arg ...]</code> — computed tokens</h3>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>Token</th>
+<th>Result</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>[timestamp]</code></td>
+<td>Milliseconds since epoch.</td>
+</tr>
+<tr>
+<td><code>[dateTime &lt;format&gt; &lt;tz&gt;]</code></td>
+<td>Current time, moment-style tokens (<code>YYYY</code>, <code>MM</code>, <code>DD</code>, <code>HH</code>, <code>mm</code>, <code>ss</code>, <code>SSS</code>, <code>A</code>, <code>Z</code>, …). Defaults: <code>YYYY-MM-DDTHH:mm:ssZ</code>, <code>UTC</code>. Format args cannot contain spaces (same limitation as the TS original).</td>
+</tr>
+<tr>
+<td><code>[sanitizeString &lt;s&gt;]</code></td>
+<td>Sanitized string.</td>
+</tr>
+<tr>
+<td><code>[removeWhiteSpaces &lt;s&gt;]</code></td>
+<td>Whitespace removed.</td>
+</tr>
+<tr>
+<td><code>[replaceString &lt;s&gt; &lt;a&gt; &lt;b&gt;]</code></td>
+<td><code>&lt;s&gt;</code> with <code>&lt;a&gt;</code> replaced by <code>&lt;b&gt;</code>.</td>
+</tr>
+</tbody>
+</table>
+</div><p>Function arguments starting with <code>data.</code> are resolved as dot-paths against the<br>
+row data merged with the writer’s <code>metadata</code> option — e.g.<br>
+<code>[sanitizeString data.NAME]</code> or <code>[replaceString data.metadata.region - _]</code>.<br>
+Nested metadata objects and arrays are supported; numeric path segments index<br>
+arrays (for example <code>data.metadata.stores.0.code</code>). String, number, and boolean<br>
+leaves are passed to template functions as strings. Missing paths, invalid<br>
+indexes, nulls, and object/array leaves retain the literal <code>data...</code> argument<br>
+rather than being serialized.<br>
+Unknown function names are left in place untouched (the TS JS-eval<br>
+<code>customFunction</code> fallback is intentionally not ported).</p>
+<hr>
+<h2 id="usage-guide-integrating-the-etl-utility-go-6-the-result" class="docmd-heading"><a href="#usage-guide-integrating-the-etl-utility-go-6-the-result" class="heading-anchor" aria-label="Permalink to this section"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-link2-icon lucide-link-2"><path d="M9 17H7A5 5 0 0 1 7 7h2m6 0h2a5 5 0 1 1 0 10h-2m-7-5h8"/></svg></a>6. The result</h2>
+<p><code>etl.Run</code> returns (and the CLI prints to stdout) a JSON <code>Result</code>:</p>
+<pre class="hljs"><code class="language-json">{
+  <span class="hljs-string">&quot;valid&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-keyword">true</span>,
+  <span class="hljs-string">&quot;withErrors&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-keyword">true</span>,
+  <span class="hljs-string">&quot;totalErrors&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">1</span>,
+  <span class="hljs-string">&quot;localOutputFile&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;/var/data/out/products.txt&quot;</span>,
+  <span class="hljs-string">&quot;localOutputFilename&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;products.txt&quot;</span>,
+  <span class="hljs-string">&quot;localErrorReportFile&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;/tmp/in.csv.error.txt&quot;</span>,
+  <span class="hljs-string">&quot;localErrorReportFilename&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;in.csv.error.txt&quot;</span>,
+  <span class="hljs-string">&quot;metadata&quot;</span><span class="hljs-punctuation">:</span> { <span class="hljs-string">&quot;BARCODE&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;123&quot;</span>, <span class="hljs-string">&quot;SKU&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;A1&quot;</span>, <span class="hljs-string">&quot;NAME&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;Widget&quot;</span>, <span class="hljs-string">&quot;barcode&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;123&quot;</span> }
+}
+</code></pre>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>valid</code></td>
+<td>The run produced a usable output. <code>false</code> when the file was empty (or header-only), or when <code>rejectOnInvalidRow</code> is set and any row failed. When <code>false</code>, the output file has been <strong>deleted</strong> — don’t try to read it.</td>
+</tr>
+<tr>
+<td><code>withErrors</code></td>
+<td>At least one row failed validation. ⚠️ Independent of <code>valid</code>: a run can be <code>valid: true, withErrors: true</code> (bad rows were skipped, good rows were written).</td>
+</tr>
+<tr>
+<td><code>totalErrors</code></td>
+<td>Count of invalid rows.</td>
+</tr>
+<tr>
+<td><code>localOutputFile</code> / <code>localOutputFilename</code></td>
+<td>Absolute path / bare name of the output file. Empty if no row was ever written (lazy writer).</td>
+</tr>
+<tr>
+<td><code>localErrorReportFile</code> / <code>localErrorReportFilename</code></td>
+<td>Path / name of the error report. <strong>Empty strings unless <code>output.options.errorReport</code> is enabled</strong> (§4.3.1) — the report is opt-in. When enabled, the file only <strong>exists on disk</strong> when <code>totalErrors &gt; 0</code> (it is deleted when there were zero errors).</td>
+</tr>
+<tr>
+<td><code>metadata</code></td>
+<td>The first valid row’s parsed record merged with the <code>identifierMappings</code> projection (identifiers win on key collisions). Use it to correlate the file with entities in your application.</td>
+</tr>
+</tbody>
+</table>
+</div><p><strong>Errors vs. invalid results:</strong> validation failures do <strong>not</strong> return a Go<br>
+error / non-zero exit — they are reported through <code>Result</code>. A Go error (or a<br>
+non-zero exit with a message on stderr) means the run itself failed: local<br>
+file or blob not found, invalid/incomplete Azure auth, an S3 source (not yet<br>
+supported), unsupported writer kind, I/O failure. On that path both the<br>
+output and error-report files are force-deleted.</p>
+<h3 id="usage-guide-integrating-the-etl-utility-go-6-the-result-61-routing-failures-writererrorkind" class="docmd-heading"><a href="#usage-guide-integrating-the-etl-utility-go-6-the-result-61-routing-failures-writererrorkind" class="heading-anchor" aria-label="Permalink to this section"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-link2-icon lucide-link-2"><path d="M9 17H7A5 5 0 0 1 7 7h2m6 0h2a5 5 0 1 1 0 10h-2m-7-5h8"/></svg></a>6.1 Routing failures — <code>writer.ErrorKind</code></h3>
+<p>Errors returned from <code>etl.Run</code> are classified so a worker can decide what to do<br>
+without parsing error text. In-process, read it with <code>writer.KindOf(err)</code>:</p>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>Kind</th>
+<th>Meaning</th>
+<th>What to do</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>KindPermanent</code></td>
+<td>Retrying the same input fails identically: bad config, unrenderable template, malformed row, rejected request.</td>
+<td>Dead-letter. Don’t spend retries.</td>
+</tr>
+<tr>
+<td><code>KindTransient</code></td>
+<td>Could succeed on retry: throttling, 5xx, dropped connection, deadline. Nothing was committed.</td>
+<td>Retry with backoff.</td>
+</tr>
+<tr>
+<td><code>KindUnresolved</code></td>
+<td>The run failed <strong>and</strong> cleanup could not guarantee the destination was left clean.</td>
+<td>Reconcile / alert. <strong>Do not retry unattended.</strong></td>
+</tr>
+</tbody>
+</table>
+</div><pre class="hljs"><code class="language-go">res, err <span class="hljs-punctuation">:=</span> etl.<span class="hljs-title function_">Run</span>(cfg)
+<span class="hljs-keyword">if</span> err <span class="hljs-punctuation">!=</span> nil {
+    <span class="hljs-keyword">switch</span> writer.<span class="hljs-title function_">KindOf</span>(err) {
+    <span class="hljs-keyword">case</span> writer.<span class="hljs-attr">KindTransient</span><span class="hljs-punctuation">:</span>  <span class="hljs-comment">// requeue with backoff</span>
+    <span class="hljs-keyword">case</span> writer.<span class="hljs-attr">KindUnresolved</span><span class="hljs-punctuation">:</span> <span class="hljs-comment">// inspect the destination before retrying</span>
+    <span class="hljs-keyword">default</span><span class="hljs-punctuation">:</span>                    <span class="hljs-comment">// dead-letter</span>
+    }
+}
+</code></pre>
+<p><code>writer.IsRetryable(err)</code> is shorthand for the <code>KindTransient</code> case. Note it<br>
+returns <code>false</code> for <code>KindUnresolved</code>: that failure is <em>not</em> permanent, but<br>
+retrying it blind risks a duplicate or half-replaced document, so it needs a<br>
+human or a reconciliation pass.</p>
+<p>An error carrying no explicit kind is classified from its cause, and anything<br>
+unrecognized reports <code>KindPermanent</code> — an unknown failure isn’t proven safe to<br>
+retry.</p>
+<p>Your application is responsible for consuming and then removing the produced<br>
+files (uploading them, moving them, etc.) — the pipeline only deletes files on<br>
+the invalid/error paths.</p>
+<hr>
+<h2 id="usage-guide-integrating-the-etl-utility-go-7-operational-notes-for-integrators" class="docmd-heading"><a href="#usage-guide-integrating-the-etl-utility-go-7-operational-notes-for-integrators" class="heading-anchor" aria-label="Permalink to this section"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-link2-icon lucide-link-2"><path d="M9 17H7A5 5 0 0 1 7 7h2m6 0h2a5 5 0 1 1 0 10h-2m-7-5h8"/></svg></a>7. Operational notes for integrators</h2>
+<ul>
+<li><strong>Concurrency</strong>: each run writes <code>filename</code> into <code>path</code> (plus<br>
+<code>&lt;source-filename&gt;.error.txt</code> next to it when <code>errorReport</code> is enabled). If<br>
+your web app processes uploads concurrently, give each job a unique output<br>
+<code>path</code> (or a <code>filename</code> with <code>[timestamp]</code>) and unique source filenames to<br>
+avoid collisions.</li>
+<li><strong>Large files</strong>: the pipeline streams line by line with buffered writes, so<br>
+memory stays flat regardless of file size. Default-writer <code>uniqueKey</code><br>
+de-duplication is the exception — it keeps one map entry per distinct key<br>
+value. JSON output does not de-duplicate rows.</li>
+<li><strong>Output row endings</strong>: rows are newline-<em>prefixed</em> (the header is not), and<br>
+the footer is appended raw. The output has no trailing newline.</li>
+<li><strong>Azure Blob output</strong>: rows stream to the destination as they’re pushed<br>
+(via <code>io.Pipe</code> into the SDK’s block-blob <code>UploadStream</code>), symmetric with<br>
+the streaming blob <em>source</em> — output size isn’t bounded by memory. The blob<br>
+is only committed (visible to readers) when the run ends; a run that fails<br>
+before then leaves nothing visible at the destination.</li>
+<li><strong>Cleanup failures are surfaced, not swallowed</strong>: when a run fails<br>
+mid-stream (e.g. the source connection drops), the orchestrator’s forced<br>
+cleanup calls the writer’s <code>End()</code> <em>before</em> <code>Delete()</code> — so the partial<br>
+output is first committed, then deleted, rather than aborted in-flight. Every<br>
+cleanup step runs even if an earlier one failed, and all failures are joined<br>
+into the returned error. In the case where the commit succeeds and the<br>
+follow-up delete then fails, a stray blob remains at the destination <strong>and</strong><br>
+the run reports <code>KindUnresolved</code> (§6.1) — so route that kind to<br>
+reconciliation rather than a blind retry, which would write a second document<br>
+alongside the one that could not be removed. The blob URL is deterministic:<br>
+<code>url</code> + rendered <code>filename</code>.</li>
+<li><strong>Serverless deployments</strong>: the process is typically frozen or destroyed<br>
+right after a run returns, so there is no later pass to tidy up. Two<br>
+consequences: leave <code>output.options.errorReport</code> off (the default) unless you<br>
+actually collect the file, since warm containers share a small capped <code>/tmp</code><br>
+across invocations; and treat <code>KindUnresolved</code> as an alert rather than a<br>
+retry, because nothing else will clean up after it.</li>
+<li><strong>Not yet supported</strong> (explicit errors, planned per the design doc): S3<br>
+sources and destinations, JSON output to cloud destinations, Excel writers,<br>
+<code>PushIfExist</code>/file-index dedup variants, custom JS template functions, and<br>
+flags-only CLI mode.</li>
+</ul>
+<hr>
+<h2 id="usage-guide-integrating-the-etl-utility-go-8-testing-your-integration" class="docmd-heading"><a href="#usage-guide-integrating-the-etl-utility-go-8-testing-your-integration" class="heading-anchor" aria-label="Permalink to this section"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-link2-icon lucide-link-2"><path d="M9 17H7A5 5 0 0 1 7 7h2m6 0h2a5 5 0 1 1 0 10h-2m-7-5h8"/></svg></a>8. Testing your integration</h2>
+<pre class="hljs"><code class="language-bash"><span class="hljs-keyword">cd</span> <span class="hljs-keyword">go</span>
+<span class="hljs-keyword">go</span> build .<span class="hljs-punctuation">/</span>...   <span class="hljs-comment"># build everything</span>
+<span class="hljs-keyword">go</span> test .<span class="hljs-punctuation">/</span>...    <span class="hljs-comment"># unit + e2e pipeline tests</span>
+
+<span class="hljs-comment"># Smoke-test the binary with your own config:</span>
+<span class="hljs-keyword">go</span> build <span class="hljs-punctuation">-</span>o .<span class="hljs-punctuation">/</span>bin<span class="hljs-punctuation">/</span>etl .<span class="hljs-punctuation">/</span>cmd
+<span class="hljs-keyword">printf</span> <span class="hljs-string">&#039;BARCODE,SKU,NAME\n123,A1,Widget\n&#039;</span> <span class="hljs-punctuation">&gt;</span> <span class="hljs-punctuation">/</span>tmp<span class="hljs-punctuation">/</span><span class="hljs-keyword">in</span>.<span class="hljs-attr">csv</span>
+.<span class="hljs-punctuation">/</span>etl <span class="hljs-punctuation">-</span><span class="hljs-keyword">source</span> <span class="hljs-punctuation">/</span>tmp<span class="hljs-punctuation">/</span><span class="hljs-keyword">in</span>.<span class="hljs-attr">csv</span> <span class="hljs-punctuation">-</span>config your<span class="hljs-punctuation">-</span>config.<span class="hljs-attr">json</span>
+</code></pre>
+<p>Runnable reference configs (local object form and every Azure Blob auth mode)<br>
+are under <a href="../../../../../../samples/"><code>samples/</code></a> at the repo root — see<br>
+<a href="../../../../../../samples/"><code>samples/README.md</code></a>.</p>
+<p>For deployment-specific commands, including Lambda zip packaging, running the<br>
+HTTP server, and compiling the CLI binary, see<br>
+<a href="../../../../../deployment-guide/">deployment-guide.md</a>.</p>
+
+                
+                  <div class="page-navigation">
+                    
+                      <a href="../../../../docmd/okf/concepts/source-file-improvement/" class="prev-page">
+                        
+<svg class="lucide-icon icon-arrow-left page-nav-icon" width="1em" height="1em" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"
+  class="lucide lucide-arrow-left"
+  xmlns="http://www.w3.org/2000/svg"
+  width="24"
+  height="24"
+  viewBox="0 0 24 24"
+  fill="none"
+  stroke="currentColor"
+  stroke-width="2"
+  stroke-linecap="round"
+  stroke-linejoin="round"
+>
+  <path d="m12 19-7-7 7-7" />
+  <path d="M19 12H5" />
+</svg>
+
+                        <span><small>Previous</small><strong>
+                            Source File Improvement Plan
+                          </strong></span>
+                      </a>
+                    
+                    
+                      <div class="next-page-placeholder">
+                      </div>
+                    
+                  </div>
+                
+              </div>
+              <div class="toc-sidebar">
+                
+
+
+  <div class="toc-container">
+    <h2 class="toc-title">On This Page<span class="mobile-view toc-menu-button float-right">
+<svg class="lucide-icon icon-chevron-down " width="1em" height="1em" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"
+  class="lucide lucide-chevron-down"
+  xmlns="http://www.w3.org/2000/svg"
+  width="24"
+  height="24"
+  viewBox="0 0 24 24"
+  fill="none"
+  stroke="currentColor"
+  stroke-width="2"
+  stroke-linecap="round"
+  stroke-linejoin="round"
+>
+  <path d="m6 9 6 6 6-6" />
+</svg>
+</span></h2>
+    <ul class="toc-list">
+      
+        <li class="toc-item toc-level-1">
+          <a href="#usage-guide-integrating-the-etl-utility-go" class="toc-link">Usage Guide — Integrating the ETL Utility (Go)</a>
+        </li>
+      
+        <li class="toc-item toc-level-2">
+          <a href="#usage-guide-integrating-the-etl-utility-go-1-what-it-does" class="toc-link">1. What it does</a>
+        </li>
+      
+        <li class="toc-item toc-level-2">
+          <a href="#usage-guide-integrating-the-etl-utility-go-2-integration-surfaces" class="toc-link">2. Integration surfaces</a>
+        </li>
+      
+        <li class="toc-item toc-level-2">
+          <a href="#usage-guide-integrating-the-etl-utility-go-3-quick-start" class="toc-link">3. Quick start</a>
+        </li>
+      
+        <li class="toc-item toc-level-3">
+          <a href="#usage-guide-integrating-the-etl-utility-go-3-quick-start-31-in-process-from-a-go-web-application" class="toc-link">3.1 In-process from a Go web application</a>
+        </li>
+      
+        <li class="toc-item toc-level-3">
+          <a href="#usage-guide-integrating-the-etl-utility-go-3-quick-start-32-spawning-the-binary-nodejs-example" class="toc-link">3.2 Spawning the binary (Node.js example)</a>
+        </li>
+      
+        <li class="toc-item toc-level-3">
+          <a href="#usage-guide-integrating-the-etl-utility-go-3-quick-start-33-cli-config-file-shape" class="toc-link">3.3 CLI config file shape</a>
+        </li>
+      
+        <li class="toc-item toc-level-2">
+          <a href="#usage-guide-integrating-the-etl-utility-go-4-parameter-reference" class="toc-link">4. Parameter reference</a>
+        </li>
+      
+        <li class="toc-item toc-level-3">
+          <a href="#usage-guide-integrating-the-etl-utility-go-4-parameter-reference-41-source" class="toc-link">4.1 Source</a>
+        </li>
+      
+        <li class="toc-item toc-level-3">
+          <a href="#usage-guide-integrating-the-etl-utility-go-4-parameter-reference-42-line-rules-line-linelineconfig" class="toc-link">4.2 Line rules — line / line.LineConfig</a>
+        </li>
+      
+        <li class="toc-item toc-level-3">
+          <a href="#usage-guide-integrating-the-etl-utility-go-4-parameter-reference-43-output-definition-output-writeroutputconfig" class="toc-link">4.3 Output definition — output / writer.OutputConfig</a>
+        </li>
+      
+        <li class="toc-item toc-level-4">
+          <a href="#usage-guide-integrating-the-etl-utility-go-4-parameter-reference-43-output-definition-output-writeroutputconfig-431-writer-toggles-outputoptions" class="toc-link">4.3.1 Writer toggles — output.options</a>
+        </li>
+      
+        <li class="toc-item toc-level-3">
+          <a href="#usage-guide-integrating-the-etl-utility-go-4-parameter-reference-44-ordered-mappings-why-arrays-not-objects" class="toc-link">4.4 Ordered mappings — why arrays, not objects</a>
+        </li>
+      
+        <li class="toc-item toc-level-3">
+          <a href="#usage-guide-integrating-the-etl-utility-go-4-parameter-reference-45-run-behavior-options-etloptions" class="toc-link">4.5 Run behavior — options / etl.Options</a>
+        </li>
+      
+        <li class="toc-item toc-level-2">
+          <a href="#usage-guide-integrating-the-etl-utility-go-5-templating-reference" class="toc-link">5. Templating reference</a>
+        </li>
+      
+        <li class="toc-item toc-level-3">
+          <a href="#usage-guide-integrating-the-etl-utility-go-5-templating-reference-path-value-substitution" class="toc-link">{path} — value substitution</a>
+        </li>
+      
+        <li class="toc-item toc-level-3">
+          <a href="#usage-guide-integrating-the-etl-utility-go-5-templating-reference-func-arg-computed-tokens" class="toc-link">[func arg ...] — computed tokens</a>
+        </li>
+      
+        <li class="toc-item toc-level-2">
+          <a href="#usage-guide-integrating-the-etl-utility-go-6-the-result" class="toc-link">6. The result</a>
+        </li>
+      
+        <li class="toc-item toc-level-3">
+          <a href="#usage-guide-integrating-the-etl-utility-go-6-the-result-61-routing-failures-writererrorkind" class="toc-link">6.1 Routing failures — writer.ErrorKind</a>
+        </li>
+      
+        <li class="toc-item toc-level-2">
+          <a href="#usage-guide-integrating-the-etl-utility-go-7-operational-notes-for-integrators" class="toc-link">7. Operational notes for integrators</a>
+        </li>
+      
+        <li class="toc-item toc-level-2">
+          <a href="#usage-guide-integrating-the-etl-utility-go-8-testing-your-integration" class="toc-link">8. Testing your integration</a>
+        </li>
+      
+    </ul>
+  </div>
+
+              </div>
+            </div>
+            <div class="page-footer-actions">
+              
+              
+              <span class="git-spacer"></span>
+              
+            </div>
+          </main>
+          
+
+
+<footer class="page-footer">
+  <div class="footer-content">
+    <div class="user-footer">© 2026</div>
+    
+      <div class="branding-footer">
+        Built with <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"></path><path d="M12 5 9.04 7.96a2.17 2.17 0 0 0 0 3.08c.82.82 2.13.85 3 .07l2.07-1.9a2.82 2.82 0 0 1 3.79 0l2.96 2.66"></path><path d="m18 15-2-2"></path><path d="m15 18-2-2"></path></svg> <a href="https://docmd.io" target="_blank" rel="noopener">docmd.</a>
+      </div>
+    
+  </div>
+</footer>
+
+        </div>
+      </div>
+      
+      <script src="../../../../assets/js/docmd-main.js?v=mrt8jbbm"></script>
+      
+      <script src="../../../../assets/js/docmd-git.js?v=mrt8jbbm"></script>
+      <script src="../../../../assets/js/docmd-image-lightbox.js?v=mrt8jbbm" ></script>
+<script src="../../../../assets/js/vendor/minisearch.js?v=mrt8jbbm" ></script>
+<script src="../../../../assets/js/docmd-search.js?v=mrt8jbbm" ></script>
+<script src="../../../../assets/js/docmd-git.js?v=mrt8jbbm" type="module"></script>
+
+  <!-- Search Modal (Injected by @docmd/plugin-search) -->
+  <div id="docmd-search-modal" class="docmd-search-modal" style="display: none;" data-show-confidence="false" data-show-filters="true"
+       data-search-placeholder="Search documentation..."
+       data-search-no-results="No results found."
+       data-search-error="Failed to load search index."
+       data-search-offline="Search requires a web server. Open this site via http://localhost instead of file:// to enable search."
+       data-search-initial="Type to start searching..."
+       data-search-navigate="to navigate"
+       data-search-escape="to close">
+      <div class="docmd-search-box">
+          <div class="docmd-search-header">
+              <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide-icon icon-search"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg>
+              <input type="text" id="docmd-search-input" placeholder="Search documentation..." autocomplete="off" spellcheck="false">
+              <button onclick="window.closeDocmdSearch()" class="docmd-search-close" aria-label="Close search">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide-icon icon-x"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg>
+              </button>
+          </div>
+          <div id="docmd-search-results" class="docmd-search-results"></div>
+          <div class="docmd-search-footer">
+              <span><kbd class="docmd-kbd">↑</kbd> <kbd class="docmd-kbd">↓</kbd> to navigate</span>
+              <span><kbd class="docmd-kbd">ESC</kbd> to close</span>
+          </div>
+      </div>
+  </div>
+
+    <script>
+      (function() {
+        var searchDebounceTimer;
+
+        document.addEventListener('click', function(e) {
+          var link = e.target.closest('a');
+          if (!link || !window.gtag) return;
+          
+          var url = link.href;
+          var hostname = window.location.hostname;
+          var isExternal = link.hostname && link.hostname !== hostname;
+          var isDownload = link.hasAttribute('download') || url.match(/\.(pdf|zip|tar|gz|exe|pkg)$/i);
+          
+          if (isExternal) {
+            gtag('event', 'click_external', { 'url': url, 'link_text': link.innerText.trim() });
+          } else if (isDownload) {
+            gtag('event', 'download', { 'file_name': url.split('/').pop(), 'url': url });
+          }
+
+          // TOC tracking
+          if (link.classList.contains('toc-link')) {
+            gtag('event', 'toc_click', { 'target_id': link.getAttribute('href'), 'title': link.innerText.trim() });
+          }
+
+          // Permalink tracking
+          if (link.classList.contains('heading-anchor')) {
+            gtag('event', 'permalink_click', { 'url': url });
+          }
+        });
+
+        
+        // Search Keyword Tracking
+        document.addEventListener('input', function(e) {
+          if (e.target.id === 'docmd-search-input' && window.gtag) {
+            var query = e.target.value.trim();
+            if (query.length < 3) return;
+            
+            clearTimeout(searchDebounceTimer);
+            searchDebounceTimer = setTimeout(function() {
+              gtag('event', 'search', { 'search_term': query });
+            }, 1000);
+          }
+        });
+        
+      })();
+    </script>
+
+<script>window.__git_config={"repo":null,"branch":"main","editLink":false,"lastUpdated":true,"commitHistory":true,"maxCommits":5,"dateFormat":"relative"};window.__git_i18n={"lastUpdated":"Last updated","recentCommits":"Recent commits","viewCommitHistory":"View commit history","editOnGitHub":"Edit on GitHub","editOnGitLab":"Edit on GitLab","editOnBitbucket":"Edit on Bitbucket","editThisPage":"Edit this page","justNow":"just now","minutesAgo":"{n}m ago","hoursAgo":"{n}h ago","daysAgo":"{n}d ago"}</script>
+      
+      
+      
+  </body>
+</html>

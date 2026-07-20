@@ -1,0 +1,138 @@
+{
+  "title": "Documentation",
+  "description": "",
+  "pages": [
+    {
+      "title": "Agent Instructions: Documentation Scope",
+      "url": "/AGENTS/",
+      "description": "",
+      "priority": "medium"
+    },
+    {
+      "title": "Backlog",
+      "url": "/backlogs/",
+      "description": "",
+      "priority": "medium"
+    },
+    {
+      "title": "Deployment Guide — ETL Utility",
+      "url": "/deployment-guide/",
+      "description": "",
+      "priority": "medium"
+    },
+    {
+      "title": "Untitled",
+      "url": "/docmd/",
+      "description": "",
+      "priority": "medium"
+    },
+    {
+      "title": "Agent Instructions: Documentation Scope",
+      "url": "/docmd/okf/concepts/agents/",
+      "description": "",
+      "priority": "medium"
+    },
+    {
+      "title": "Backlog",
+      "url": "/docmd/okf/concepts/backlogs/",
+      "description": "",
+      "priority": "medium"
+    },
+    {
+      "title": "Deployment Guide — ETL Utility",
+      "url": "/docmd/okf/concepts/deployment-guide/",
+      "description": "",
+      "priority": "medium"
+    },
+    {
+      "title": "ETL Utility — Code Review & Go Implementation Design",
+      "url": "/docmd/okf/concepts/etl-code-review-and-go-des/",
+      "description": "",
+      "priority": "medium"
+    },
+    {
+      "title": "Go JSON Generator — Recommended Design",
+      "url": "/docmd/okf/concepts/go-json-generator-design/",
+      "description": "",
+      "priority": "medium"
+    },
+    {
+      "title": "Migration Process — TypeScript ETL → Go",
+      "url": "/docmd/okf/concepts/migration-process/",
+      "description": "",
+      "priority": "medium"
+    },
+    {
+      "title": "Output File Improvement Plan",
+      "url": "/docmd/okf/concepts/output-file-improvement/",
+      "description": "",
+      "priority": "medium"
+    },
+    {
+      "title": "Documentation",
+      "url": "/docmd/okf/concepts/root/",
+      "description": "",
+      "priority": "medium"
+    },
+    {
+      "title": "Source File Improvement Plan",
+      "url": "/docmd/okf/concepts/source-file-improvement/",
+      "description": "",
+      "priority": "medium"
+    },
+    {
+      "title": "Usage Guide — Integrating the ETL Utility (Go)",
+      "url": "/docmd/okf/concepts/usage/",
+      "description": "",
+      "priority": "medium"
+    },
+    {
+      "title": ". — Knowledge Catalog",
+      "url": "/docmd/okf/",
+      "description": "",
+      "priority": "medium"
+    },
+    {
+      "title": "ETL Utility — Code Review & Go Implementation Design",
+      "url": "/etl-code-review-and-go-des/",
+      "description": "",
+      "priority": "medium"
+    },
+    {
+      "title": "Go JSON Generator — Recommended Design",
+      "url": "/go-json-generator-design/",
+      "description": "",
+      "priority": "medium"
+    },
+    {
+      "title": "Documentation",
+      "url": "/",
+      "description": "",
+      "priority": "high"
+    },
+    {
+      "title": "Migration Process — TypeScript ETL → Go",
+      "url": "/migration-process/",
+      "description": "",
+      "priority": "medium"
+    },
+    {
+      "title": "Output File Improvement Plan",
+      "url": "/output-file-improvement/",
+      "description": "",
+      "priority": "medium"
+    },
+    {
+      "title": "Source File Improvement Plan",
+      "url": "/source-file-improvement/",
+      "description": "",
+      "priority": "medium"
+    },
+    {
+      "title": "Usage Guide — Integrating the ETL Utility (Go)",
+      "url": "/usage/",
+      "description": "",
+      "priority": "medium"
+    }
+  ]
+}

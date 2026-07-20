@@ -1,0 +1,1634 @@
+<!--
+  ---------------------------------------------------------------
+  docmd : the zero-config documentation engine.
+  @website https://docmd.io
+  [docmd-source] - Please do not remove this header.
+  ---------------------------------------------------------------
+-->
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="generator" content="docmd v0.8.16">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script>/**
+ * --------------------------------------------------------------------
+ * docmd : the zero-config documentation engine.
+ *
+ * @package     @docmd/core (and ecosystem)
+ * @website     https://docmd.io
+ * @repository  https://github.com/docmd-io/docmd
+ * @license     MIT
+ * @copyright   Copyright (c) 2025-present docmd.io
+ *
+ * [docmd-source] - Please do not remove this header.
+ * --------------------------------------------------------------------
+ */
+
+(function () {
+  try {
+    // 1. Determine Theme
+    //
+    // Resolve from three sources, in priority order:
+    //   1. localStorage explicit user choice (light / dark)
+    //   2. window.DOCMD_APPEARANCE  (current canonical name, set by EJS templates)
+    //   3. window.DOCMD_DEFAULT_MODE (legacy alias kept for pre-0.8.7 outputs)
+    //   4. 'light' as the final fallback
+    //
+    // Note: localStorage is only honoured when it holds an explicit
+    // 'light' or 'dark' value. A stored 'system' value (from a prior
+    // session where the user picked "follow system") must NOT win over
+    // a freshly resolved config value — the resolved value will itself
+    // be 'system' in that case and the OS preference check below takes
+    // over, so this is a no-op for the in-session behaviour but keeps
+    // any future storage migration simple.
+    var localValue = localStorage.getItem('docmd-theme');
+    var configValue = window.DOCMD_APPEARANCE
+      || window.DOCMD_DEFAULT_MODE
+      || 'light';
+    var theme = (localValue === 'light' || localValue === 'dark')
+      ? localValue
+      : configValue;
+
+    if (theme === 'system') {
+      theme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    }
+
+    // 2. Apply to Root
+    document.documentElement.setAttribute('data-theme', theme);
+
+    // 3. Highlight.js Toggle Strategy
+    var lightLink = document.getElementById('hljs-light');
+    var darkLink = document.getElementById('hljs-dark');
+
+    if (lightLink && darkLink) {
+      if (theme === 'dark') {
+        lightLink.disabled = true;
+        darkLink.disabled = false;
+      } else {
+        lightLink.disabled = false;
+        darkLink.disabled = true;
+      }
+    }
+
+    document.documentElement.style.visibility = "visible";
+  } catch (e) {
+    document.documentElement.style.visibility = "visible";
+    console.error('Theme init failed', e);
+  }
+})();</script>
+    <style>
+      html {
+        visibility: hidden;
+      }
+    </style>
+    
+    <script>
+      var root = "../";
+      if (root && !root.endsWith('/')) root += '/';
+      if (root === '') root = './';
+      window.DOCMD_ROOT = root;
+
+      window.DOCMD_SITE_ROOT = "/";
+
+      window.DOCMD_APPEARANCE = "system";
+      window.DOCMD_VERSION_ROOT = "/";
+      window.DOCMD_BASE = "/";
+      window.DOCMD_LOCALE = "";
+      window.DOCMD_DEFAULT_LOCALE = "";
+    </script>
+    <title>
+      ETL Utility — Code Review &amp; Go Implementation Design : Documentation
+    </title>
+    
+    
+
+    <link id="site-favicon" rel="icon" href="../assets/favicon.ico?v=mrt8jbbm">
+    <link rel="stylesheet" href="../assets/css/docmd-main.css?v=mrt8jbbm">
+    
+    <link rel="stylesheet" href="../assets/css/docmd-highlight-light.css?v=mrt8jbbm" id="hljs-light" >
+    <link rel="stylesheet" href="../assets/css/docmd-highlight-dark.css?v=mrt8jbbm" id="hljs-dark" disabled>
+    
+    
+<meta name="description" content="">
+<meta property="og:title" content="ETL Utility — Code Review &amp; Go Implementation Design - Documentation">
+<meta property="og:description" content="">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="ETL Utility — Code Review &amp; Go Implementation Design - Documentation">
+<meta name="twitter:description" content="">
+
+
+
+<link rel="stylesheet" href="../assets/css/docmd-git.css?v=mrt8jbbm" >
+<link rel="stylesheet" href="../assets/css/docmd-openapi.css?v=mrt8jbbm" >
+
+    
+    <script>/**
+ * --------------------------------------------------------------------
+ * docmd : the zero-config documentation engine.
+ *
+ * @package     @docmd/core (and ecosystem)
+ * @website     https://docmd.io
+ * @repository  https://github.com/docmd-io/docmd
+ * @license     MIT
+ * @copyright   Copyright (c) 2025-present docmd.io
+ *
+ * [docmd-source] - Please do not remove this header.
+ * --------------------------------------------------------------------
+ */
+
+(function () {
+  try {
+    // 1. Determine Theme
+    //
+    // Resolve from three sources, in priority order:
+    //   1. localStorage explicit user choice (light / dark)
+    //   2. window.DOCMD_APPEARANCE  (current canonical name, set by EJS templates)
+    //   3. window.DOCMD_DEFAULT_MODE (legacy alias kept for pre-0.8.7 outputs)
+    //   4. 'light' as the final fallback
+    //
+    // Note: localStorage is only honoured when it holds an explicit
+    // 'light' or 'dark' value. A stored 'system' value (from a prior
+    // session where the user picked "follow system") must NOT win over
+    // a freshly resolved config value — the resolved value will itself
+    // be 'system' in that case and the OS preference check below takes
+    // over, so this is a no-op for the in-session behaviour but keeps
+    // any future storage migration simple.
+    var localValue = localStorage.getItem('docmd-theme');
+    var configValue = window.DOCMD_APPEARANCE
+      || window.DOCMD_DEFAULT_MODE
+      || 'light';
+    var theme = (localValue === 'light' || localValue === 'dark')
+      ? localValue
+      : configValue;
+
+    if (theme === 'system') {
+      theme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    }
+
+    // 2. Apply to Root
+    document.documentElement.setAttribute('data-theme', theme);
+
+    // 3. Highlight.js Toggle Strategy
+    var lightLink = document.getElementById('hljs-light');
+    var darkLink = document.getElementById('hljs-dark');
+
+    if (lightLink && darkLink) {
+      if (theme === 'dark') {
+        lightLink.disabled = true;
+        darkLink.disabled = false;
+      } else {
+        lightLink.disabled = false;
+        darkLink.disabled = true;
+      }
+    }
+
+    document.documentElement.style.visibility = "visible";
+  } catch (e) {
+    document.documentElement.style.visibility = "visible";
+    console.error('Theme init failed', e);
+  }
+})();</script>
+  </head>
+  <body
+    class="sidebar-collapsible"
+    data-default-collapsed="false"
+    data-copy-code-enabled="true" data-spa-enabled="true" data-source-file="../etl-code-review-and-go-des.md">
+
+    <a href="#main-content" class="skip-link">Skip to main content</a>
+
+    
+    
+      <aside class="sidebar">
+        <div class="sidebar-header">
+          
+<h1><a href="../">
+                Documentation
+              </a></h1>
+          
+          <span class="mobile-view sidebar-menu-button float-right">
+            
+<svg class="lucide-icon icon-menu " width="1em" height="1em" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"
+  class="lucide lucide-menu"
+  xmlns="http://www.w3.org/2000/svg"
+  width="24"
+  height="24"
+  viewBox="0 0 24 24"
+  fill="none"
+  stroke="currentColor"
+  stroke-width="2"
+  stroke-linecap="round"
+  stroke-linejoin="round"
+>
+  <path d="M4 5h16" />
+  <path d="M4 12h16" />
+  <path d="M4 19h16" />
+</svg>
+
+          </span>
+        </div>
+        <div class="sidebar-top-group">
+          
+          
+          
+          
+        </div>
+        
+
+<nav class="sidebar-nav" aria-label="Main Navigation">
+  <ul>
+    
+      <li class="" >
+      
+        <a href="../" class=" "
+          >
+          
+          <span class="nav-item-title">
+            Documentation
+            </span>
+          
+          
+        </a>
+        
+
+        
+      </li>
+    
+      <li class="" >
+      
+        <a href="../AGENTS/" class=" "
+          >
+          
+          <span class="nav-item-title">
+            Agent Instructions: Documentation Scope
+            </span>
+          
+          
+        </a>
+        
+
+        
+      </li>
+    
+      <li class="" >
+      
+        <a href="../backlogs/" class=" "
+          >
+          
+          <span class="nav-item-title">
+            Backlog
+            </span>
+          
+          
+        </a>
+        
+
+        
+      </li>
+    
+      <li class="" >
+      
+        <a href="../deployment-guide/" class=" "
+          >
+          
+          <span class="nav-item-title">
+            Deployment Guide — ETL Utility
+            </span>
+          
+          
+        </a>
+        
+
+        
+      </li>
+    
+      <li class="active" >
+      
+        <a href="../etl-code-review-and-go-des/" class="active "
+          >
+          
+          <span class="nav-item-title">
+            ETL Utility — Code Review &amp; Go Implementation Design
+            </span>
+          
+          
+        </a>
+        
+
+        
+      </li>
+    
+      <li class="" >
+      
+        <a href="../go-json-generator-design/" class=" "
+          >
+          
+          <span class="nav-item-title">
+            Go JSON Generator — Recommended Design
+            </span>
+          
+          
+        </a>
+        
+
+        
+      </li>
+    
+      <li class="" >
+      
+        <a href="../migration-process/" class=" "
+          >
+          
+          <span class="nav-item-title">
+            Migration Process — TypeScript ETL → Go
+            </span>
+          
+          
+        </a>
+        
+
+        
+      </li>
+    
+      <li class="" >
+      
+        <a href="../output-file-improvement/" class=" "
+          >
+          
+          <span class="nav-item-title">
+            Output File Improvement Plan
+            </span>
+          
+          
+        </a>
+        
+
+        
+      </li>
+    
+      <li class="" >
+      
+        <a href="../source-file-improvement/" class=" "
+          >
+          
+          <span class="nav-item-title">
+            Source File Improvement Plan
+            </span>
+          
+          
+        </a>
+        
+
+        
+      </li>
+    
+      <li class="" >
+      
+        <a href="../usage/" class=" "
+          >
+          
+          <span class="nav-item-title">
+            Usage Guide — Integrating the ETL Utility (Go)
+            </span>
+          
+          
+        </a>
+        
+
+        
+      </li>
+    
+      <li class="collapsible nav-group"  aria-expanded="false" >
+      
+        <span class="nav-label nav-group">
+          
+          <span class="nav-item-title">
+            Docmd
+          </span>
+          
+            <span class="collapse-icon-wrapper">
+<svg class="lucide-icon icon-chevron-right collapse-icon" width="1em" height="1em" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"
+  class="lucide lucide-chevron-right"
+  xmlns="http://www.w3.org/2000/svg"
+  width="24"
+  height="24"
+  viewBox="0 0 24 24"
+  fill="none"
+  stroke="currentColor"
+  stroke-width="2"
+  stroke-linecap="round"
+  stroke-linejoin="round"
+>
+  <path d="m9 18 6-6-6-6" />
+</svg>
+</span>
+          
+        </span>
+        
+
+        
+          <ul class="submenu">
+            
+      <li class="" >
+      
+        <a href="../docmd" class=" "
+          >
+          
+          <span class="nav-item-title">
+            README
+            </span>
+          
+          
+        </a>
+        
+
+        
+      </li>
+    
+      <li class="collapsible nav-group"  aria-expanded="false" >
+      
+        <span class="nav-label nav-group">
+          
+          <span class="nav-item-title">
+            Okf
+          </span>
+          
+            <span class="collapse-icon-wrapper">
+<svg class="lucide-icon icon-chevron-right collapse-icon" width="1em" height="1em" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"
+  class="lucide lucide-chevron-right"
+  xmlns="http://www.w3.org/2000/svg"
+  width="24"
+  height="24"
+  viewBox="0 0 24 24"
+  fill="none"
+  stroke="currentColor"
+  stroke-width="2"
+  stroke-linecap="round"
+  stroke-linejoin="round"
+>
+  <path d="m9 18 6-6-6-6" />
+</svg>
+</span>
+          
+        </span>
+        
+
+        
+          <ul class="submenu">
+            
+      <li class="" >
+      
+        <a href="../docmd/okf" class=" "
+          >
+          
+          <span class="nav-item-title">
+            . — Knowledge Catalog
+            </span>
+          
+          
+        </a>
+        
+
+        
+      </li>
+    
+      <li class="collapsible nav-group"  aria-expanded="false" >
+      
+        <span class="nav-label nav-group">
+          
+          <span class="nav-item-title">
+            Concepts
+          </span>
+          
+            <span class="collapse-icon-wrapper">
+<svg class="lucide-icon icon-chevron-right collapse-icon" width="1em" height="1em" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"
+  class="lucide lucide-chevron-right"
+  xmlns="http://www.w3.org/2000/svg"
+  width="24"
+  height="24"
+  viewBox="0 0 24 24"
+  fill="none"
+  stroke="currentColor"
+  stroke-width="2"
+  stroke-linecap="round"
+  stroke-linejoin="round"
+>
+  <path d="m9 18 6-6-6-6" />
+</svg>
+</span>
+          
+        </span>
+        
+
+        
+          <ul class="submenu">
+            
+      <li class="" >
+      
+        <a href="../docmd/okf/concepts/agents/" class=" "
+          >
+          
+          <span class="nav-item-title">
+            Agent Instructions: Documentation Scope
+            </span>
+          
+          
+        </a>
+        
+
+        
+      </li>
+    
+      <li class="" >
+      
+        <a href="../docmd/okf/concepts/backlogs/" class=" "
+          >
+          
+          <span class="nav-item-title">
+            Backlog
+            </span>
+          
+          
+        </a>
+        
+
+        
+      </li>
+    
+      <li class="" >
+      
+        <a href="../docmd/okf/concepts/deployment-guide/" class=" "
+          >
+          
+          <span class="nav-item-title">
+            Deployment Guide — ETL Utility
+            </span>
+          
+          
+        </a>
+        
+
+        
+      </li>
+    
+      <li class="" >
+      
+        <a href="../docmd/okf/concepts/root/" class=" "
+          >
+          
+          <span class="nav-item-title">
+            Documentation
+            </span>
+          
+          
+        </a>
+        
+
+        
+      </li>
+    
+      <li class="" >
+      
+        <a href="../docmd/okf/concepts/etl-code-review-and-go-des/" class=" "
+          >
+          
+          <span class="nav-item-title">
+            ETL Utility — Code Review &amp; Go Implementation Design
+            </span>
+          
+          
+        </a>
+        
+
+        
+      </li>
+    
+      <li class="" >
+      
+        <a href="../docmd/okf/concepts/go-json-generator-design/" class=" "
+          >
+          
+          <span class="nav-item-title">
+            Go JSON Generator — Recommended Design
+            </span>
+          
+          
+        </a>
+        
+
+        
+      </li>
+    
+      <li class="" >
+      
+        <a href="../docmd/okf/concepts/migration-process/" class=" "
+          >
+          
+          <span class="nav-item-title">
+            Migration Process — TypeScript ETL → Go
+            </span>
+          
+          
+        </a>
+        
+
+        
+      </li>
+    
+      <li class="" >
+      
+        <a href="../docmd/okf/concepts/output-file-improvement/" class=" "
+          >
+          
+          <span class="nav-item-title">
+            Output File Improvement Plan
+            </span>
+          
+          
+        </a>
+        
+
+        
+      </li>
+    
+      <li class="" >
+      
+        <a href="../docmd/okf/concepts/source-file-improvement/" class=" "
+          >
+          
+          <span class="nav-item-title">
+            Source File Improvement Plan
+            </span>
+          
+          
+        </a>
+        
+
+        
+      </li>
+    
+      <li class="" >
+      
+        <a href="../docmd/okf/concepts/usage/" class=" "
+          >
+          
+          <span class="nav-item-title">
+            Usage Guide — Integrating the ETL Utility (Go)
+            </span>
+          
+          
+        </a>
+        
+
+        
+      </li>
+    
+          </ul>
+        
+      </li>
+    
+          </ul>
+        
+      </li>
+    
+          </ul>
+        
+      </li>
+    
+  </ul>
+</nav>
+        <div class="sidebar-bottom-group mt-auto">
+          
+          
+          
+          
+        </div>
+      </aside>
+      
+      
+      
+      <div class="main-content-wrapper">
+        
+        
+          <header class="page-header">
+            <div class="header-left">
+              
+                <button id="sidebar-toggle-button" class="sidebar-toggle-button"
+                  aria-label="Toggle Sidebar">
+                  
+<svg class="lucide-icon icon-chevron-left " width="1em" height="1em" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"
+  class="lucide lucide-chevron-left"
+  xmlns="http://www.w3.org/2000/svg"
+  width="24"
+  height="24"
+  viewBox="0 0 24 24"
+  fill="none"
+  stroke="currentColor"
+  stroke-width="2"
+  stroke-linecap="round"
+  stroke-linejoin="round"
+>
+  <path d="m15 18-6-6 6-6" />
+</svg>
+
+                </button>
+              
+              <div class="header-titles-wrapper">
+                <span class="header-title">
+                  ETL Utility — Code Review &amp; Go Implementation Design
+                </span>
+              </div>
+            </div>
+            <div class="header-right">
+              
+                
+
+
+<div class="docmd-options-menu">
+    
+    <button class="docmd-search-trigger" aria-label="Search">
+        
+<svg class="lucide-icon icon-search " width="1em" height="1em" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"
+  class="lucide lucide-search"
+  xmlns="http://www.w3.org/2000/svg"
+  width="24"
+  height="24"
+  viewBox="0 0 24 24"
+  fill="none"
+  stroke="currentColor"
+  stroke-width="2"
+  stroke-linecap="round"
+  stroke-linejoin="round"
+>
+  <path d="m21 21-4.34-4.34" />
+  <circle cx="11" cy="11" r="8" />
+</svg>
+
+        <span class="search-label">Search</span>
+        <span class="search-keys"><kbd class="docmd-kbd">⌘</kbd><kbd class="docmd-kbd">K</kbd></span>
+    </button>
+    
+
+    
+
+    
+
+    
+    <button class="theme-toggle-button" aria-label="Toggle theme">
+        
+<svg class="lucide-icon icon-sun icon-sun" width="1em" height="1em" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"
+  class="lucide lucide-sun"
+  xmlns="http://www.w3.org/2000/svg"
+  width="24"
+  height="24"
+  viewBox="0 0 24 24"
+  fill="none"
+  stroke="currentColor"
+  stroke-width="2"
+  stroke-linecap="round"
+  stroke-linejoin="round"
+>
+  <circle cx="12" cy="12" r="4" />
+  <path d="M12 2v2" />
+  <path d="M12 20v2" />
+  <path d="m4.93 4.93 1.41 1.41" />
+  <path d="m17.66 17.66 1.41 1.41" />
+  <path d="M2 12h2" />
+  <path d="M20 12h2" />
+  <path d="m6.34 17.66-1.41 1.41" />
+  <path d="m19.07 4.93-1.41 1.41" />
+</svg>
+ 
+<svg class="lucide-icon icon-moon icon-moon" width="1em" height="1em" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"
+  class="lucide lucide-moon"
+  xmlns="http://www.w3.org/2000/svg"
+  width="24"
+  height="24"
+  viewBox="0 0 24 24"
+  fill="none"
+  stroke="currentColor"
+  stroke-width="2"
+  stroke-linecap="round"
+  stroke-linejoin="round"
+>
+  <path d="M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401" />
+</svg>
+
+    </button>
+    
+
+    
+</div>
+
+              
+            </div>
+          </header>
+        
+        <div class="content-theme-cover">
+          <main class="content-area" id="main-content">
+            <div class="content-layout">
+              <div class="main-content">
+                <div class="docmd-breadcrumbs-row">
+                  <div id="docmd-raw-markdown" data-content="%23%20ETL%20Utility%20%E2%80%94%20Code%20Review%20%26%20Go%20Implementation%20Design%0A%0A%3E%20Reference%20notes%20for%20the%20streaming%20flat-file%20ETL%20pipeline.%0A%3E%20Covers%20(1)%20a%20review%20of%20the%20TypeScript%20%60ETL%60%20class%20and%20(2)%20the%20design%20of%20the%20Go%0A%3E%20port%20that%20now%20lives%20under%20%5B%60go%2F%60%5D(go%2F).%0A%0A---%0A%0A%23%23%201.%20What%20the%20pipeline%20does%0A%0A%5B%60typescript%2Fsrc%2Fetl%2Fetl.ts%60%5D(typescript%2Fsrc%2Fetl%2Fetl.ts)%20is%20a%20thin%20**orchestrator**.%0AGiven%20a%20**file%20source**%20(local%20path%20or%20Azure%20blob%20URL)%2C%20a%20set%20of%20**line%20rules**%2C%0Aand%20an%20**output%20writer**%2C%20it%3A%0A%0A1.%20Streams%20the%20source%20**line%20by%20line**%20(Node%20%60readline%60%20over%20a%20read%20stream).%0A2.%20Parses%20each%20raw%20line%20into%20a%20keyed%20record%20and%20**validates**%20it%20(%60SourceLine%60).%0A3.%20Writes%20**valid%2C%20non-header**%20rows%20to%20the%20output%20writer.%0A4.%20Writes%20**invalid**%20rows%20to%20a%20separate%20%60%3Csource%3E.error.txt%60%20report.%0A5.%20Captures%20the%20**first%20valid%20row**%20as%20a%20metadata%20sample%20%2B%20identifiers.%0A6.%20Finalizes%20(footer)%2C%20**cleans%20up**%20streams%2C%20and%20**deletes**%20empty%2Finvalid%20files.%0A7.%20Returns%20an%20%60ETLResult%60%20summary.%0A%0A%23%23%23%20Module%20map%20(TypeScript)%0A%0A%7C%20Concern%20%20%20%20%20%20%20%20%20%20%20%20%20%20%7C%20File%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%7C%0A%7C%20--------------------%20%7C%20-------------------------------------------------------------------------------------------------------------------------------------------------------------%20%7C%0A%7C%20Orchestrator%20%20%20%20%20%20%20%20%20%7C%20%60src%2Fetl%2Fetl.ts%60%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%7C%0A%7C%20Source%20streaming%20%20%20%20%20%7C%20%60src%2Ffile-reader%2F%60%20(%60readline-interface-factory.ts%60%2C%20%60file-reader.ts%60%2C%20%60blob-reader.ts%60%2C%20%60read-line-base.ts%60)%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%7C%0A%7C%20Line%20parse%2Fvalidate%20%20%7C%20%60src%2Fline-data%2F%60%20(%60source-line.ts%60%2C%20%60line-source-base.ts%60)%20%2B%20%60src%2Futils%2Fline-validator.ts%60%2C%20%60line-data-to-json.ts%60%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%7C%0A%7C%20Output%20writers%20%20%20%20%20%20%20%7C%20%60src%2Ffile-generator%2F%60%20(%60flat-file-base-lazy.ts%60%2C%20%60default-generator.ts%60%2C%20%60json-generator.ts%60%2C%20%60error-report.ts%60%2C%20cloud%20writers)%20%2B%20%60file-generator-factory.ts%60%20%7C%0A%7C%20Templating%20%2F%20mapping%20%7C%20%60src%2Futils%2F%60%20(%60replace-with-map.ts%60%2C%20%60replace-with-function.ts%60%2C%20%60map.ts%60%2C%20%60filename.ts%60)%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%7C%0A%7C%20Types%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%7C%20%60src%2Ftypes%2Findex.ts%60%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%7C%0A%0A%23%23%23%20Templating%20model%20(preserved%20in%20the%20port)%0A%0A-%20**%60%7Bpath%7D%60**%20%E2%86%92%20value%20substitution%20from%20row%2Foutput%2Fmetadata%20data.%0A-%20**%60%5Bfunc%20arg%20...%5D%60**%20%E2%86%92%20%60replaceWithFunction%60%3A%20computed%20tokens%20%E2%80%94%0A%20%20%60%5Btimestamp%5D%60%2C%20%60%5BdateTime%20YYYY-MM-DD%5D%60%2C%20%60%5BsanitizeString%5D%60%2C%20%60%5BremoveWhiteSpaces%5D%60%2C%0A%20%20%60%5BreplaceString%20a%20b%5D%60.%20%60data.x.y%60%20args%20resolve%20against%20a%20metadata%20object.%0A-%20**%60mapWithDefault%60**%20(output%20projection)%3A%20a%20config%20value%20that%20is%20a%20column%20name%20is%0A%20%20looked%20up%3B%20a%20%60%5B...%5D%60%20value%20is%20evaluated%3B%20otherwise%20the%20value%20is%20a%20literal%20default.%0A-%20**%60mapFields%60**%20(identifier%20projection)%3A%20keyed%20lookups%20only.%0A%0A---%0A%0A%23%23%202.%20Code%20review%20of%20%60etl.ts%60%0A%0A%23%23%23%20Correctness%20%2F%20bugs%0A%0A%7C%20%23%20%20%20%7C%20Issue%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%7C%20Location%20%20%20%20%20%20%20%7C%20Fix%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%7C%0A%7C%20---%20%7C%20---------------------------------------------------------------------------------------------------------------------------------------------------%20%7C%20--------------%20%7C%20--------------------------------------------------------%20%7C%0A%7C%201%20%20%20%7C%20**Footer%20race**%20%E2%80%94%20%60onCloseHandler%60%20calls%20%60resolve(%7B%7D)%60%20_before_%20%60pushFooter()%60%2C%20so%20%60cleanUp()%60%2F%60end()%60%20can%20run%20before%20the%20footer%20write%20lands.%20%20%20%20%20%20%20%7C%20%60etl.ts%3A64-67%60%20%7C%20Write%20footer%2C%20_then_%20resolve.%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%7C%0A%7C%202%20%20%20%7C%20**%60forceCleanUp()%60%20not%20awaited**%20in%20the%20%60catch%60%20%E2%80%94%20streams%20may%20not%20close%20%2F%20files%20not%20delete%20before%20the%20error%20propagates.%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%7C%20%60etl.ts%3A169%60%20%20%20%7C%20%60await%20this.forceCleanUp()%60.%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%7C%0A%7C%203%20%20%20%7C%20**Lost%20parse%20errors**%20%E2%80%94%20%60onLineHandler%60%20re-emits%20errors%20onto%20the%20same%20readline%20interface%3B%20if%20listeners%20are%20already%20cleaned%20up%20the%20error%20is%20dropped.%20%7C%20%60etl.ts%3A59-61%60%20%7C%20Reject%20the%20processing%20promise%20via%20a%20stored%20%60reject%60%20ref.%20%7C%0A%7C%204%20%20%20%7C%20**%60fileSource%60%20via%20truthiness%20%2B%20%60as%20string%60%20cast**%20hides%20the%20%22neither%20provided%22%20case.%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%7C%20%60etl.ts%3A31%60%20%20%20%20%7C%20Guard%20and%20throw%20a%20clear%20error.%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%7C%0A%0A%23%23%23%20Design%20%2F%20maintainability%0A%0A%7C%20%23%20%20%20%7C%20Issue%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%7C%20Location%20%20%20%20%20%20%20%20%20%7C%0A%7C%20---%20%7C%20-----------------------------------------------------------------------------------------------------------------------------------%20%7C%20----------------%20%7C%0A%7C%205%20%20%20%7C%20%60processLines()%60%20**reimplements**%20the%20existing%20%60ReadLineBase.readlinePromise()%60%20helper.%20Reuse%20it.%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%7C%20%60etl.ts%3A97-107%60%20%20%7C%0A%7C%206%20%20%20%7C%20%60cleanUp()%60%20and%20%60forceCleanUp()%60%20are%20**near-duplicates**%20%E2%80%94%20only%20the%20conditional%20deletes%20differ.%20Collapse%20into%20%60cleanUp(force)%60.%20%20%20%20%20%7C%20%60etl.ts%3A109-137%60%20%7C%0A%7C%207%20%20%20%7C%20%60populate()%60%20re-evaluates%20%60isValid%20%26%26%20!isHeader%60%20**twice**%3B%20fold%20into%20one%20branch.%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%7C%20%60etl.ts%3A78-86%60%20%20%20%7C%0A%7C%208%20%20%20%7C%20%60onCloseHandler(resolve%3A%20Function)%60%20uses%20the%20loose%20%60Function%60%20type.%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%7C%20%60etl.ts%3A64%60%20%20%20%20%20%20%7C%0A%7C%209%20%20%20%7C%20%60lineIndex%60%20is%20really%20a%20**1-based%20line%20number**%20%E2%80%94%20rename%20to%20match%20%60SourceLine.currentLineNumber%60.%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%7C%20%60etl.ts%3A24%2C50%60%20%20%20%7C%0A%7C%2010%20%20%7C%20**No%20write%20backpressure**%20%E2%80%94%20%60outputFileWriter.push()%60%20ignores%20%60write()%60&#039;s%20return%20%2F%20%60drain%60%3B%20can%20balloon%20memory%20on%20very%20large%20files.%20%7C%20%60etl.ts%3A79%60%20%20%20%20%20%20%7C%0A%0A%23%23%23%20Minor%20%2F%20subtle%0A%0A-%20%60valid%60%20and%20%60withErrors%60%20are%20**independent**%3A%20a%20file%20can%20be%20%60valid%3A%20true%2C%20withErrors%3A%20true%60.%20Worth%20a%20comment.%0A-%20%60getResult().metadata%60%20merges%20%60sampleLineData%60%20%2B%20%60identifiers%60%3B%20**key%20collisions%20favor%20identifiers**%20silently.%0A-%20The%20column-count%20check%20in%20%60line-validator.ts%60%20is%20**commented%20out**%20(TODO).%20Decide%20whether%20to%20enforce%20(made%20configurable-friendly%20in%20Go).%0A%0A%3E%20The%20Go%20port%20fixes%20%231%2C%20%232%2C%20%235%2C%20%236%2C%20%237%2C%20%239%20**by%20construction**%20(sequential%20flow%2C%0A%3E%20footer-before-done%2C%20unified%20%60cleanUp(force)%60)%2C%20and%20gets%20backpressure%20(%2310)%20for%0A%3E%20free%20via%20%60bufio.Writer%60%20%2B%20explicit%20flush.%0A%0A---%0A%0A%23%23%203.%20Go%20implementation%20design%0A%0AModule%20%60flatfile-go%60%20(Go%201.26).%20**Library-first**%3A%20the%20core%20is%20plain%20packages%20with%0Ano%20I%2FO%20assumptions%20beyond%20the%20local%20filesystem%3B%20entrypoints%20are%20thin%20shells%20over%20a%0Asingle%20%60etl.Run(Config)%60.%0A%0A%23%23%23%20Roadmap%20alignment%20(multi-surface)%0A%0AThe%20binary%2Fcore%20is%20consumable%20four%20ways%2C%20all%20funneling%20through%20%60etl.Run%60%3A%0A%0A%7C%20Surface%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%7C%20How%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%7C%0A%7C%20---------------------------%20%7C%20------------------------------------------------------------------------------------------------------------------%20%7C%0A%7C%20**Terminal%20%2F%20worker**%20%20%20%20%20%20%20%7C%20%60cmd%2Fetl%20-config%20%3Cpath-or-%3E%60%3B%20%60-%60%20reads%20canonical%20JSON%20from%20stdin%20and%20optional%20%60-source%60%20overrides%20its%20source.%20%20%20%20%20%20%7C%0A%7C%20**BullMQ%20worker%20(Node)**%20%20%20%20%7C%20Worker%20spawns%20the%20binary%2C%20pipes%20a%20JSON%20%60Config%60%20to%20%60-config%20-%60%20(stdin)%2C%20reads%20the%20JSON%20%60Result%60%20from%20stdout.%20%20%20%20%20%20%20%7C%0A%7C%20**Lambda%20%2F%20Cloud%20Function**%20%7C%20Go%20runtime%20imports%20%60flatfile-go%2Fetl%60%20and%20calls%20%60etl.Run(cfg)%60%3B%20or%20the%20function%20shells%20out%20to%20the%20binary%20with%20JSON.%20%7C%0A%7C%20**In-process%20helper%20(API)**%20%7C%20Import%20%60etl%60%2C%20build%20a%20%60Config%60%20(or%20call%20%60etl.New(source%2C%20opts%2C%20writer)%60%20directly)%20and%20%60Process()%60.%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%7C%0A%0AThe%20JSON%20%60Config%60%20is%20the%20stable%20contract%20shared%20by%20every%20surface%2C%20so%20they%20all%0Aexercise%20identical%20core%20logic.%0A%0A%23%23%23%20Package%20layout%20(%5B%60go%2F%60%5D(go%2F))%0A%0A%60%60%60%0Ago%2F%0A%20%20template%2F%20%20%20%7Bpath%7D%20%2B%20%5Bfunc%5D%20templating%2C%20sanitize%20helpers%20%20%20%20(field.go%2C%20function.go%2C%20sanitize.go)%0A%20%20line%2F%20%20%20%20%20%20%20SourceLine%3A%20parse%2C%20validate%2C%20map%20projections%20%20%20%20(options.go%2C%20sourceline.go%2C%20validator.go%2C%20mapping.go)%0A%20%20reader%2F%20%20%20%20%20Reader%20interface%20%2B%20local%2FAzure%20Blob%20streamers%20%20%20%20(reader.go%2C%20filereader.go%2C%20blobreader.go%2C%20sourceconfig.go%2C%20azureauth.go)%0A%20%20writer%2F%20%20%20%20%20Writer%20interface%20%2B%20DefaultWriter%20%2B%20ErrorReport%20%2B%20Factory%20%20(writer.go%2C%20default.go%2C%20errorreport.go)%0A%20%20etl%2F%20%20%20%20%20%20%20%20Orchestrator%20%2B%20Config%2FRun%20boundary%20%20%20%20%20%20%20%20%20%20%20%20%20%20(etl.go%2C%20run.go)%0A%20%20cmd%2Fetl%2F%20%20%20%20CLI%20%2F%20worker%20%2F%20function%20entrypoint%20%20%20%20%20%20%20%20%20%20%20%20%20%20(main.go)%0A%20%20utils%2F%20%20%20%20%20%20existing%20helpers%20(IsValidURL%2C%20parsing)%0A%20%20skuserial%2F%20%20existing%20codec%20(unchanged)%0A%60%60%60%0A%0A%23%23%23%20Data%20flow%0A%0A%60%60%60%0Aetl.Run(Config)%0A%20%20%E2%94%94%E2%94%80%20writer.Factory(kind%2C%20opts)%20%E2%94%80%E2%94%80%E2%94%80%E2%94%80%E2%94%80%E2%94%80%E2%94%80%E2%94%80%E2%94%80%E2%94%80%E2%94%80%E2%94%80%E2%94%80%E2%96%BA%20Writer%0A%20%20%E2%94%94%E2%94%80%20etl.New(source%2C%20opts%2C%20writer)%0A%20%20%20%20%20%20%20%20%E2%94%94%E2%94%80%20reader.New(source)%20%E2%94%80%E2%94%80%E2%94%80%E2%94%80%E2%94%80%E2%94%80%E2%94%80%E2%94%80%E2%94%80%E2%94%80%E2%94%80%E2%94%80%E2%94%80%E2%94%80%E2%94%80%E2%96%BA%20Reader%20%20(local%20file%20or%20Azure%20Blob%20by%20SourceConfig.Type%3B%20S3%20%3D%3E%20explicit%20%22not%20supported%22%20error)%0A%20%20%20%20%20%20%20%20%E2%94%94%E2%94%80%20writer.NewErrorReport(reader.Filename()%2C%20writer.Path())%0A%20%20%E2%94%94%E2%94%80%20ETL.Process()%0A%20%20%20%20%20%20%20%20reader.Open()%0A%20%20%20%20%20%20%20%20for%20reader.Scan()%3A%0A%20%20%20%20%20%20%20%20%20%20%20%20sl%20%3A%3D%20line.New(text%2C%20opts.Line%2C%20lineNo)%0A%20%20%20%20%20%20%20%20%20%20%20%20sl.Validate()%0A%20%20%20%20%20%20%20%20%20%20%20%20invalid%3F%20%20%20%20%20%20%20%20%20%20%20%20%E2%86%92%20errorReport.Push(sl.Error())%0A%20%20%20%20%20%20%20%20%20%20%20%20valid%20%26%20!header%3F%20%20%20%20%E2%86%92%20output.Push(sl)%3B%20capture%20sample%2Bidentifiers%20once%0A%20%20%20%20%20%20%20%20reader.Err()%3F%20%20%20%20%20%20%20%20%20%20%20%E2%86%92%20cleanUp(force%3Dtrue)%3B%20return%20err%0A%20%20%20%20%20%20%20%20output.PushFooter()%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%E2%86%90%20footer%20BEFORE%20%22done%22%20(fixes%20review%20%231)%0A%20%20%20%20%20%20%20%20validateFinalResult()%20%20%20(empty%20file%20%2F%20rejectOnInvalidRow)%0A%20%20%20%20%20%20%20%20cleanUp(force%3Dfalse)%20%20%20%20(flush%2Bclose%3B%20delete%20empty%2Finvalid)%20%20%E2%86%90%20unified%20(fixes%20%236)%0A%20%20%20%20%20%20%20%20return%20Result%0A%60%60%60%0A%0A%23%23%23%20TS%20%E2%86%92%20Go%20type%20mapping%0A%0A%7C%20TypeScript%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%7C%20Go%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%7C%0A%7C%20--------------------------------------------------------%20%7C%20----------------------------------------------------------------------------------------%20%7C%0A%7C%20%60ReadLineInterface%60%20union%20%2B%20%60readLineInterface()%60%20%20%20%20%20%20%20%20%7C%20%60reader.Reader%60%20interface%20%2B%20%60reader.New()%60%20factory%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%7C%0A%7C%20%60BlobReader%60%20(env-var%20shared-key%20auth%20only)%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%7C%20%60reader.AzureBlobReader%60%20%E2%80%94%20caller-supplied%20%60AzureAuth%60%20(shared%20key%2C%20connection%20string%2C%20SAS%2C%20or%20the%20default%20credential%20chain)%20%7C%0A%7C%20Node%20%60readline%60%20(event-based)%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%7C%20%60bufio.Scanner%60%20(%60ScanLines%60%20drops%20trailing%20%60%5Cr%60%20%E2%86%92%20CRLF%20tolerant)%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%7C%0A%7C%20%60LineSourceBaseOptions%60%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%7C%20%60line.LineConfig%60%20(JSON-tagged)%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%7C%0A%7C%20%60SourceLine%60%20class%20%2B%20getters%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%7C%20%60line.SourceLine%60%20%2B%20methods%20%60Validate%2FIsValid%2FError%2FIsHeader%2FOutput%2FAllData%2FIdentifiers%60%20%7C%0A%7C%20%60jsonLine%3A%20JSONObject%60%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%7C%20%60map%5Bstring%5Dstring%60%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%7C%0A%7C%20%60outputMappings%60%20%2F%20%60identifierMappings%60%20(objects)%20%20%20%20%20%20%20%20%7C%20%60%5B%5Dline.Mapping%7BOut%2CSrc%7D%60%20%E2%80%94%20**ordered**%20so%20delimited%20output%20is%20deterministic%20%20%20%20%20%20%20%20%20%20%20%20%20%7C%0A%7C%20%60FlatFileBaseLazy%20%26%20FlatFileBaseLazyMethods%60%20%20%20%20%20%20%20%20%20%20%20%20%20%7C%20%60writer.Writer%60%20interface%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%7C%0A%7C%20%60DefaultGenerator%60%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%7C%20%60writer.DefaultWriter%60%20(lazy%20create%2C%20uniqueKey%20dedup)%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%7C%0A%7C%20%60ErrorReport%60%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%7C%20%60writer.ErrorReport%60%20(lazy%3B%20%60InvalidRows%60%20counter)%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%7C%0A%7C%20%60FileGeneratorFactory%60%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%7C%20%60writer.Factory(OutputConfig)%60%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%7C%0A%7C%20%60replaceWithMap%2FFunction%60%2C%20%60mapFields%60%2C%20%60mapWithDefault%60%20%7C%20%60template.*%60%20%2B%20%60line.mapWithDefault%2FmapFields%60%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%7C%0A%7C%20%60ETLResult%60%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%7C%20%60etl.Result%60%20(JSON-tagged)%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%7C%0A%0A%3E%20**Why%20ordered%20%60%5B%5DMapping%60%20instead%20of%20a%20map%3F**%20Go%20maps%20have%20no%20stable%20order%20and%0A%3E%20JS%20object%20key%20order%20is%20not%20guaranteed%20across%20a%20JSON%20boundary.%20Arrays%20of%0A%3E%20%60%7Bout%2C%20src%7D%60%20keep%20the%20delimited%20writer&#039;s%20column%20order%20deterministic%20and%20survive%0A%3E%20JSON%20round-trips%20from%20a%20worker%2Ffunction.%0A%0A%23%23%23%20Configuration%20contract%0A%0A-%20Every%20entrypoint%20uses%20the%20canonical%20%60etl.Config%60%20JSON%20shape%3A%20%60source%60%2C%0A%20%20%60output%60%2C%20and%20%60options%60.%20The%20CLI%20decodes%20that%20shape%20strictly%20from%20a%20file%20or%0A%20%20stdin%20and%20rejects%20retired%20wrapper%2Fenvelope%20shapes.%0A-%20%60OutputConfig.FileGenerator%60%20matches%20the%20%60fileGenerator%60%20JSON%20key.%0A-%20%60filename%60%20is%20canonically%20a%20flat%20string%20and%20is%20always%20passed%20through%20field%0A%20%20and%20function%20templating.%20The%20TypeScript%20object%20form%20and%20legacy%0A%20%20%60filenameTemplate%60%20key%20remain%20temporary%20read-time%20compatibility%20inputs.%0A-%20%60output.metadata%60%20is%20the%20sole%20writer-metadata%20location.%20It%20accepts%20arbitrary%0A%20%20JSON%20values%3B%20template%20paths%20can%20traverse%20nested%20objects%20and%20arrays%20and%20use%0A%20%20string%2C%20numeric%2C%20and%20boolean%20leaves.%0A-%20A%20row%20%60template%60%20takes%20precedence%20over%20output%20%60separator%60%20projection%20when%0A%20%20both%20are%20configured.%0A%0A%23%23%23%20Behavior-parity%20notes%20(faithful%20to%20TS)%0A%0A-%20**Field%20parse**%3A%20split%20on%20separator%2C%20strip%20**one**%20leading%20and%20**one**%20trailing%20%60%22%60.%0A-%20**Missing%20trailing%20columns**%20%E2%86%92%20%60%22%22%60%20(TS%20%60undefined%60%3B%20both%20fail%20the%20mandatory%20check).%0A-%20**Header**%3A%20%60withHeader%20%26%26%20lineNo%20%3D%3D%201%60%3B%20never%20written%20to%20output%2C%20but%20its%20presence%0A%20%20on%20line%201%20is%20why%20a%20header-only%20file%20is%20treated%20as%20%22empty%22.%0A-%20**Lazy%20writer**%3A%20file%20%2B%20header%20created%20on%20first%20%60Push%60%20%E2%86%92%20empty%2Fall-invalid%20input%0A%20%20produces%20no%20output%20file.%0A-%20**Row%20newlines**%3A%20data%20rows%20are%20newline-**prefixed**%3B%20the%20header%20is%20not%3B%20the%0A%20%20**footer%20is%20written%20raw**%20(no%20leading%20newline)%20%E2%80%94%20so%20it%20concatenates%20onto%20the%20last%0A%20%20row%20(%60...Widget%20CEOF%60).%20This%20is%20intentional%20parity%20with%20%60DefaultGenerator%60.%0A-%20**Error%20format**%3A%20%60ERROR%20AT%20LINE%20%3Cn%3E%3A%20Invalid%20%3Cfield%3E%20value%20of%20%22%3Cvalue%3E%22%60.%0A-%20**dateTime**%3A%20moment-style%20tokens%20mapped%20onto%20Go&#039;s%20reference-time%20layout%2C%20so%0A%20%20config%20strings%20(%60YYYY-MM-DD%60%2C%20%60HHmmss%60%2C%20%E2%80%A6)%20are%20unchanged.%20(Format%20args%20can&#039;t%0A%20%20contain%20spaces%20%E2%80%94%20same%20limitation%20as%20TS.)%0A-%20**Output%20dir**%3A%20configurable%20%60Path%60%2C%20default%20%60os.TempDir()%60%20(TS%20hard-codes%20%60%2Fvar%2Ftmp%60).%0A%0A%23%23%23%20Implemented%20since%20core%20migration%3A%20Azure%20Blob%20reader%0A%0A%60reader.AzureBlobReader%60%20(ported%20from%20%60blob-reader.ts%60)%20streams%0A%60DownloadStream%60&#039;s%20response%20body%20through%20the%20same%20%60bufio.Scanner%60%20setup%20as%0A%60LocalFileReader%60%20%E2%80%94%2064%20KiB%20initial%20buffer%2C%20the%20package&#039;s%2010%20MiB%20line%20cap%20%E2%80%94%0Aso%20line%2FCRLF%20behavior%20is%20identical%20across%20both%20sources.%20It%20implements%0A%60Reader%60%20directly%3B%20no%20separate%20%60Source%60%2F%60LineReader%60%20split%20was%20introduced.%0A%0AUnlike%20the%20TS%20%60BlobReader%60%2C%20credentials%20are%20never%20read%20from%20the%20environment.%0AThe%20caller%20supplies%20an%20%60AzureAuth%60%20struct%20(shared%20key%2C%20connection%20string%2C%20SAS%0Atoken%2C%20or%20the%20zero-value%20default%20credential%20chain)%2C%20and%20%60AzureAuth.Type()%60%0Aidentifies%20which%20mode%20applies.%20%60Config.Source%60%20(%60reader.SourceConfig%60)%0Aaccepts%20both%20the%20legacy%20string%20form%20(local%20path%20or%20blob%20URL%2C%20inferred%20by%0Ashape)%20and%20a%20typed%20object%20form%20(%60%7B%22type%22%2C%20%22path%22%2F%22url%22%2C%20%22auth%22%7D%60)%20for%20callers%0Athat%20need%20to%20attach%20credentials.%20See%20%5Busage.md%5D(usage.md)%2C%20%C2%A74.1%2C%20and%20the%0Arunnable%20configs%20under%20%5B%60samples%2F%60%5D(..%2Fsamples).%0A%0A%23%23%23%20Deferred%20(out%20of%20current%20core%20scope)%0A%0AS3%20reader%3B%20S3%20output%3B%20JSON%20output%20to%20cloud%20destinations%3B%20Excel%20(%60ExcelJS%60)%3B%0Athe%20%60PushIfExist%60%20%2F%20%60FileIndexGenerator%60%20dedup%20variants%3B%20the%20JS-eval%0A%60customFunction%60%20template%20fallback%3B%20%60indexFile%60%20external%20dedup%3B%20and%0A%60context.Context%60%20threading%20through%20the%20reader%20(Azure%20calls%20currently%20use%0A%60context.Background()%60).%20Local%20streaming%20%60JSONGenerator%60%20output%20is%20implemented.%0AIn-memory%20%60uniqueKey%60%20deduplication%20is%20supported%20by%20the%20default%20writer%20only%3B%20the%0AJSON%20writer%20rejects%20%60uniqueKey%60%20and%20serializes%20every%20valid%20row%20it%20receives.%20The%0A%60Reader%60%20%2F%20%60Writer%60%20interfaces%20%2B%20factory%20are%20shaped%20so%20these%20slot%20in%20**without%0Atouching%20%60etl.go%60**.%0A%0A---%0A%0A%23%23%204.%20Running%20%26%20testing%0A%0A%60%60%60bash%0Acd%20go%0A%0A%23%20Build%20everything%0Ago%20build%20.%2F...%0A%0A%23%20Unit%20%2B%20e2e%20tests%20(template%2C%20line%2C%20etl%20pipeline)%0Ago%20test%20.%2F...%0A%0A%23%20Terminal%20run%20(canonical%20JSON%20config%20file)%0Ago%20run%20.%2Fcmd%2Fetl%20-config%20.%2Fsamples%2Fcsv-to-csv%2Fconfig.default.json%0A%0A%23%20Worker%20%2F%20function%20run%20(the%20same%20canonical%20JSON%20via%20stdin%20%E2%86%92%20JSON%20result%20on%20stdout)%0Aecho%20&#039;%7B%20%22source%22%3A%22in.csv%22%2C%0A%20%20%20%20%20%20%20%20%22output%22%3A%7B%22fileGenerator%22%3A%22default-generator%22%2C%22path%22%3A%22%2Ftmp%22%2C%22filename%22%3A%22out.csv%22%2C%0A%20%20%20%20%20%20%20%20%20%20%22separator%22%3A%22%3B%22%2C%22template%22%3A%22%7BSKU%7D%3B%7BNAME%7D%22%2C%22header%22%3A%22sku%3Bname%22%2C%22footer%22%3A%22EOF%22%7D%2C%0A%20%20%20%20%20%20%20%20%22options%22%3A%7B%22line%22%3A%7B%22columns%22%3A%5B%22BARCODE%22%2C%22SKU%22%2C%22NAME%22%5D%2C%22mandatoryFields%22%3A%5B%22BARCODE%22%2C%22SKU%22%5D%2C%0A%20%20%20%20%20%20%20%20%20%20%22separator%22%3A%22%2C%22%2C%22withHeader%22%3Atrue%2C%0A%20%20%20%20%20%20%20%20%20%20%22identifierMappings%22%3A%5B%7B%22out%22%3A%22barcode%22%2C%22src%22%3A%22BARCODE%22%7D%5D%7D%7D%20%7D&#039;%20%5C%0A%20%20%7C%20go%20run%20.%2Fcmd%2Fetl%20-config%20-%0A%60%60%60%0A%0A**Test%20coverage**%3A%20%60template%60%20(substitution%2C%20%60%5Btimestamp%5D%60%2F%60%5BdateTime%5D%60%2C%20data-path%2C%0Asanitize)%3B%20%60line%60%20(quote%20stripping%2C%20missing%20columns%2C%20mandatory%20validation%2C%20header%0Adetection%2C%20ordered%20output%20%2B%20defaults%2C%20identifiers)%3B%20%60reader%60%20(Azure%20auth-mode%0Aidentification%20and%20precedence%2C%20source%20config%20legacy-string%2Fobject%20decoding%20and%0Avalidation%2C%20blob%20reader%20line%20scanning%20over%20an%20injected%20fake%20stream%20%E2%80%94%20CRLF%2C%0A%3E64%20KiB%20lines%2C%20close%20idempotence%2C%20not-found%20translation)%3B%20%60etl%60%20end-to-end%0A(happy%20path%20with%20a%20skipped%20invalid%20row%2C%20empty%20file%20%E2%86%92%20invalid%20%2B%20no%20output%2C%0A%60rejectOnInvalidRow%60%2C%20zero-error%20report%20deletion).%0A" style="display: none;"></div>
+                  
+                    <nav aria-label="breadcrumb" class="docmd-breadcrumbs">
+                      <ol>
+                        
+                        
+                          <li class="breadcrumb-item active" aria-current=&quot;page&quot;>
+                            
+                              <span>ETL Utility — Code Review &amp; Go Implementation Design</span>
+                            
+                            
+                          </li>
+                        
+                      </ol>
+                    </nav>
+                  
+
+                  
+                    <div class="docmd-copy-widgets">
+                      
+                        <button class="docmd-copy-btn docmd-copy-raw-btn" data-copied="Copied!" title="Copy Markdown" aria-label="Copy Markdown">
+                          <span class="docmd-btn-icon">
+<svg class="lucide-icon icon-copy " width="1em" height="1em" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"
+  class="lucide lucide-copy"
+  xmlns="http://www.w3.org/2000/svg"
+  width="24"
+  height="24"
+  viewBox="0 0 24 24"
+  fill="none"
+  stroke="currentColor"
+  stroke-width="2"
+  stroke-linecap="round"
+  stroke-linejoin="round"
+>
+  <rect width="14" height="14" x="8" y="8" rx="2" ry="2" />
+  <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" />
+</svg>
+</span>
+                        </button>
+                      
+                      
+                        <button class="docmd-copy-btn docmd-copy-context-btn" data-copied="Copied!" title="Copy Context">
+                          <span class="docmd-btn-icon">
+<svg class="lucide-icon icon-message-square " width="1em" height="1em" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"
+  class="lucide lucide-message-square"
+  xmlns="http://www.w3.org/2000/svg"
+  width="24"
+  height="24"
+  viewBox="0 0 24 24"
+  fill="none"
+  stroke="currentColor"
+  stroke-width="2"
+  stroke-linecap="round"
+  stroke-linejoin="round"
+>
+  <path d="M22 17a2 2 0 0 1-2 2H6.828a2 2 0 0 0-1.414.586l-2.202 2.202A.71.71 0 0 1 2 21.286V5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2z" />
+</svg>
+</span>
+                          <span class="docmd-btn-text">Copy Context</span>
+                        </button>
+                      
+                    </div>
+                  
+                </div>
+                
+                <h1 id="etl-utility-code-review-go-implementation-design" class="docmd-heading"><a href="#etl-utility-code-review-go-implementation-design" class="heading-anchor" aria-label="Permalink to this section"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-link2-icon lucide-link-2"><path d="M9 17H7A5 5 0 0 1 7 7h2m6 0h2a5 5 0 1 1 0 10h-2m-7-5h8"/></svg></a>ETL Utility — Code Review &amp; Go Implementation Design</h1>
+<blockquote>
+<p>Reference notes for the streaming flat-file ETL pipeline.<br>
+Covers (1) a review of the TypeScript <code>ETL</code> class and (2) the design of the Go<br>
+port that now lives under <a href="../../go/"><code>go/</code></a>.</p>
+</blockquote>
+<hr>
+<h2 id="etl-utility-code-review-go-implementation-design-1-what-the-pipeline-does" class="docmd-heading"><a href="#etl-utility-code-review-go-implementation-design-1-what-the-pipeline-does" class="heading-anchor" aria-label="Permalink to this section"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-link2-icon lucide-link-2"><path d="M9 17H7A5 5 0 0 1 7 7h2m6 0h2a5 5 0 1 1 0 10h-2m-7-5h8"/></svg></a>1. What the pipeline does</h2>
+<p><a href="../typescript/src/etl/etl.ts"><code>typescript/src/etl/etl.ts</code></a> is a thin <strong>orchestrator</strong>.<br>
+Given a <strong>file source</strong> (local path or Azure blob URL), a set of <strong>line rules</strong>,<br>
+and an <strong>output writer</strong>, it:</p>
+<ol>
+<li>Streams the source <strong>line by line</strong> (Node <code>readline</code> over a read stream).</li>
+<li>Parses each raw line into a keyed record and <strong>validates</strong> it (<code>SourceLine</code>).</li>
+<li>Writes <strong>valid, non-header</strong> rows to the output writer.</li>
+<li>Writes <strong>invalid</strong> rows to a separate <code>&lt;source&gt;.error.txt</code> report.</li>
+<li>Captures the <strong>first valid row</strong> as a metadata sample + identifiers.</li>
+<li>Finalizes (footer), <strong>cleans up</strong> streams, and <strong>deletes</strong> empty/invalid files.</li>
+<li>Returns an <code>ETLResult</code> summary.</li>
+</ol>
+<h3 id="etl-utility-code-review-go-implementation-design-1-what-the-pipeline-does-module-map-typescript" class="docmd-heading"><a href="#etl-utility-code-review-go-implementation-design-1-what-the-pipeline-does-module-map-typescript" class="heading-anchor" aria-label="Permalink to this section"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-link2-icon lucide-link-2"><path d="M9 17H7A5 5 0 0 1 7 7h2m6 0h2a5 5 0 1 1 0 10h-2m-7-5h8"/></svg></a>Module map (TypeScript)</h3>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>Concern</th>
+<th>File</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Orchestrator</td>
+<td><code>src/etl/etl.ts</code></td>
+</tr>
+<tr>
+<td>Source streaming</td>
+<td><code>src/file-reader/</code> (<code>readline-interface-factory.ts</code>, <code>file-reader.ts</code>, <code>blob-reader.ts</code>, <code>read-line-base.ts</code>)</td>
+</tr>
+<tr>
+<td>Line parse/validate</td>
+<td><code>src/line-data/</code> (<code>source-line.ts</code>, <code>line-source-base.ts</code>) + <code>src/utils/line-validator.ts</code>, <code>line-data-to-json.ts</code></td>
+</tr>
+<tr>
+<td>Output writers</td>
+<td><code>src/file-generator/</code> (<code>flat-file-base-lazy.ts</code>, <code>default-generator.ts</code>, <code>json-generator.ts</code>, <code>error-report.ts</code>, cloud writers) + <code>file-generator-factory.ts</code></td>
+</tr>
+<tr>
+<td>Templating / mapping</td>
+<td><code>src/utils/</code> (<code>replace-with-map.ts</code>, <code>replace-with-function.ts</code>, <code>map.ts</code>, <code>filename.ts</code>)</td>
+</tr>
+<tr>
+<td>Types</td>
+<td><code>src/types/index.ts</code></td>
+</tr>
+</tbody>
+</table>
+</div><h3 id="etl-utility-code-review-go-implementation-design-1-what-the-pipeline-does-templating-model-preserved-in-the-port" class="docmd-heading"><a href="#etl-utility-code-review-go-implementation-design-1-what-the-pipeline-does-templating-model-preserved-in-the-port" class="heading-anchor" aria-label="Permalink to this section"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-link2-icon lucide-link-2"><path d="M9 17H7A5 5 0 0 1 7 7h2m6 0h2a5 5 0 1 1 0 10h-2m-7-5h8"/></svg></a>Templating model (preserved in the port)</h3>
+<ul>
+<li><strong><code>{path}</code></strong> → value substitution from row/output/metadata data.</li>
+<li><strong><code>[func arg ...]</code></strong> → <code>replaceWithFunction</code>: computed tokens —<br>
+<code>[timestamp]</code>, <code>[dateTime YYYY-MM-DD]</code>, <code>[sanitizeString]</code>, <code>[removeWhiteSpaces]</code>,<br>
+<code>[replaceString a b]</code>. <code>data.x.y</code> args resolve against a metadata object.</li>
+<li><strong><code>mapWithDefault</code></strong> (output projection): a config value that is a column name is<br>
+looked up; a <code>[...]</code> value is evaluated; otherwise the value is a literal default.</li>
+<li><strong><code>mapFields</code></strong> (identifier projection): keyed lookups only.</li>
+</ul>
+<hr>
+<h2 id="etl-utility-code-review-go-implementation-design-2-code-review-of-etlts" class="docmd-heading"><a href="#etl-utility-code-review-go-implementation-design-2-code-review-of-etlts" class="heading-anchor" aria-label="Permalink to this section"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-link2-icon lucide-link-2"><path d="M9 17H7A5 5 0 0 1 7 7h2m6 0h2a5 5 0 1 1 0 10h-2m-7-5h8"/></svg></a>2. Code review of <code>etl.ts</code></h2>
+<h3 id="etl-utility-code-review-go-implementation-design-2-code-review-of-etlts-correctness-bugs" class="docmd-heading"><a href="#etl-utility-code-review-go-implementation-design-2-code-review-of-etlts-correctness-bugs" class="heading-anchor" aria-label="Permalink to this section"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-link2-icon lucide-link-2"><path d="M9 17H7A5 5 0 0 1 7 7h2m6 0h2a5 5 0 1 1 0 10h-2m-7-5h8"/></svg></a>Correctness / bugs</h3>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>#</th>
+<th>Issue</th>
+<th>Location</th>
+<th>Fix</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td><strong>Footer race</strong> — <code>onCloseHandler</code> calls <code>resolve({})</code> <em>before</em> <code>pushFooter()</code>, so <code>cleanUp()</code>/<code>end()</code> can run before the footer write lands.</td>
+<td><code>etl.ts:64-67</code></td>
+<td>Write footer, <em>then</em> resolve.</td>
+</tr>
+<tr>
+<td>2</td>
+<td><strong><code>forceCleanUp()</code> not awaited</strong> in the <code>catch</code> — streams may not close / files not delete before the error propagates.</td>
+<td><code>etl.ts:169</code></td>
+<td><code>await this.forceCleanUp()</code>.</td>
+</tr>
+<tr>
+<td>3</td>
+<td><strong>Lost parse errors</strong> — <code>onLineHandler</code> re-emits errors onto the same readline interface; if listeners are already cleaned up the error is dropped.</td>
+<td><code>etl.ts:59-61</code></td>
+<td>Reject the processing promise via a stored <code>reject</code> ref.</td>
+</tr>
+<tr>
+<td>4</td>
+<td><strong><code>fileSource</code> via truthiness + <code>as string</code> cast</strong> hides the “neither provided” case.</td>
+<td><code>etl.ts:31</code></td>
+<td>Guard and throw a clear error.</td>
+</tr>
+</tbody>
+</table>
+</div><h3 id="etl-utility-code-review-go-implementation-design-2-code-review-of-etlts-design-maintainability" class="docmd-heading"><a href="#etl-utility-code-review-go-implementation-design-2-code-review-of-etlts-design-maintainability" class="heading-anchor" aria-label="Permalink to this section"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-link2-icon lucide-link-2"><path d="M9 17H7A5 5 0 0 1 7 7h2m6 0h2a5 5 0 1 1 0 10h-2m-7-5h8"/></svg></a>Design / maintainability</h3>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>#</th>
+<th>Issue</th>
+<th>Location</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>5</td>
+<td><code>processLines()</code> <strong>reimplements</strong> the existing <code>ReadLineBase.readlinePromise()</code> helper. Reuse it.</td>
+<td><code>etl.ts:97-107</code></td>
+</tr>
+<tr>
+<td>6</td>
+<td><code>cleanUp()</code> and <code>forceCleanUp()</code> are <strong>near-duplicates</strong> — only the conditional deletes differ. Collapse into <code>cleanUp(force)</code>.</td>
+<td><code>etl.ts:109-137</code></td>
+</tr>
+<tr>
+<td>7</td>
+<td><code>populate()</code> re-evaluates <code>isValid &amp;&amp; !isHeader</code> <strong>twice</strong>; fold into one branch.</td>
+<td><code>etl.ts:78-86</code></td>
+</tr>
+<tr>
+<td>8</td>
+<td><code>onCloseHandler(resolve: Function)</code> uses the loose <code>Function</code> type.</td>
+<td><code>etl.ts:64</code></td>
+</tr>
+<tr>
+<td>9</td>
+<td><code>lineIndex</code> is really a <strong>1-based line number</strong> — rename to match <code>SourceLine.currentLineNumber</code>.</td>
+<td><code>etl.ts:24,50</code></td>
+</tr>
+<tr>
+<td>10</td>
+<td><strong>No write backpressure</strong> — <code>outputFileWriter.push()</code> ignores <code>write()</code>'s return / <code>drain</code>; can balloon memory on very large files.</td>
+<td><code>etl.ts:79</code></td>
+</tr>
+</tbody>
+</table>
+</div><h3 id="etl-utility-code-review-go-implementation-design-2-code-review-of-etlts-minor-subtle" class="docmd-heading"><a href="#etl-utility-code-review-go-implementation-design-2-code-review-of-etlts-minor-subtle" class="heading-anchor" aria-label="Permalink to this section"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-link2-icon lucide-link-2"><path d="M9 17H7A5 5 0 0 1 7 7h2m6 0h2a5 5 0 1 1 0 10h-2m-7-5h8"/></svg></a>Minor / subtle</h3>
+<ul>
+<li><code>valid</code> and <code>withErrors</code> are <strong>independent</strong>: a file can be <code>valid: true, withErrors: true</code>. Worth a comment.</li>
+<li><code>getResult().metadata</code> merges <code>sampleLineData</code> + <code>identifiers</code>; <strong>key collisions favor identifiers</strong> silently.</li>
+<li>The column-count check in <code>line-validator.ts</code> is <strong>commented out</strong> (TODO). Decide whether to enforce (made configurable-friendly in Go).</li>
+</ul>
+<blockquote>
+<p>The Go port fixes #1, #2, #5, #6, #7, #9 <strong>by construction</strong> (sequential flow,<br>
+footer-before-done, unified <code>cleanUp(force)</code>), and gets backpressure (#10) for<br>
+free via <code>bufio.Writer</code> + explicit flush.</p>
+</blockquote>
+<hr>
+<h2 id="etl-utility-code-review-go-implementation-design-3-go-implementation-design" class="docmd-heading"><a href="#etl-utility-code-review-go-implementation-design-3-go-implementation-design" class="heading-anchor" aria-label="Permalink to this section"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-link2-icon lucide-link-2"><path d="M9 17H7A5 5 0 0 1 7 7h2m6 0h2a5 5 0 1 1 0 10h-2m-7-5h8"/></svg></a>3. Go implementation design</h2>
+<p>Module <code>flatfile-go</code> (Go 1.26). <strong>Library-first</strong>: the core is plain packages with<br>
+no I/O assumptions beyond the local filesystem; entrypoints are thin shells over a<br>
+single <code>etl.Run(Config)</code>.</p>
+<h3 id="etl-utility-code-review-go-implementation-design-3-go-implementation-design-roadmap-alignment-multi-surface" class="docmd-heading"><a href="#etl-utility-code-review-go-implementation-design-3-go-implementation-design-roadmap-alignment-multi-surface" class="heading-anchor" aria-label="Permalink to this section"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-link2-icon lucide-link-2"><path d="M9 17H7A5 5 0 0 1 7 7h2m6 0h2a5 5 0 1 1 0 10h-2m-7-5h8"/></svg></a>Roadmap alignment (multi-surface)</h3>
+<p>The binary/core is consumable four ways, all funneling through <code>etl.Run</code>:</p>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>Surface</th>
+<th>How</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Terminal / worker</strong></td>
+<td><code>cmd/etl -config &lt;path-or-&gt;</code>; <code>-</code> reads canonical JSON from stdin and optional <code>-source</code> overrides its source.</td>
+</tr>
+<tr>
+<td><strong>BullMQ worker (Node)</strong></td>
+<td>Worker spawns the binary, pipes a JSON <code>Config</code> to <code>-config -</code> (stdin), reads the JSON <code>Result</code> from stdout.</td>
+</tr>
+<tr>
+<td><strong>Lambda / Cloud Function</strong></td>
+<td>Go runtime imports <code>flatfile-go/etl</code> and calls <code>etl.Run(cfg)</code>; or the function shells out to the binary with JSON.</td>
+</tr>
+<tr>
+<td><strong>In-process helper (API)</strong></td>
+<td>Import <code>etl</code>, build a <code>Config</code> (or call <code>etl.New(source, opts, writer)</code> directly) and <code>Process()</code>.</td>
+</tr>
+</tbody>
+</table>
+</div><p>The JSON <code>Config</code> is the stable contract shared by every surface, so they all<br>
+exercise identical core logic.</p>
+<h3 id="etl-utility-code-review-go-implementation-design-3-go-implementation-design-package-layout-gogo" class="docmd-heading"><a href="#etl-utility-code-review-go-implementation-design-3-go-implementation-design-package-layout-gogo" class="heading-anchor" aria-label="Permalink to this section"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-link2-icon lucide-link-2"><path d="M9 17H7A5 5 0 0 1 7 7h2m6 0h2a5 5 0 1 1 0 10h-2m-7-5h8"/></svg></a>Package layout (<a href="../../go/"><code>go/</code></a>)</h3>
+<pre class="hljs"><code><span class="hljs-keyword">go</span><span class="hljs-punctuation">/</span>
+  template<span class="hljs-punctuation">/</span>   {path} <span class="hljs-punctuation">+</span> [<span class="hljs-keyword">func</span>] templating, sanitize <span class="hljs-title function_">helpers</span>    (field.<span class="hljs-keyword">go</span>, <span class="hljs-keyword">function</span>.<span class="hljs-keyword">go</span>, sanitize.<span class="hljs-keyword">go</span>)
+  line<span class="hljs-punctuation">/</span>       SourceLine<span class="hljs-punctuation">:</span> parse, validate, map <span class="hljs-title function_">projections</span>    (options.<span class="hljs-keyword">go</span>, sourceline.<span class="hljs-keyword">go</span>, validator.<span class="hljs-keyword">go</span>, mapping.<span class="hljs-keyword">go</span>)
+  reader<span class="hljs-punctuation">/</span>     Reader <span class="hljs-keyword">interface</span> <span class="hljs-punctuation">+</span> local<span class="hljs-punctuation">/</span>Azure Blob <span class="hljs-title function_">streamers</span>    (reader.<span class="hljs-keyword">go</span>, filereader.<span class="hljs-keyword">go</span>, blobreader.<span class="hljs-keyword">go</span>, sourceconfig.<span class="hljs-keyword">go</span>, azureauth.<span class="hljs-keyword">go</span>)
+  writer<span class="hljs-punctuation">/</span>     Writer <span class="hljs-keyword">interface</span> <span class="hljs-punctuation">+</span> DefaultWriter <span class="hljs-punctuation">+</span> ErrorReport <span class="hljs-punctuation">+</span> <span class="hljs-title function_">Factory</span>  (writer.<span class="hljs-keyword">go</span>, <span class="hljs-keyword">default</span>.<span class="hljs-keyword">go</span>, errorreport.<span class="hljs-keyword">go</span>)
+  etl<span class="hljs-punctuation">/</span>        Orchestrator <span class="hljs-punctuation">+</span> Config<span class="hljs-punctuation">/</span>Run <span class="hljs-title function_">boundary</span>              (etl.<span class="hljs-keyword">go</span>, run.<span class="hljs-keyword">go</span>)
+  cmd<span class="hljs-punctuation">/</span>etl<span class="hljs-punctuation">/</span>    CLI <span class="hljs-punctuation">/</span> worker <span class="hljs-punctuation">/</span> <span class="hljs-keyword">function</span> <span class="hljs-title function_">entrypoint</span>              (main.<span class="hljs-keyword">go</span>)
+  utils<span class="hljs-punctuation">/</span>      existing <span class="hljs-title function_">helpers</span> (IsValidURL, parsing)
+  skuserial<span class="hljs-punctuation">/</span>  existing <span class="hljs-title function_">codec</span> (unchanged)
+</code></pre>
+<h3 id="etl-utility-code-review-go-implementation-design-3-go-implementation-design-data-flow" class="docmd-heading"><a href="#etl-utility-code-review-go-implementation-design-3-go-implementation-design-data-flow" class="heading-anchor" aria-label="Permalink to this section"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-link2-icon lucide-link-2"><path d="M9 17H7A5 5 0 0 1 7 7h2m6 0h2a5 5 0 1 1 0 10h-2m-7-5h8"/></svg></a>Data flow</h3>
+<pre class="hljs"><code>etl.<span class="hljs-title function_">Run</span>(Config)
+  └─ writer.<span class="hljs-title function_">Factory</span>(kind, opts) ─────────────► Writer
+  └─ etl.<span class="hljs-title function_">New</span>(<span class="hljs-keyword">source</span>, opts, writer)
+        └─ reader.<span class="hljs-title function_">New</span>(<span class="hljs-keyword">source</span>) ───────────────► <span class="hljs-title function_">Reader</span>  (local file or Azure Blob by SourceConfig.<span class="hljs-attr">Type</span>; S3 <span class="hljs-punctuation">=&gt;</span> explicit <span class="hljs-string">&quot;not supported&quot;</span> error)
+        └─ writer.<span class="hljs-title function_">NewErrorReport</span>(reader.<span class="hljs-title function_">Filename</span>(), writer.<span class="hljs-title function_">Path</span>())
+  └─ ETL.<span class="hljs-title function_">Process</span>()
+        reader.<span class="hljs-title function_">Open</span>()
+        <span class="hljs-keyword">for</span> reader.<span class="hljs-title function_">Scan</span>()<span class="hljs-punctuation">:</span>
+            sl <span class="hljs-punctuation">:=</span> line.<span class="hljs-title function_">New</span>(text, opts.<span class="hljs-attr">Line</span>, lineNo)
+            sl.<span class="hljs-title function_">Validate</span>()
+            invalid<span class="hljs-punctuation">?</span>            → errorReport.<span class="hljs-title function_">Push</span>(sl.<span class="hljs-title function_">Error</span>())
+            valid <span class="hljs-punctuation">&amp;</span> <span class="hljs-punctuation">!</span>header<span class="hljs-punctuation">?</span>    → output.<span class="hljs-title function_">Push</span>(sl); capture sample<span class="hljs-punctuation">+</span>identifiers once
+        reader.<span class="hljs-title function_">Err</span>()<span class="hljs-punctuation">?</span>           → <span class="hljs-title function_">cleanUp</span>(force<span class="hljs-punctuation">=</span><span class="hljs-keyword">true</span>); <span class="hljs-keyword">return</span> err
+        output.<span class="hljs-title function_">PushFooter</span>()                    ← footer BEFORE <span class="hljs-string">&quot;done&quot;</span> (fixes review <span class="hljs-comment">#1)</span>
+        <span class="hljs-title function_">validateFinalResult</span>()   (empty file <span class="hljs-punctuation">/</span> rejectOnInvalidRow)
+        <span class="hljs-title function_">cleanUp</span>(force<span class="hljs-punctuation">=</span><span class="hljs-keyword">false</span>)    (flush<span class="hljs-punctuation">+</span>close; delete empty<span class="hljs-punctuation">/</span>invalid)  ← <span class="hljs-title function_">unified</span> (fixes <span class="hljs-comment">#6)</span>
+        <span class="hljs-keyword">return</span> Result
+</code></pre>
+<h3 id="etl-utility-code-review-go-implementation-design-3-go-implementation-design-ts-go-type-mapping" class="docmd-heading"><a href="#etl-utility-code-review-go-implementation-design-3-go-implementation-design-ts-go-type-mapping" class="heading-anchor" aria-label="Permalink to this section"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-link2-icon lucide-link-2"><path d="M9 17H7A5 5 0 0 1 7 7h2m6 0h2a5 5 0 1 1 0 10h-2m-7-5h8"/></svg></a>TS → Go type mapping</h3>
+<div class="table-wrapper"><table>
+<thead>
+<tr>
+<th>TypeScript</th>
+<th>Go</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>ReadLineInterface</code> union + <code>readLineInterface()</code></td>
+<td><code>reader.Reader</code> interface + <code>reader.New()</code> factory</td>
+</tr>
+<tr>
+<td><code>BlobReader</code> (env-var shared-key auth only)</td>
+<td><code>reader.AzureBlobReader</code> — caller-supplied <code>AzureAuth</code> (shared key, connection string, SAS, or the default credential chain)</td>
+</tr>
+<tr>
+<td>Node <code>readline</code> (event-based)</td>
+<td><code>bufio.Scanner</code> (<code>ScanLines</code> drops trailing <code>\r</code> → CRLF tolerant)</td>
+</tr>
+<tr>
+<td><code>LineSourceBaseOptions</code></td>
+<td><code>line.LineConfig</code> (JSON-tagged)</td>
+</tr>
+<tr>
+<td><code>SourceLine</code> class + getters</td>
+<td><code>line.SourceLine</code> + methods <code>Validate/IsValid/Error/IsHeader/Output/AllData/Identifiers</code></td>
+</tr>
+<tr>
+<td><code>jsonLine: JSONObject</code></td>
+<td><code>map[string]string</code></td>
+</tr>
+<tr>
+<td><code>outputMappings</code> / <code>identifierMappings</code> (objects)</td>
+<td><code>[]line.Mapping{Out,Src}</code> — <strong>ordered</strong> so delimited output is deterministic</td>
+</tr>
+<tr>
+<td><code>FlatFileBaseLazy &amp; FlatFileBaseLazyMethods</code></td>
+<td><code>writer.Writer</code> interface</td>
+</tr>
+<tr>
+<td><code>DefaultGenerator</code></td>
+<td><code>writer.DefaultWriter</code> (lazy create, uniqueKey dedup)</td>
+</tr>
+<tr>
+<td><code>ErrorReport</code></td>
+<td><code>writer.ErrorReport</code> (lazy; <code>InvalidRows</code> counter)</td>
+</tr>
+<tr>
+<td><code>FileGeneratorFactory</code></td>
+<td><code>writer.Factory(OutputConfig)</code></td>
+</tr>
+<tr>
+<td><code>replaceWithMap/Function</code>, <code>mapFields</code>, <code>mapWithDefault</code></td>
+<td><code>template.*</code> + <code>line.mapWithDefault/mapFields</code></td>
+</tr>
+<tr>
+<td><code>ETLResult</code></td>
+<td><code>etl.Result</code> (JSON-tagged)</td>
+</tr>
+</tbody>
+</table>
+</div><blockquote>
+<p><strong>Why ordered <code>[]Mapping</code> instead of a map?</strong> Go maps have no stable order and<br>
+JS object key order is not guaranteed across a JSON boundary. Arrays of<br>
+<code>{out, src}</code> keep the delimited writer’s column order deterministic and survive<br>
+JSON round-trips from a worker/function.</p>
+</blockquote>
+<h3 id="etl-utility-code-review-go-implementation-design-3-go-implementation-design-configuration-contract" class="docmd-heading"><a href="#etl-utility-code-review-go-implementation-design-3-go-implementation-design-configuration-contract" class="heading-anchor" aria-label="Permalink to this section"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-link2-icon lucide-link-2"><path d="M9 17H7A5 5 0 0 1 7 7h2m6 0h2a5 5 0 1 1 0 10h-2m-7-5h8"/></svg></a>Configuration contract</h3>
+<ul>
+<li>Every entrypoint uses the canonical <code>etl.Config</code> JSON shape: <code>source</code>,<br>
+<code>output</code>, and <code>options</code>. The CLI decodes that shape strictly from a file or<br>
+stdin and rejects retired wrapper/envelope shapes.</li>
+<li><code>OutputConfig.FileGenerator</code> matches the <code>fileGenerator</code> JSON key.</li>
+<li><code>filename</code> is canonically a flat string and is always passed through field<br>
+and function templating. The TypeScript object form and legacy<br>
+<code>filenameTemplate</code> key remain temporary read-time compatibility inputs.</li>
+<li><code>output.metadata</code> is the sole writer-metadata location. It accepts arbitrary<br>
+JSON values; template paths can traverse nested objects and arrays and use<br>
+string, numeric, and boolean leaves.</li>
+<li>A row <code>template</code> takes precedence over output <code>separator</code> projection when<br>
+both are configured.</li>
+</ul>
+<h3 id="etl-utility-code-review-go-implementation-design-3-go-implementation-design-behavior-parity-notes-faithful-to-ts" class="docmd-heading"><a href="#etl-utility-code-review-go-implementation-design-3-go-implementation-design-behavior-parity-notes-faithful-to-ts" class="heading-anchor" aria-label="Permalink to this section"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-link2-icon lucide-link-2"><path d="M9 17H7A5 5 0 0 1 7 7h2m6 0h2a5 5 0 1 1 0 10h-2m-7-5h8"/></svg></a>Behavior-parity notes (faithful to TS)</h3>
+<ul>
+<li><strong>Field parse</strong>: split on separator, strip <strong>one</strong> leading and <strong>one</strong> trailing <code>&quot;</code>.</li>
+<li><strong>Missing trailing columns</strong> → <code>&quot;&quot;</code> (TS <code>undefined</code>; both fail the mandatory check).</li>
+<li><strong>Header</strong>: <code>withHeader &amp;&amp; lineNo == 1</code>; never written to output, but its presence<br>
+on line 1 is why a header-only file is treated as “empty”.</li>
+<li><strong>Lazy writer</strong>: file + header created on first <code>Push</code> → empty/all-invalid input<br>
+produces no output file.</li>
+<li><strong>Row newlines</strong>: data rows are newline-<strong>prefixed</strong>; the header is not; the<br>
+<strong>footer is written raw</strong> (no leading newline) — so it concatenates onto the last<br>
+row (<code>...Widget CEOF</code>). This is intentional parity with <code>DefaultGenerator</code>.</li>
+<li><strong>Error format</strong>: <code>ERROR AT LINE &lt;n&gt;: Invalid &lt;field&gt; value of &quot;&lt;value&gt;&quot;</code>.</li>
+<li><strong>dateTime</strong>: moment-style tokens mapped onto Go’s reference-time layout, so<br>
+config strings (<code>YYYY-MM-DD</code>, <code>HHmmss</code>, …) are unchanged. (Format args can’t<br>
+contain spaces — same limitation as TS.)</li>
+<li><strong>Output dir</strong>: configurable <code>Path</code>, default <code>os.TempDir()</code> (TS hard-codes <code>/var/tmp</code>).</li>
+</ul>
+<h3 id="etl-utility-code-review-go-implementation-design-3-go-implementation-design-implemented-since-core-migration-azure-blob-reader" class="docmd-heading"><a href="#etl-utility-code-review-go-implementation-design-3-go-implementation-design-implemented-since-core-migration-azure-blob-reader" class="heading-anchor" aria-label="Permalink to this section"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-link2-icon lucide-link-2"><path d="M9 17H7A5 5 0 0 1 7 7h2m6 0h2a5 5 0 1 1 0 10h-2m-7-5h8"/></svg></a>Implemented since core migration: Azure Blob reader</h3>
+<p><code>reader.AzureBlobReader</code> (ported from <code>blob-reader.ts</code>) streams<br>
+<code>DownloadStream</code>’s response body through the same <code>bufio.Scanner</code> setup as<br>
+<code>LocalFileReader</code> — 64 KiB initial buffer, the package’s 10 MiB line cap —<br>
+so line/CRLF behavior is identical across both sources. It implements<br>
+<code>Reader</code> directly; no separate <code>Source</code>/<code>LineReader</code> split was introduced.</p>
+<p>Unlike the TS <code>BlobReader</code>, credentials are never read from the environment.<br>
+The caller supplies an <code>AzureAuth</code> struct (shared key, connection string, SAS<br>
+token, or the zero-value default credential chain), and <code>AzureAuth.Type()</code><br>
+identifies which mode applies. <code>Config.Source</code> (<code>reader.SourceConfig</code>)<br>
+accepts both the legacy string form (local path or blob URL, inferred by<br>
+shape) and a typed object form (<code>{&quot;type&quot;, &quot;path&quot;/&quot;url&quot;, &quot;auth&quot;}</code>) for callers<br>
+that need to attach credentials. See <a href="../../usage/">usage.md</a>, §4.1, and the<br>
+runnable configs under <a href="../../../samples/"><code>samples/</code></a>.</p>
+<h3 id="etl-utility-code-review-go-implementation-design-3-go-implementation-design-deferred-out-of-current-core-scope" class="docmd-heading"><a href="#etl-utility-code-review-go-implementation-design-3-go-implementation-design-deferred-out-of-current-core-scope" class="heading-anchor" aria-label="Permalink to this section"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-link2-icon lucide-link-2"><path d="M9 17H7A5 5 0 0 1 7 7h2m6 0h2a5 5 0 1 1 0 10h-2m-7-5h8"/></svg></a>Deferred (out of current core scope)</h3>
+<p>S3 reader; S3 output; JSON output to cloud destinations; Excel (<code>ExcelJS</code>);<br>
+the <code>PushIfExist</code> / <code>FileIndexGenerator</code> dedup variants; the JS-eval<br>
+<code>customFunction</code> template fallback; <code>indexFile</code> external dedup; and<br>
+<code>context.Context</code> threading through the reader (Azure calls currently use<br>
+<code>context.Background()</code>). Local streaming <code>JSONGenerator</code> output is implemented.<br>
+In-memory <code>uniqueKey</code> deduplication is supported by the default writer only; the<br>
+JSON writer rejects <code>uniqueKey</code> and serializes every valid row it receives. The<br>
+<code>Reader</code> / <code>Writer</code> interfaces + factory are shaped so these slot in <strong>without<br>
+touching <code>etl.go</code></strong>.</p>
+<hr>
+<h2 id="etl-utility-code-review-go-implementation-design-4-running-testing" class="docmd-heading"><a href="#etl-utility-code-review-go-implementation-design-4-running-testing" class="heading-anchor" aria-label="Permalink to this section"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-link2-icon lucide-link-2"><path d="M9 17H7A5 5 0 0 1 7 7h2m6 0h2a5 5 0 1 1 0 10h-2m-7-5h8"/></svg></a>4. Running &amp; testing</h2>
+<pre class="hljs"><code class="language-bash"><span class="hljs-keyword">cd</span> <span class="hljs-keyword">go</span>
+
+<span class="hljs-comment"># Build everything</span>
+<span class="hljs-keyword">go</span> build .<span class="hljs-punctuation">/</span>...
+
+<span class="hljs-comment"># Unit + e2e tests (template, line, etl pipeline)</span>
+<span class="hljs-keyword">go</span> test .<span class="hljs-punctuation">/</span>...
+
+<span class="hljs-comment"># Terminal run (canonical JSON config file)</span>
+<span class="hljs-keyword">go</span> run .<span class="hljs-punctuation">/</span>cmd<span class="hljs-punctuation">/</span>etl <span class="hljs-punctuation">-</span>config .<span class="hljs-punctuation">/</span>samples<span class="hljs-punctuation">/</span>csv<span class="hljs-punctuation">-</span>to<span class="hljs-punctuation">-</span>csv<span class="hljs-punctuation">/</span>config.<span class="hljs-keyword">default</span>.<span class="hljs-attr">json</span>
+
+<span class="hljs-comment"># Worker / function run (the same canonical JSON via stdin → JSON result on stdout)</span>
+<span class="hljs-keyword">echo</span> <span class="hljs-string">&#039;{ &quot;source&quot;:&quot;in.csv&quot;,
+        &quot;output&quot;:{&quot;fileGenerator&quot;:&quot;default-generator&quot;,&quot;path&quot;:&quot;/tmp&quot;,&quot;filename&quot;:&quot;out.csv&quot;,
+          &quot;separator&quot;:&quot;;&quot;,&quot;template&quot;:&quot;{SKU};{NAME}&quot;,&quot;header&quot;:&quot;sku;name&quot;,&quot;footer&quot;:&quot;EOF&quot;},
+        &quot;options&quot;:{&quot;line&quot;:{&quot;columns&quot;:[&quot;BARCODE&quot;,&quot;SKU&quot;,&quot;NAME&quot;],&quot;mandatoryFields&quot;:[&quot;BARCODE&quot;,&quot;SKU&quot;],
+          &quot;separator&quot;:&quot;,&quot;,&quot;withHeader&quot;:true,
+          &quot;identifierMappings&quot;:[{&quot;out&quot;:&quot;barcode&quot;,&quot;src&quot;:&quot;BARCODE&quot;}]}} }&#039;</span> \
+  <span class="hljs-punctuation">|</span> <span class="hljs-keyword">go</span> run .<span class="hljs-punctuation">/</span>cmd<span class="hljs-punctuation">/</span>etl <span class="hljs-punctuation">-</span>config <span class="hljs-punctuation">-</span>
+</code></pre>
+<p><strong>Test coverage</strong>: <code>template</code> (substitution, <code>[timestamp]</code>/<code>[dateTime]</code>, data-path,<br>
+sanitize); <code>line</code> (quote stripping, missing columns, mandatory validation, header<br>
+detection, ordered output + defaults, identifiers); <code>reader</code> (Azure auth-mode<br>
+identification and precedence, source config legacy-string/object decoding and<br>
+validation, blob reader line scanning over an injected fake stream — CRLF,</p>
+<blockquote>
+<p>64 KiB lines, close idempotence, not-found translation); <code>etl</code> end-to-end<br>
+(happy path with a skipped invalid row, empty file → invalid + no output,<br>
+<code>rejectOnInvalidRow</code>, zero-error report deletion).</p>
+</blockquote>
+
+                
+                  <div class="page-navigation">
+                    
+                      <a href="../deployment-guide/" class="prev-page">
+                        
+<svg class="lucide-icon icon-arrow-left page-nav-icon" width="1em" height="1em" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"
+  class="lucide lucide-arrow-left"
+  xmlns="http://www.w3.org/2000/svg"
+  width="24"
+  height="24"
+  viewBox="0 0 24 24"
+  fill="none"
+  stroke="currentColor"
+  stroke-width="2"
+  stroke-linecap="round"
+  stroke-linejoin="round"
+>
+  <path d="m12 19-7-7 7-7" />
+  <path d="M19 12H5" />
+</svg>
+
+                        <span><small>Previous</small><strong>
+                            Deployment Guide — ETL Utility
+                          </strong></span>
+                      </a>
+                    
+                    
+                      <a href="../go-json-generator-design/" class="next-page">
+                        <span><small>Next</small>
+                          <strong>
+                            Go JSON Generator — Recommended Design
+                          </strong></span>
+                        
+<svg class="lucide-icon icon-arrow-right page-nav-icon" width="1em" height="1em" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"
+  class="lucide lucide-arrow-right"
+  xmlns="http://www.w3.org/2000/svg"
+  width="24"
+  height="24"
+  viewBox="0 0 24 24"
+  fill="none"
+  stroke="currentColor"
+  stroke-width="2"
+  stroke-linecap="round"
+  stroke-linejoin="round"
+>
+  <path d="M5 12h14" />
+  <path d="m12 5 7 7-7 7" />
+</svg>
+
+                      </a>
+                    
+                  </div>
+                
+              </div>
+              <div class="toc-sidebar">
+                
+
+
+  <div class="toc-container">
+    <h2 class="toc-title">On This Page<span class="mobile-view toc-menu-button float-right">
+<svg class="lucide-icon icon-chevron-down " width="1em" height="1em" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"
+  class="lucide lucide-chevron-down"
+  xmlns="http://www.w3.org/2000/svg"
+  width="24"
+  height="24"
+  viewBox="0 0 24 24"
+  fill="none"
+  stroke="currentColor"
+  stroke-width="2"
+  stroke-linecap="round"
+  stroke-linejoin="round"
+>
+  <path d="m6 9 6 6 6-6" />
+</svg>
+</span></h2>
+    <ul class="toc-list">
+      
+        <li class="toc-item toc-level-1">
+          <a href="#etl-utility-code-review-go-implementation-design" class="toc-link">ETL Utility — Code Review &amp; Go Implementation Design</a>
+        </li>
+      
+        <li class="toc-item toc-level-2">
+          <a href="#etl-utility-code-review-go-implementation-design-1-what-the-pipeline-does" class="toc-link">1. What the pipeline does</a>
+        </li>
+      
+        <li class="toc-item toc-level-3">
+          <a href="#etl-utility-code-review-go-implementation-design-1-what-the-pipeline-does-module-map-typescript" class="toc-link">Module map (TypeScript)</a>
+        </li>
+      
+        <li class="toc-item toc-level-3">
+          <a href="#etl-utility-code-review-go-implementation-design-1-what-the-pipeline-does-templating-model-preserved-in-the-port" class="toc-link">Templating model (preserved in the port)</a>
+        </li>
+      
+        <li class="toc-item toc-level-2">
+          <a href="#etl-utility-code-review-go-implementation-design-2-code-review-of-etlts" class="toc-link">2. Code review of etl.ts</a>
+        </li>
+      
+        <li class="toc-item toc-level-3">
+          <a href="#etl-utility-code-review-go-implementation-design-2-code-review-of-etlts-correctness-bugs" class="toc-link">Correctness / bugs</a>
+        </li>
+      
+        <li class="toc-item toc-level-3">
+          <a href="#etl-utility-code-review-go-implementation-design-2-code-review-of-etlts-design-maintainability" class="toc-link">Design / maintainability</a>
+        </li>
+      
+        <li class="toc-item toc-level-3">
+          <a href="#etl-utility-code-review-go-implementation-design-2-code-review-of-etlts-minor-subtle" class="toc-link">Minor / subtle</a>
+        </li>
+      
+        <li class="toc-item toc-level-2">
+          <a href="#etl-utility-code-review-go-implementation-design-3-go-implementation-design" class="toc-link">3. Go implementation design</a>
+        </li>
+      
+        <li class="toc-item toc-level-3">
+          <a href="#etl-utility-code-review-go-implementation-design-3-go-implementation-design-roadmap-alignment-multi-surface" class="toc-link">Roadmap alignment (multi-surface)</a>
+        </li>
+      
+        <li class="toc-item toc-level-3">
+          <a href="#etl-utility-code-review-go-implementation-design-3-go-implementation-design-package-layout-gogo" class="toc-link">Package layout (go/)</a>
+        </li>
+      
+        <li class="toc-item toc-level-3">
+          <a href="#etl-utility-code-review-go-implementation-design-3-go-implementation-design-data-flow" class="toc-link">Data flow</a>
+        </li>
+      
+        <li class="toc-item toc-level-3">
+          <a href="#etl-utility-code-review-go-implementation-design-3-go-implementation-design-ts-go-type-mapping" class="toc-link">TS → Go type mapping</a>
+        </li>
+      
+        <li class="toc-item toc-level-3">
+          <a href="#etl-utility-code-review-go-implementation-design-3-go-implementation-design-configuration-contract" class="toc-link">Configuration contract</a>
+        </li>
+      
+        <li class="toc-item toc-level-3">
+          <a href="#etl-utility-code-review-go-implementation-design-3-go-implementation-design-behavior-parity-notes-faithful-to-ts" class="toc-link">Behavior-parity notes (faithful to TS)</a>
+        </li>
+      
+        <li class="toc-item toc-level-3">
+          <a href="#etl-utility-code-review-go-implementation-design-3-go-implementation-design-implemented-since-core-migration-azure-blob-reader" class="toc-link">Implemented since core migration: Azure Blob reader</a>
+        </li>
+      
+        <li class="toc-item toc-level-3">
+          <a href="#etl-utility-code-review-go-implementation-design-3-go-implementation-design-deferred-out-of-current-core-scope" class="toc-link">Deferred (out of current core scope)</a>
+        </li>
+      
+        <li class="toc-item toc-level-2">
+          <a href="#etl-utility-code-review-go-implementation-design-4-running-testing" class="toc-link">4. Running &amp; testing</a>
+        </li>
+      
+    </ul>
+  </div>
+
+              </div>
+            </div>
+            <div class="page-footer-actions">
+              
+              
+                <span class="git-last-updated" data-timestamp="1784543345000">
+                  <svg class="git-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <polyline points="12 6 12 12 16 14"></polyline>
+                  </svg>
+                  <span class="git-label">Last updated:</span>
+                  <span class="git-time" data-timestamp="1784543345000"></span>
+                  
+                  <div class="git-commit-tooltip" role="tooltip">
+                    <div class="git-tooltip-title">Recent commits</div>
+                    <ul class="git-commit-list">
+                      
+                        <li class="git-commit-item">
+                          <div class="git-commit-avatar" title="moxalibudbud">
+                            
+                              <img src="https://www.gravatar.com/avatar/b24434cde1d9f733fde069a686a1e09f?d=mp&amp;s=64" alt="moxalibudbud">
+                            
+                          </div>
+                          <div class="git-commit-details">
+                            <div class="git-commit-message" title="refactor templating reference">refactor templating reference</div>
+                            <div class="git-commit-meta">
+                              <span class="git-commit-author">moxalibudbud</span>
+                              <span class="git-commit-date" data-timestamp="1784543345000"></span>
+                            </div>
+                          </div>
+                        </li>
+                      
+                        <li class="git-commit-item">
+                          <div class="git-commit-avatar" title="moxalibudbud">
+                            
+                              <img src="https://www.gravatar.com/avatar/b24434cde1d9f733fde069a686a1e09f?d=mp&amp;s=64" alt="moxalibudbud">
+                            
+                          </div>
+                          <div class="git-commit-details">
+                            <div class="git-commit-message" title="implement json writter phase 1">implement json writter phase 1</div>
+                            <div class="git-commit-meta">
+                              <span class="git-commit-author">moxalibudbud</span>
+                              <span class="git-commit-date" data-timestamp="1784542429000"></span>
+                            </div>
+                          </div>
+                        </li>
+                      
+                        <li class="git-commit-item">
+                          <div class="git-commit-avatar" title="moxalibudbud">
+                            
+                              <img src="https://www.gravatar.com/avatar/b24434cde1d9f733fde069a686a1e09f?d=mp&amp;s=64" alt="moxalibudbud">
+                            
+                          </div>
+                          <div class="git-commit-details">
+                            <div class="git-commit-message" title="update docs">update docs</div>
+                            <div class="git-commit-meta">
+                              <span class="git-commit-author">moxalibudbud</span>
+                              <span class="git-commit-date" data-timestamp="1784532412000"></span>
+                            </div>
+                          </div>
+                        </li>
+                      
+                        <li class="git-commit-item">
+                          <div class="git-commit-avatar" title="moxalibudbud">
+                            
+                              <img src="https://www.gravatar.com/avatar/b24434cde1d9f733fde069a686a1e09f?d=mp&amp;s=64" alt="moxalibudbud">
+                            
+                          </div>
+                          <div class="git-commit-details">
+                            <div class="git-commit-message" title="document blob reader">document blob reader</div>
+                            <div class="git-commit-meta">
+                              <span class="git-commit-author">moxalibudbud</span>
+                              <span class="git-commit-date" data-timestamp="1784287714000"></span>
+                            </div>
+                          </div>
+                        </li>
+                      
+                        <li class="git-commit-item">
+                          <div class="git-commit-avatar" title="moxalibudbud">
+                            
+                              <img src="https://www.gravatar.com/avatar/b24434cde1d9f733fde069a686a1e09f?d=mp&amp;s=64" alt="moxalibudbud">
+                            
+                          </div>
+                          <div class="git-commit-details">
+                            <div class="git-commit-message" title="finalize code review">finalize code review</div>
+                            <div class="git-commit-meta">
+                              <span class="git-commit-author">moxalibudbud</span>
+                              <span class="git-commit-date" data-timestamp="1784279470000"></span>
+                            </div>
+                          </div>
+                        </li>
+                      
+                    </ul>
+                  </div>
+                  
+                </span>
+              
+              <span class="git-spacer"></span>
+              
+            </div>
+          </main>
+          
+
+
+<footer class="page-footer">
+  <div class="footer-content">
+    <div class="user-footer">© 2026</div>
+    
+      <div class="branding-footer">
+        Built with <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"></path><path d="M12 5 9.04 7.96a2.17 2.17 0 0 0 0 3.08c.82.82 2.13.85 3 .07l2.07-1.9a2.82 2.82 0 0 1 3.79 0l2.96 2.66"></path><path d="m18 15-2-2"></path><path d="m15 18-2-2"></path></svg> <a href="https://docmd.io" target="_blank" rel="noopener">docmd.</a>
+      </div>
+    
+  </div>
+</footer>
+
+        </div>
+      </div>
+      
+      <script src="../assets/js/docmd-main.js?v=mrt8jbbm"></script>
+      
+      <script src="../assets/js/docmd-git.js?v=mrt8jbbm"></script>
+      <script src="../assets/js/docmd-image-lightbox.js?v=mrt8jbbm" ></script>
+<script src="../assets/js/vendor/minisearch.js?v=mrt8jbbm" ></script>
+<script src="../assets/js/docmd-search.js?v=mrt8jbbm" ></script>
+<script src="../assets/js/docmd-git.js?v=mrt8jbbm" type="module"></script>
+
+  <!-- Search Modal (Injected by @docmd/plugin-search) -->
+  <div id="docmd-search-modal" class="docmd-search-modal" style="display: none;" data-show-confidence="false" data-show-filters="true"
+       data-search-placeholder="Search documentation..."
+       data-search-no-results="No results found."
+       data-search-error="Failed to load search index."
+       data-search-offline="Search requires a web server. Open this site via http://localhost instead of file:// to enable search."
+       data-search-initial="Type to start searching..."
+       data-search-navigate="to navigate"
+       data-search-escape="to close">
+      <div class="docmd-search-box">
+          <div class="docmd-search-header">
+              <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide-icon icon-search"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg>
+              <input type="text" id="docmd-search-input" placeholder="Search documentation..." autocomplete="off" spellcheck="false">
+              <button onclick="window.closeDocmdSearch()" class="docmd-search-close" aria-label="Close search">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide-icon icon-x"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg>
+              </button>
+          </div>
+          <div id="docmd-search-results" class="docmd-search-results"></div>
+          <div class="docmd-search-footer">
+              <span><kbd class="docmd-kbd">↑</kbd> <kbd class="docmd-kbd">↓</kbd> to navigate</span>
+              <span><kbd class="docmd-kbd">ESC</kbd> to close</span>
+          </div>
+      </div>
+  </div>
+
+    <script>
+      (function() {
+        var searchDebounceTimer;
+
+        document.addEventListener('click', function(e) {
+          var link = e.target.closest('a');
+          if (!link || !window.gtag) return;
+          
+          var url = link.href;
+          var hostname = window.location.hostname;
+          var isExternal = link.hostname && link.hostname !== hostname;
+          var isDownload = link.hasAttribute('download') || url.match(/\.(pdf|zip|tar|gz|exe|pkg)$/i);
+          
+          if (isExternal) {
+            gtag('event', 'click_external', { 'url': url, 'link_text': link.innerText.trim() });
+          } else if (isDownload) {
+            gtag('event', 'download', { 'file_name': url.split('/').pop(), 'url': url });
+          }
+
+          // TOC tracking
+          if (link.classList.contains('toc-link')) {
+            gtag('event', 'toc_click', { 'target_id': link.getAttribute('href'), 'title': link.innerText.trim() });
+          }
+
+          // Permalink tracking
+          if (link.classList.contains('heading-anchor')) {
+            gtag('event', 'permalink_click', { 'url': url });
+          }
+        });
+
+        
+        // Search Keyword Tracking
+        document.addEventListener('input', function(e) {
+          if (e.target.id === 'docmd-search-input' && window.gtag) {
+            var query = e.target.value.trim();
+            if (query.length < 3) return;
+            
+            clearTimeout(searchDebounceTimer);
+            searchDebounceTimer = setTimeout(function() {
+              gtag('event', 'search', { 'search_term': query });
+            }, 1000);
+          }
+        });
+        
+      })();
+    </script>
+
+<script>window.__git_config={"repo":null,"branch":"main","editLink":false,"lastUpdated":true,"commitHistory":true,"maxCommits":5,"dateFormat":"relative"};window.__git_i18n={"lastUpdated":"Last updated","recentCommits":"Recent commits","viewCommitHistory":"View commit history","editOnGitHub":"Edit on GitHub","editOnGitLab":"Edit on GitLab","editOnBitbucket":"Edit on Bitbucket","editThisPage":"Edit this page","justNow":"just now","minutesAgo":"{n}m ago","hoursAgo":"{n}h ago","daysAgo":"{n}d ago"}</script>
+      
+      
+      
+  </body>
+</html>
