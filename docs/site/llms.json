@@ -16,19 +16,25 @@
     },
     {
       "title": "ETL Utility — Code Review & Go Implementation Design",
-      "url": "/ETL_CODE_REVIEW_AND_GO_DESIGN/",
+      "url": "/etl-code-review-and-go-des/",
       "description": "",
       "priority": "medium"
     },
     {
       "title": "Go JSON Generator — Recommended Design",
-      "url": "/GO_JSON_GENERATOR_DESIGN/",
+      "url": "/go-json-generator-design/",
       "description": "",
       "priority": "medium"
     },
     {
+      "title": "Documentation",
+      "url": "/",
+      "description": "",
+      "priority": "high"
+    },
+    {
       "title": "Migration Process — TypeScript ETL → Go",
-      "url": "/MIGRATION_PROCESS/",
+      "url": "/migration-process/",
       "description": "",
       "priority": "medium"
     },

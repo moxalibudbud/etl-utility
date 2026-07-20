@@ -1,12 +1,12 @@
 ---
 type: concept
 title: "Migration Process — TypeScript ETL → Go"
-source: /MIGRATION_PROCESS/
-path: /MIGRATION_PROCESS/
+source: /migration-process/
+path: /migration-process/
 updated: 2026-07-20
 okf:
   generated_by: "@docmd/plugin-okf"
-  generated_at: "2026-07-20T07:11:07.549Z"
+  generated_at: "2026-07-20T07:24:35.075Z"
 ---
 # Migration Process — TypeScript ETL → Go
 
@@ -18,7 +18,7 @@ implemented. S3 reader, cloud (Azure/S3) output destinations, and
 Excel/JSON/dedup writers deferred.
 
 For the architectural rationale, code-review details, and TS→Go type mapping, see
-[ETL_CODE_REVIEW_AND_GO_DESIGN.md](ETL_CODE_REVIEW_AND_GO_DESIGN.md).
+[etl-code-review-and-go-design.md](etl-code-review-and-go-design.md).
 
 ---
 

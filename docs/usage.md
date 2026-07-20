@@ -5,7 +5,7 @@ web application that accepts a source file upload and needs it validated and
 transformed into a delimited output file.
 
 For the internal design and TS→Go migration rationale, see
-[ETL_CODE_REVIEW_AND_GO_DESIGN.md](ETL_CODE_REVIEW_AND_GO_DESIGN.md).
+[etl-code-review-and-go-design.md](etl-code-review-and-go-design.md).
 
 For build and hosting instructions, see
 [deployment-guide.md](deployment-guide.md).

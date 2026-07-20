@@ -1,12 +1,12 @@
 ---
 type: concept
 title: "Go JSON Generator — Recommended Design"
-source: /GO_JSON_GENERATOR_DESIGN/
-path: /GO_JSON_GENERATOR_DESIGN/
+source: /go-json-generator-design/
+path: /go-json-generator-design/
 updated: 2026-07-20
 okf:
   generated_by: "@docmd/plugin-okf"
-  generated_at: "2026-07-20T07:11:07.548Z"
+  generated_at: "2026-07-20T07:24:35.073Z"
 ---
 # Go JSON Generator — Recommended Design
 

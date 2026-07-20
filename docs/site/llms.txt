@@ -6,9 +6,10 @@
 
 - [Backlog](/backlogs/)
 - [Deployment Guide — ETL Utility](/deployment-guide/)
-- [ETL Utility — Code Review & Go Implementation Design](/ETL_CODE_REVIEW_AND_GO_DESIGN/)
-- [Go JSON Generator — Recommended Design](/GO_JSON_GENERATOR_DESIGN/)
-- [Migration Process — TypeScript ETL → Go](/MIGRATION_PROCESS/)
+- [ETL Utility — Code Review & Go Implementation Design](/etl-code-review-and-go-des/)
+- [Go JSON Generator — Recommended Design](/go-json-generator-design/)
+- [Documentation](/)
+- [Migration Process — TypeScript ETL → Go](/migration-process/)
 - [Output File Improvement Plan](/output-file-improvement/)
 - [Source File Improvement Plan](/source-file-improvement/)
 - [Usage Guide — Integrating the ETL Utility (Go)](/usage/)

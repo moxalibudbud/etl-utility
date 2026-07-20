@@ -6,7 +6,7 @@ path: /usage/
 updated: 2026-07-20
 okf:
   generated_by: "@docmd/plugin-okf"
-  generated_at: "2026-07-20T07:11:07.553Z"
+  generated_at: "2026-07-20T07:24:35.077Z"
 ---
 # Usage Guide — Integrating the ETL Utility (Go)
 
@@ -15,7 +15,7 @@ web application that accepts a source file upload and needs it validated and
 transformed into a delimited output file.
 
 For the internal design and TS→Go migration rationale, see
-[ETL_CODE_REVIEW_AND_GO_DESIGN.md](ETL_CODE_REVIEW_AND_GO_DESIGN.md).
+[etl-code-review-and-go-design.md](etl-code-review-and-go-design.md).
 
 For build and hosting instructions, see
 [deployment-guide.md](deployment-guide.md).

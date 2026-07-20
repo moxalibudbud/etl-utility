@@ -1,12 +1,12 @@
 ---
 type: concept
 title: "ETL Utility — Code Review & Go Implementation Design"
-source: /ETL_CODE_REVIEW_AND_GO_DESIGN/
-path: /ETL_CODE_REVIEW_AND_GO_DESIGN/
+source: /etl-code-review-and-go-des/
+path: /etl-code-review-and-go-des/
 updated: 2026-07-20
 okf:
   generated_by: "@docmd/plugin-okf"
-  generated_at: "2026-07-20T07:11:07.546Z"
+  generated_at: "2026-07-20T07:24:35.072Z"
 ---
 # ETL Utility — Code Review & Go Implementation Design
 

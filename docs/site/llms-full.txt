@@ -273,7 +273,7 @@ The zip listing should show a root-level `bootstrap` file.
 
 ---
 
-## [ETL Utility — Code Review & Go Implementation Design](/ETL_CODE_REVIEW_AND_GO_DESIGN/)
+## [ETL Utility — Code Review & Go Implementation Design](/etl-code-review-and-go-des/)
 
 # ETL Utility — Code Review & Go Implementation Design
 
@@ -530,7 +530,7 @@ validation, blob reader line scanning over an injected fake stream — CRLF,
 
 ---
 
-## [Go JSON Generator — Recommended Design](/GO_JSON_GENERATOR_DESIGN/)
+## [Go JSON Generator — Recommended Design](/go-json-generator-design/)
 
 # Go JSON Generator — Recommended Design
 
@@ -1043,7 +1043,40 @@ The local Go JSON generator is complete when:
 
 ---
 
-## [Migration Process — TypeScript ETL → Go](/MIGRATION_PROCESS/)
+## [Documentation](/)
+
+---
+title: Documentation
+---
+
+# Documentation
+
+Documentation for using, migrating, deploying, and extending the ETL utility.
+
+## Usage and operations
+
+- [Usage Guide](usage.md)
+- [Deployment Guide](deployment-guide.md)
+
+## Architecture and migration
+
+- [ETL Code Review and Go Implementation Design](etl-code-review-and-go-design.md)
+- [TypeScript to Go Migration Process](migration-process.md)
+
+## Improvement designs
+
+- [Go JSON Generator Design](go-json-generator-design.md)
+- [Source File Improvement Plan](source-file-improvement.md)
+- [Output File Improvement Plan](output-file-improvement.md)
+
+## Planning
+
+- [Backlog](backlogs.md)
+
+
+---
+
+## [Migration Process — TypeScript ETL → Go](/migration-process/)
 
 # Migration Process — TypeScript ETL → Go
 
@@ -1055,7 +1088,7 @@ implemented. S3 reader, cloud (Azure/S3) output destinations, and
 Excel/JSON/dedup writers deferred.
 
 For the architectural rationale, code-review details, and TS→Go type mapping, see
-[ETL_CODE_REVIEW_AND_GO_DESIGN.md](ETL_CODE_REVIEW_AND_GO_DESIGN.md).
+[etl-code-review-and-go-design.md](etl-code-review-and-go-design.md).
 
 ---
 
@@ -2124,7 +2157,7 @@ web application that accepts a source file upload and needs it validated and
 transformed into a delimited output file.
 
 For the internal design and TS→Go migration rationale, see
-[ETL_CODE_REVIEW_AND_GO_DESIGN.md](ETL_CODE_REVIEW_AND_GO_DESIGN.md).
+[etl-code-review-and-go-design.md](etl-code-review-and-go-design.md).
 
 For build and hosting instructions, see
 [deployment-guide.md](deployment-guide.md).

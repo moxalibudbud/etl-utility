@@ -6,7 +6,7 @@ path: /source-file-improvement/
 updated: 2026-07-20
 okf:
   generated_by: "@docmd/plugin-okf"
-  generated_at: "2026-07-20T07:11:07.552Z"
+  generated_at: "2026-07-20T07:24:35.076Z"
 ---
 # Source File Improvement Plan
 

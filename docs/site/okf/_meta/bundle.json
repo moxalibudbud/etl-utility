@@ -6,48 +6,18 @@
     "description": "",
     "url": "",
     "generated_by": "@docmd/plugin-okf",
-    "generated_at": "2026-07-20T07:11:07.553Z",
+    "generated_at": "2026-07-20T07:24:35.078Z",
     "default_type": "concept"
   },
   "stats": {
-    "concepts": 8,
+    "concepts": 9,
     "by_type": {
-      "concept": 8
+      "concept": 9
     },
     "locales": [],
     "versions": []
   },
   "concepts": [
-    {
-      "id": "etl-code-review-and-go-design",
-      "type": "concept",
-      "title": "ETL Utility — Code Review & Go Implementation Design",
-      "path": "/ETL_CODE_REVIEW_AND_GO_DESIGN/",
-      "file": "concepts/etl-code-review-and-go-design.md",
-      "locale": "",
-      "version": "",
-      "tags": []
-    },
-    {
-      "id": "go-json-generator-design",
-      "type": "concept",
-      "title": "Go JSON Generator — Recommended Design",
-      "path": "/GO_JSON_GENERATOR_DESIGN/",
-      "file": "concepts/go-json-generator-design.md",
-      "locale": "",
-      "version": "",
-      "tags": []
-    },
-    {
-      "id": "migration-process",
-      "type": "concept",
-      "title": "Migration Process — TypeScript ETL → Go",
-      "path": "/MIGRATION_PROCESS/",
-      "file": "concepts/migration-process.md",
-      "locale": "",
-      "version": "",
-      "tags": []
-    },
     {
       "id": "backlogs",
       "type": "concept",
@@ -64,6 +34,46 @@
       "title": "Deployment Guide — ETL Utility",
       "path": "/deployment-guide/",
       "file": "concepts/deployment-guide.md",
+      "locale": "",
+      "version": "",
+      "tags": []
+    },
+    {
+      "id": "etl-code-review-and-go-des",
+      "type": "concept",
+      "title": "ETL Utility — Code Review & Go Implementation Design",
+      "path": "/etl-code-review-and-go-des/",
+      "file": "concepts/etl-code-review-and-go-des.md",
+      "locale": "",
+      "version": "",
+      "tags": []
+    },
+    {
+      "id": "go-json-generator-design",
+      "type": "concept",
+      "title": "Go JSON Generator — Recommended Design",
+      "path": "/go-json-generator-design/",
+      "file": "concepts/go-json-generator-design.md",
+      "locale": "",
+      "version": "",
+      "tags": []
+    },
+    {
+      "id": "root",
+      "type": "concept",
+      "title": "Documentation",
+      "path": "/",
+      "file": "concepts/root.md",
+      "locale": "",
+      "version": "",
+      "tags": []
+    },
+    {
+      "id": "migration-process",
+      "type": "concept",
+      "title": "Migration Process — TypeScript ETL → Go",
+      "path": "/migration-process/",
+      "file": "concepts/migration-process.md",
       "locale": "",
       "version": "",
       "tags": []

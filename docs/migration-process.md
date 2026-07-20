@@ -8,7 +8,7 @@ implemented. S3 reader, cloud (Azure/S3) output destinations, and
 Excel/JSON/dedup writers deferred.
 
 For the architectural rationale, code-review details, and TS→Go type mapping, see
-[ETL_CODE_REVIEW_AND_GO_DESIGN.md](ETL_CODE_REVIEW_AND_GO_DESIGN.md).
+[etl-code-review-and-go-design.md](etl-code-review-and-go-design.md).
 
 ---
 
