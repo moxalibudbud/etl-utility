@@ -19,6 +19,7 @@ Documentation for using, migrating, deploying, and extending the ETL utility.
 ## Improvement designs
 
 - [Go JSON Generator Design](go-json-generator-design.md)
+- [Structured Typed JSON Template Refactor](structured-typed-json-template-refactor.md)
 - [Source File Improvement Plan](source-file-improvement.md)
 - [Output File Improvement Plan](output-file-improvement.md)
 
