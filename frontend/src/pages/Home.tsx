@@ -37,13 +37,23 @@ export default function Home() {
         </header>
 
         <section>
-          <Link
-            key="config-builder"
-            to="/config-builder"
-            className="flex flex-col gap-3 border border-border bg-card p-4 text-left hover:bg-accent transition-colors"
-          >
-            Config Builder
-          </Link>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Link
+              key="config-builder"
+              to="/config-builder"
+              className="flex flex-col gap-3 border border-border bg-card p-4 text-left hover:bg-accent transition-colors"
+            >
+              Config Builder
+            </Link>
+            <Link
+              key="octoplus"
+              to="/octoplus"
+              className="flex flex-col gap-3 border border-border bg-card p-4 text-left hover:bg-accent transition-colors"
+            >
+              Octo+ Home
+            </Link>
+            
+          </div>
         </section>
       </div>
     </div>

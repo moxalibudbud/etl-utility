@@ -1,4 +1,4 @@
-import { Archive, Barcode, Building2, Folder, Package, Printer, Store, Truck } from 'lucide-react'
+import { Archive, ArrowLeft, Barcode, Building2, Folder, Package, Printer, Store, Truck } from 'lucide-react'
 import { Link } from 'react-router'
 import type { LucideIcon } from 'lucide-react'
 import type { RepoSlug, RepoKind } from '@/lib/schema'
@@ -27,9 +27,13 @@ export default function OctoplusPortalHome() {
     <div className="min-h-screen bg-background text-foreground">
       <div className="mx-auto max-w-3xl px-6 py-16">
         <header className="mb-14">
-          <p className="text-xs font-medium uppercase tracking-widest text-muted-foreground mb-3">
-            Internal · Phase 1
-          </p>
+          <Link
+            to="/"
+            className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors mb-8"
+          >
+            <ArrowLeft className="h-3 w-3" strokeWidth={1.5} />
+            Home
+          </Link>
           <h1 className="text-3xl font-semibold tracking-tight">Octo+ Portal</h1>
           <p className="mt-3 text-muted-foreground leading-relaxed max-w-lg">
             Generate valid Octo+ CSV files in English and deliver them
