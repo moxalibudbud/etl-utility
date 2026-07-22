@@ -2,6 +2,7 @@ import { Link } from 'react-router'
 import { ArrowLeft } from 'lucide-react'
 import { ConfigurationSummary } from '@/components/config/ConfigurationSummary'
 import { LineConfigBuilder } from '@/components/config/LineConfigBuilder'
+import { OutputConfigBuilder } from '@/components/config/OutputConfigBuilder'
 import { mockConfig } from '@/lib/config/mock'
 
 export default function ConfigBuilder() {
@@ -34,6 +35,13 @@ export default function ConfigBuilder() {
               Build <code className="font-mono normal-case">options.line</code>
             </h2>
             <LineConfigBuilder />
+          </div>
+
+          <div className="space-y-4">
+            <h2 className="text-xs font-semibold uppercase tracking-widest">
+              Build <code className="font-mono normal-case">output</code>
+            </h2>
+            <OutputConfigBuilder />
           </div>
 
           <div className="space-y-4">
