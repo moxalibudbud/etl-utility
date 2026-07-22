@@ -40,15 +40,15 @@ export default function ConfigBuilder() {
             <TabsTrigger value="summary">Summary</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="line" className="mt-6">
+          <TabsContent value="line" className="mt-6" keepMounted>
             <LineConfigBuilder onColumnsChange={setSourceColumns} />
           </TabsContent>
 
-          <TabsContent value="output" className="mt-6">
+          <TabsContent value="output" className="mt-6" keepMounted>
             <OutputConfigBuilder sourceColumns={sourceColumns} />
           </TabsContent>
 
-          <TabsContent value="summary" className="mt-6 space-y-4">
+          <TabsContent value="summary" className="mt-6 space-y-4" keepMounted>
             <p className="text-xs text-muted-foreground">
               Mock data — not wired up to the Source / Output tabs yet.
             </p>
