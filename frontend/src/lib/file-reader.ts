@@ -9,7 +9,7 @@ export function detectDelimiter(sample: string): Delimiter {
   return firstLine.includes(';') ? ';' : ','
 }
 
-export function parseCSVLine(line: string, delimiter: Delimiter): string[] {
+export function parseLine(line: string, delimiter: Delimiter): string[] {
   return line.split(delimiter)
 }
 
@@ -25,7 +25,7 @@ export async function readHeader(
     throw new Error('Could not read header row — file appears to be empty.')
   }
   const delimiter = delimiterOverride || detectDelimiter(text)
-  const firstRowCells = parseCSVLine(firstLine, delimiter)
+  const firstRowCells = parseLine(firstLine, delimiter)
   const columns = hasHeader
     ? firstRowCells.map((c) => c.trim())
     : firstRowCells.map((_, i) => `Column ${i + 1}`)
