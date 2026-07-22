@@ -1,12 +1,12 @@
 # Frontend Agent Guidelines
 
-Instructions for coding agents working in the Octo+ Data Portal frontend.
+Instructions for coding agents:
 
-Read the root `../AGENTS.md` first. It contains the product architecture,
-security constraints, schema-driven design requirements, Octo+ integration
-rules, and repository-wide decisions.
+This project is a boilerplate for a React frontend using Vite, TypeScript, React Router, shadcn/ui, Tailwind CSS, and Lucide React icons.
+It has an implementation of a Config Builder UI that allows users to build a config for the ETL utility defined in ./docs/config-builder-ui-improvement.md.
+We used this boilerplate as a starting point for the project because some of the implementation is in frontend/src/lib/schema.
 
-This file defines frontend-specific implementation conventions.
+DON'T DELETE THE EXISING IMPLEMENTATION OF THIS PROJECT to implement ./docs/config-builder-ui-improvement.md. Instead, extend this project to support the new features.
 
 ## Stack
 
