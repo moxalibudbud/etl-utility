@@ -25,7 +25,7 @@ export function ConfigurationSummary({ config }: ConfigurationSummaryProps) {
         mappings={config.options.line.identifierMappings}
         columns={config.options.line.columns}
       />
-      <ConfigJsonPanel config={config} />
+      <ConfigJsonPanel data={config} />
     </div>
   )
 }
