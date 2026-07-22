@@ -1,5 +1,6 @@
 import { Link } from 'react-router'
 import { ArrowLeft } from 'lucide-react'
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { ConfigurationSummary } from '@/components/config/ConfigurationSummary'
 import { LineConfigBuilder } from '@/components/config/LineConfigBuilder'
 import { OutputConfigBuilder } from '@/components/config/OutputConfigBuilder'
@@ -29,29 +30,28 @@ export default function ConfigBuilder() {
           full plan.
         </p>
 
-        <div className="space-y-10">
-          <div className="space-y-4">
-            <h2 className="text-xs font-semibold uppercase tracking-widest">
-              Build <code className="font-mono normal-case">options.line</code>
-            </h2>
+        <Tabs defaultValue="line">
+          <TabsList>
+            <TabsTrigger value="line">Source</TabsTrigger>
+            <TabsTrigger value="output">Output</TabsTrigger>
+            <TabsTrigger value="summary">Summary</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="line" className="mt-6">
             <LineConfigBuilder />
-          </div>
+          </TabsContent>
 
-          <div className="space-y-4">
-            <h2 className="text-xs font-semibold uppercase tracking-widest">
-              Build <code className="font-mono normal-case">output</code>
-            </h2>
+          <TabsContent value="output" className="mt-6">
             <OutputConfigBuilder />
-          </div>
+          </TabsContent>
 
-          <div className="space-y-4">
-            <h2 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-              Rest of the config{' '}
-              <span className="normal-case font-normal">(mock — not wired up yet)</span>
-            </h2>
+          <TabsContent value="summary" className="mt-6 space-y-4">
+            <p className="text-xs text-muted-foreground">
+              Mock data — not wired up to the Source / Output tabs yet.
+            </p>
             <ConfigurationSummary config={mockConfig} />
-          </div>
-        </div>
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   )
