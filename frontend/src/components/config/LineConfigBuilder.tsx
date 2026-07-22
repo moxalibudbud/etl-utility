@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { FileUpload } from '@/components/transform/FileUpload'
 import { Button } from '@/components/ui/button'
 import { Section } from './Section'
@@ -39,7 +39,14 @@ function ColumnCheckboxes({
   )
 }
 
-export function LineConfigBuilder() {
+interface LineConfigBuilderProps {
+  /** Notified whenever the source columns change, so a sibling (e.g. the
+   * output uniqueKey select, which must reference a source column via
+   * SourceLine.JSONLine) can offer them without re-uploading the file. */
+  onColumnsChange?: (columns: string[]) => void
+}
+
+export function LineConfigBuilder({ onColumnsChange }: LineConfigBuilderProps = {}) {
   const [columns, setColumns] = useState<string[]>([])
   const [separator, setSeparator] = useState<Delimiter>(';')
   const [withHeader, setWithHeader] = useState(true)
@@ -55,6 +62,10 @@ export function LineConfigBuilder() {
     setIdentifierColumns([])
     setSavedAt(null)
   }
+
+  useEffect(() => {
+    onColumnsChange?.(columns)
+  }, [columns, onColumnsChange])
 
   const identifierMappings: Mapping[] = useMemo(
     () => identifierColumns.map((col) => ({ out: col, src: col })),

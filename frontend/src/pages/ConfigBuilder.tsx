@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Link } from 'react-router'
 import { ArrowLeft } from 'lucide-react'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
@@ -7,6 +8,8 @@ import { OutputConfigBuilder } from '@/components/config/OutputConfigBuilder'
 import { mockConfig } from '@/lib/config/mock'
 
 export default function ConfigBuilder() {
+  const [sourceColumns, setSourceColumns] = useState<string[]>([])
+
   return (
     <div className="min-h-screen bg-background text-foreground">
       <div className="mx-auto max-w-7xl px-6 py-10">
@@ -38,11 +41,11 @@ export default function ConfigBuilder() {
           </TabsList>
 
           <TabsContent value="line" className="mt-6">
-            <LineConfigBuilder />
+            <LineConfigBuilder onColumnsChange={setSourceColumns} />
           </TabsContent>
 
           <TabsContent value="output" className="mt-6">
-            <OutputConfigBuilder />
+            <OutputConfigBuilder sourceColumns={sourceColumns} />
           </TabsContent>
 
           <TabsContent value="summary" className="mt-6 space-y-4">

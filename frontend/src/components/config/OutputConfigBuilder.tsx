@@ -26,10 +26,20 @@ const SUPPORTED_GENERATORS = [
   { value: 'json-generator', label: 'JSON' },
 ] as const
 
-export function OutputConfigBuilder() {
+const NO_UNIQUE_KEY = '__none__'
+
+interface OutputConfigBuilderProps {
+  /** Source columns from the Source tab — uniqueKey must name one of these,
+   * since the writer looks it up as sl.JSONLine[UniqueKey]
+   * (go/writer/render.go), and JSONLine is keyed by options.line.columns. */
+  sourceColumns?: string[]
+}
+
+export function OutputConfigBuilder({ sourceColumns = [] }: OutputConfigBuilderProps) {
   const [fileGenerator, setFileGenerator] = useState<string>('default-generator')
   const [filename, setFilename] = useState('')
   const [footer, setFooter] = useState('')
+  const [uniqueKey, setUniqueKey] = useState('')
   // Key names only — output.metadata's values are populated at runtime by
   // the pipeline, not authored here. This just tells the templated fields
   // below which data.metadata.<key> tokens are valid to insert.
@@ -59,10 +69,10 @@ export function OutputConfigBuilder() {
       footer: isDelimited ? footer : '',
       template: '',
       arrayField: '',
-      uniqueKey: '',
+      uniqueKey: isDelimited ? uniqueKey : '',
       metadata: {}, // populated at runtime, not authored here
     }),
-    [fileGenerator, filename, isDelimited, separator, header, footer],
+    [fileGenerator, filename, isDelimited, separator, header, footer, uniqueKey],
   )
 
   function handleSave() {
@@ -124,6 +134,37 @@ export function OutputConfigBuilder() {
               placeholder="END OF FILE"
               metadataKeys={metadataKeys}
             />
+          </Section>
+
+          <Section
+            title="Unique key"
+            meta={<span className="text-xs text-muted-foreground">de-duplicates rows by this source column</span>}
+          >
+            <Select
+              value={uniqueKey === '' ? NO_UNIQUE_KEY : uniqueKey}
+              onValueChange={(v) => {
+                setUniqueKey(v === NO_UNIQUE_KEY ? '' : (v as string))
+                setSavedAt(null)
+              }}
+              disabled={sourceColumns.length === 0}
+            >
+              <SelectTrigger className="w-56">
+                <SelectValue placeholder="no source columns yet" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={NO_UNIQUE_KEY}>— none —</SelectItem>
+                {sourceColumns.map((col) => (
+                  <SelectItem key={col} value={col}>
+                    {col}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {sourceColumns.length === 0 && (
+              <p className="mt-2 text-[10px] text-muted-foreground">
+                Build the Source tab first to populate columns.
+              </p>
+            )}
           </Section>
 
           <Section title="Sample output file">
