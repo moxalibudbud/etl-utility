@@ -4,13 +4,38 @@ export type Delimiter = string
 
 export type ColumnMapping = Record<string, string | null>
 
+const DELIMITER_CANDIDATES: Delimiter[] = [',', ';', '\t', '|']
+
+// Picks whichever candidate appears most often in the first line, defaulting
+// to comma when none appear at all. Covers the four separators the ETL core
+// itself treats as the usual candidates (see docs/config-builder-ui-improvement.md).
 export function detectDelimiter(sample: string): Delimiter {
   const firstLine = sample.split(/\r?\n/)[0] ?? ''
-  return firstLine.includes(';') ? ';' : ','
+  let best: Delimiter = ','
+  let bestCount = 0
+  for (const candidate of DELIMITER_CANDIDATES) {
+    const count = firstLine.split(candidate).length - 1
+    if (count > bestCount) {
+      best = candidate
+      bestCount = count
+    }
+  }
+  return best
 }
 
 export function parseLine(line: string, delimiter: Delimiter): string[] {
   return line.split(delimiter)
+}
+
+// A human-readable label for a delimiter — raw whitespace characters (tab)
+// collapse to nothing visible when rendered directly in HTML.
+export function delimiterLabel(delimiter: Delimiter): string {
+  if (delimiter === '') return 'auto'
+  if (delimiter === ',') return 'comma (,)'
+  if (delimiter === ';') return 'semicolon (;)'
+  if (delimiter === '\t') return 'tab'
+  if (delimiter === '|') return 'pipe (|)'
+  return `"${delimiter}"`
 }
 
 export async function readHeader(

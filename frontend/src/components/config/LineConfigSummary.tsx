@@ -1,5 +1,6 @@
 import { Badge } from '@/components/ui/badge'
 import { FieldRow } from './Section'
+import { delimiterLabel } from '@/lib/file-reader'
 import type { LineConfig } from '@/lib/config/types'
 
 interface LineConfigSummaryProps {
@@ -13,7 +14,7 @@ export function LineConfigSummary({ line }: LineConfigSummaryProps) {
 
   return (
     <>
-      <FieldRow label="separator">"{line.separator}"</FieldRow>
+      <FieldRow label="separator">{delimiterLabel(line.separator)}</FieldRow>
       <FieldRow label="withHeader">
         <Badge variant={line.withHeader ? 'default' : 'secondary'}>
           {line.withHeader ? 'true' : 'false'}

@@ -1,6 +1,7 @@
 import { Badge } from '@/components/ui/badge'
 import { Section, FieldRow } from './Section'
 import { resolveAuthMode } from '@/lib/config/auth'
+import { delimiterLabel } from '@/lib/file-reader'
 import type { OutputConfig } from '@/lib/config/types'
 
 interface OutputSummaryProps {
@@ -46,7 +47,7 @@ export function OutputSummary({ output }: OutputSummaryProps) {
           </>
         ) : (
           <>
-            <FieldRow label="separator">"{output.separator}"</FieldRow>
+            <FieldRow label="separator">{delimiterLabel(output.separator)}</FieldRow>
             <FieldRow label="header">{output.header || '—'}</FieldRow>
             <FieldRow label="footer">{output.footer || '—'}</FieldRow>
           </>

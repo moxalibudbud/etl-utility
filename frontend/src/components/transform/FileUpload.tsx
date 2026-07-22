@@ -1,20 +1,22 @@
 import { useRef, useState } from 'react'
 import { Upload } from 'lucide-react'
-import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { readHeader } from '@/lib/file-reader'
+import { readHeader, delimiterLabel } from '@/lib/file-reader'
 import type { Delimiter } from '@/lib/file-reader'
 
 interface FileUploadProps {
   onFileSelected: (file: File, columns: string[], delimiter: Delimiter, hasHeader: boolean) => void
 }
 
-function delimiterLabel(delimiter: Delimiter): string {
-  if (delimiter === ';') return 'semicolon (;)'
-  if (delimiter === ',') return 'comma (,)'
-  if (delimiter === '\t') return 'tab'
-  return `"${delimiter}"`
-}
+// Quick-select presets — typing an actual tab character into a text input
+// isn't practical (Tab moves focus instead of inserting \t in a browser).
+const SEPARATOR_PRESETS: { value: Delimiter; label: string }[] = [
+  { value: '', label: 'Auto' },
+  { value: ',', label: 'Comma' },
+  { value: ';', label: 'Semicolon' },
+  { value: '\t', label: 'Tab' },
+  { value: '|', label: 'Pipe' },
+]
 
 export function FileUpload({ onFileSelected }: FileUploadProps) {
   const inputRef = useRef<HTMLInputElement>(null)
@@ -51,8 +53,7 @@ export function FileUpload({ onFileSelected }: FileUploadProps) {
     if (file) handleFile(file)
   }
 
-  function handleSeparatorChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const value = e.target.value
+  function applySeparator(value: string) {
     setSeparator(value)
     if (selectedFile) handleFile(selectedFile, value)
   }
@@ -92,17 +93,20 @@ export function FileUpload({ onFileSelected }: FileUploadProps) {
 
       <div className="flex items-center gap-4">
         <div className="flex items-center gap-2">
-          <Label htmlFor="separator" className="text-muted-foreground">
-            Separator
-          </Label>
-          <Input
-            id="separator"
-            value={separator}
-            onChange={handleSeparatorChange}
-            maxLength={1}
-            placeholder="auto"
-            className="w-16 font-mono text-center"
-          />
+          <Label className="text-muted-foreground">Separator</Label>
+          <div className="flex items-center gap-1">
+            {SEPARATOR_PRESETS.map((preset) => (
+              <button
+                key={preset.label}
+                type="button"
+                onClick={() => applySeparator(preset.value)}
+                aria-pressed={separator === preset.value}
+                className="text-[10px] font-mono border border-border px-1.5 py-0.5 hover:bg-accent aria-pressed:bg-accent transition-colors"
+              >
+                {preset.label}
+              </button>
+            ))}
+          </div>
         </div>
 
         <label htmlFor="has-header" className="flex items-center gap-2 cursor-pointer select-none">
