@@ -20,7 +20,7 @@ export const mockConfig: Config = {
     template: '',
     arrayField: '',
     uniqueKey: '',
-    metadata: { store_id: '123', count_id: '456', timestamp: '20250618220000' },
+    metadata: { store_id: '123', count_id: '456', timestamp: '20250618220000', filename: 'products_20250618220000.csv' },
     options: { errorReport: true },
   },
   options: {

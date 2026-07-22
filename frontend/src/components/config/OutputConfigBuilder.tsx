@@ -9,6 +9,8 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Section } from './Section'
+import { TemplatedTextField } from './TemplatedTextField'
+import { MetadataKeysEditor } from './MetadataKeysEditor'
 import { OutputSummary } from './OutputSummary'
 import { ConfigJsonPanel } from './ConfigJsonPanel'
 import { saveOutputConfig } from '@/lib/config/persist'
@@ -26,6 +28,12 @@ const SUPPORTED_GENERATORS = [
 
 export function OutputConfigBuilder() {
   const [fileGenerator, setFileGenerator] = useState<string>('default-generator')
+  const [filename, setFilename] = useState('')
+  const [footer, setFooter] = useState('')
+  // Key names only — output.metadata's values are populated at runtime by
+  // the pipeline, not authored here. This just tells the templated fields
+  // below which data.metadata.<key> tokens are valid to insert.
+  const [metadataKeys, setMetadataKeys] = useState<string[]>([])
   const [columns, setColumns] = useState<string[]>([])
   const [separator, setSeparator] = useState<Delimiter>(';')
   const [savedAt, setSavedAt] = useState<number | null>(null)
@@ -45,16 +53,16 @@ export function OutputConfigBuilder() {
   const outputConfig: OutputConfig = useMemo(
     () => ({
       fileGenerator,
-      filename: '',
+      filename,
       separator: isDelimited ? separator : '',
       header: isDelimited ? header : '',
-      footer: '',
+      footer: isDelimited ? footer : '',
       template: '',
       arrayField: '',
       uniqueKey: '',
-      metadata: {},
+      metadata: {}, // populated at runtime, not authored here
     }),
-    [fileGenerator, isDelimited, separator, header],
+    [fileGenerator, filename, isDelimited, separator, header, footer],
   )
 
   function handleSave() {
@@ -79,8 +87,45 @@ export function OutputConfigBuilder() {
         </Select>
       </Section>
 
+      <Section
+        title="Metadata keys"
+        meta={<span className="text-xs text-muted-foreground">values are populated at runtime</span>}
+      >
+        <MetadataKeysEditor keys={metadataKeys} onChange={setMetadataKeys} />
+      </Section>
+
+      <Section
+        title="Filename"
+        meta={<span className="text-xs text-muted-foreground">free text + [func ...] tokens</span>}
+      >
+        <TemplatedTextField
+          value={filename}
+          onChange={(v) => {
+            setFilename(v)
+            setSavedAt(null)
+          }}
+          placeholder="products_[dateTime YYYY-MM-DD].csv"
+          metadataKeys={metadataKeys}
+        />
+      </Section>
+
       {isDelimited ? (
         <>
+          <Section
+            title="Footer"
+            meta={<span className="text-xs text-muted-foreground">free text + [func ...] tokens</span>}
+          >
+            <TemplatedTextField
+              value={footer}
+              onChange={(v) => {
+                setFooter(v)
+                setSavedAt(null)
+              }}
+              placeholder="END OF FILE"
+              metadataKeys={metadataKeys}
+            />
+          </Section>
+
           <Section title="Sample output file">
             <FileUpload onFileSelected={handleFileSelected} />
           </Section>
