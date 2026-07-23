@@ -19,3 +19,9 @@ run the binary from there:
 go build -o go/bin/etl ./go/cmd
 ./go/bin/etl -config samples/local/config.object-form.json
 ```
+
+Or run directly with go run:
+
+```
+go run ./cmd -config /Users/dev/dev/etl-utility/sample-config/local/config.object-form.json
+```
