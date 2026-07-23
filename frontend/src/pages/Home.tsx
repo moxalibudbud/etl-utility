@@ -46,6 +46,13 @@ export default function Home() {
               Config Builder
             </Link>
             <Link
+              key="configs"
+              to="/configs"
+              className="flex flex-col gap-3 border border-border bg-card p-4 text-left hover:bg-accent transition-colors"
+            >
+              Saved Configurations
+            </Link>
+            <Link
               key="octoplus"
               to="/octoplus"
               className="flex flex-col gap-3 border border-border bg-card p-4 text-left hover:bg-accent transition-colors"

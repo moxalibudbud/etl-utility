@@ -105,6 +105,32 @@ export function toHeaderTemplateString(rows: StructuredTemplateRow[]): string {
   return parts.length > 0 ? `{${parts.join(',')}}` : ''
 }
 
+// Inverse of toStructuredTemplate — reconstructs editable rows from an
+// existing StructuredTemplate, so loading a saved Config can seed the editor
+// instead of starting blank. `string`/`number` values round-trip only when
+// they were already stored as strings (the wire shape allows a bare number
+// there too, per go/writer/json_template.go's stringNodeValue, which this
+// editor never produces itself — such a value is coerced to '' rather than
+// silently dropping the field).
+export function rowsFromStructuredTemplate(template: StructuredTemplate): StructuredTemplateRow[] {
+  return Object.entries(template).map(([name, node]) => {
+    const base = { id: crypto.randomUUID(), name, value: '', boolValue: false }
+    switch (node.type) {
+      case 'string':
+      case 'number':
+        return { ...base, type: node.type, value: typeof node.value === 'string' ? node.value : '' }
+      case 'boolean':
+        return { ...base, type: 'boolean' as const, boolValue: node.value === true }
+      case 'null':
+        return { ...base, type: 'null' as const }
+      case 'literal':
+        return { ...base, type: 'literal' as const, value: JSON.stringify(node.value ?? null, null, 2) }
+      default:
+        return { ...base, type: 'string' as const }
+    }
+  })
+}
+
 function literalParseError(value: string): string | null {
   if (value.trim() === '') return null
   try {

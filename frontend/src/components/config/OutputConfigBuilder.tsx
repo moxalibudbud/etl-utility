@@ -9,6 +9,7 @@ import {
   StructuredTemplateEditor,
   toStructuredTemplate,
   toHeaderTemplateString,
+  rowsFromStructuredTemplate,
   type StructuredTemplateRow,
 } from './StructuredTemplateEditor';
 import { JsonSampleUpload } from './JsonSampleUpload';
@@ -42,32 +43,52 @@ interface OutputConfigBuilderProps {
   /** Notified with the assembled OutputConfig on every change, so the page
    * can feed a live output into the Summary tab. */
   onChange?: (output: OutputConfig) => void;
+  /** Seeds the form from an existing OutputConfig (e.g. loaded from the
+   * config list) instead of starting blank. Only read once, on mount. */
+  initialOutput?: OutputConfig;
 }
 
-export function OutputConfigBuilder({ sourceColumns = [], onChange }: OutputConfigBuilderProps) {
-  const [type, setType] = useState<DestinationType>('local');
-  const [fileGenerator, setFileGenerator] = useState<string>('default-generator');
-  const [filename, setFilename] = useState('');
-  const [footer, setFooter] = useState('');
-  const [uniqueKey, setUniqueKey] = useState('');
+export function OutputConfigBuilder({ sourceColumns = [], onChange, initialOutput }: OutputConfigBuilderProps) {
+  const [type, setType] = useState<DestinationType>(initialOutput?.type ?? 'local');
+  const [fileGenerator, setFileGenerator] = useState<string>(initialOutput?.fileGenerator || 'default-generator');
+  const [filename, setFilename] = useState(initialOutput?.filename ?? '');
+  const [footer, setFooter] = useState(initialOutput?.footer ?? '');
+  const [uniqueKey, setUniqueKey] = useState(initialOutput?.uniqueKey ?? '');
   // Key names only — output.metadata's values are populated at runtime by
   // the pipeline, not authored here. This just tells the templated fields
-  // below which data.metadata.<key> tokens are valid to insert.
-  const [metadataKeys, setMetadataKeys] = useState<string[]>([]);
-  const [columns, setColumns] = useState<string[]>([]);
-  const [separator, setSeparator] = useState<Delimiter>(';');
+  // below which data.metadata.<key> tokens are valid to insert. Seeded from
+  // an existing config's metadata *keys* only, never its (runtime-populated) values.
+  const [metadataKeys, setMetadataKeys] = useState<string[]>(Object.keys(initialOutput?.metadata ?? {}));
+  // header is a joined string on the wire, not an array — split it back into
+  // columns using the config's own separator so re-loading looks the same
+  // as having just re-uploaded the original sample.
+  const initialSeparator = initialOutput?.separator || ';';
+  const initialColumns =
+    initialOutput?.header && initialOutput.separator ? initialOutput.header.split(initialOutput.separator) : [];
+  const [columns, setColumns] = useState<string[]>(initialColumns);
+  const [separator, setSeparator] = useState<Delimiter>(initialSeparator);
   // One template segment per header column, in order — joined by `separator`
   // to build output.template. Each segment is a {sourceColumn}/{metadata.key}
   // reference, a [func ...] token, or literal text (go/writer/render.go
   // renders the whole row through the same template layer as filename/header).
-  const [templateValues, setTemplateValues] = useState<string[]>([]);
+  const [templateValues, setTemplateValues] = useState<string[]>(
+    initialOutput?.template && initialOutput.separator
+      ? initialOutput.template.split(initialOutput.separator)
+      : new Array(initialColumns.length).fill(''),
+  );
   // JSON generator only: output.arrayField and the typed structuredTemplate
   // alternative to the string template (go/writer/json_template.go).
-  const [arrayField, setArrayField] = useState('');
-  const [structuredRows, setStructuredRows] = useState<StructuredTemplateRow[]>([]);
+  const [arrayField, setArrayField] = useState(initialOutput?.arrayField ?? '');
+  const [structuredRows, setStructuredRows] = useState<StructuredTemplateRow[]>(
+    initialOutput?.structuredTemplate ? rowsFromStructuredTemplate(initialOutput.structuredTemplate) : [],
+  );
   // Root/header object — reuses the same row editor as the structured
   // template, but renders to a templated JSON *string* (output.header only
   // supports the untyped string-templating layer, not a structured contract).
+  // Not reconstructed from an existing config's raw `header` string — that
+  // would mean parsing arbitrary hand-written JSON-with-tokens text back
+  // into rows, which this tool doesn't attempt; the raw value is still
+  // visible in the Summary/JSON panels either way.
   const [headerRows, setHeaderRows] = useState<StructuredTemplateRow[]>([]);
 
   const isDelimited = fileGenerator !== 'json-generator';

@@ -55,15 +55,30 @@ interface LineConfigBuilderProps {
    * authored here — path/url/auth are populated at runtime, not in this
    * tool, so the config just needs to say which source the pipeline reads. */
   onSourceChange?: (source: SourceConfig) => void;
+  /** Seeds the form from an existing Config (e.g. loaded from the config
+   * list) instead of starting blank. Only read once, on mount. */
+  initialSource?: SourceConfig;
+  initialLine?: LineConfig;
 }
 
-export function LineConfigBuilder({ onColumnsChange, onChange, onSourceChange }: LineConfigBuilderProps = {}) {
-  const [type, setType] = useState<SourceType>('local');
-  const [columns, setColumns] = useState<string[]>([]);
-  const [separator, setSeparator] = useState<Delimiter>(';');
-  const [withHeader, setWithHeader] = useState(true);
-  const [mandatoryFields, setMandatoryFields] = useState<string[]>([]);
-  const [identifierColumns, setIdentifierColumns] = useState<string[]>([]);
+export function LineConfigBuilder({
+  onColumnsChange,
+  onChange,
+  onSourceChange,
+  initialSource,
+  initialLine,
+}: LineConfigBuilderProps = {}) {
+  const [type, setType] = useState<SourceType>(initialSource?.type ?? 'local');
+  const [columns, setColumns] = useState<string[]>(initialLine?.columns ?? []);
+  const [separator, setSeparator] = useState<Delimiter>(initialLine?.separator || ';');
+  const [withHeader, setWithHeader] = useState(initialLine?.withHeader ?? true);
+  const [mandatoryFields, setMandatoryFields] = useState<string[]>(initialLine?.mandatoryFields ?? []);
+  // identifierMappings is an ordered {out, src} list, but this editor only
+  // offers pass-through selection (out === src) via checkboxes — a loaded
+  // mapping that isn't pass-through can't be represented and is dropped.
+  const [identifierColumns, setIdentifierColumns] = useState<string[]>(
+    initialLine?.identifierMappings.filter((m) => m.out === m.src).map((m) => m.src) ?? [],
+  );
 
   function handleFileSelected(_file: File, cols: string[], delimiter: Delimiter, hasHeader: boolean) {
     setColumns(cols);
