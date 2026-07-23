@@ -1,0 +1,51 @@
+{
+  "source": {
+    "type": "azure-blob",
+    "url": "https://<account>.blob.core.windows.net/wip/ItemMast_251015_3147_12706.txt",
+    "auth": {
+      "connectionString": "DefaultEndpointsProtocol="
+    }
+  },
+  "output": {
+    "type": "azure-blob",
+    "url": "https://<account>.blob.core.windows.net/wip",
+    "auth": {
+      "connectionString": "DefaultEndpointsProtocol="
+    },
+    "filename": "ItemMast_251015_3147_12706_XXX.csv",
+    "header": "SKU;BARCODE",
+    "template": "{ITEM};{BARCODE}",
+    "separator": ";",
+     "metadata": {
+      "store_id": "X101X"
+    }
+  },
+  "options": {
+    "line": {
+      "columns": [
+        "LOC",
+        "ITEM",
+        "DEPT",
+        "DEPT_NAME",
+        "CLASS",
+        "CLASS_NAME",
+        "SUBCLASS",
+        "SUB_NAME",
+        "ITEM_DESC",
+        "AV_COST",
+        "SELLING_UNIT_RETAIL",
+        "CURRENCY_CODE",
+        "UDA_VALUE",
+        "ITEM_LOC_STATUS",
+        "SIZE",
+        "BARCODE"
+      ],
+      "mandatoryFields": [],
+      "identifierMappings": [],
+      "outputMappings": [],
+      "separator": ",",
+      "withHeader": true
+    },
+    "rejectOnInvalidRow": false
+  }
+}
