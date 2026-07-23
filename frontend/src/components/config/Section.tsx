@@ -8,11 +8,14 @@ interface SectionProps {
   titleClassName?: string;
   /** Overrides the content box's border classes (default: "border-border"). */
   borderClassName?: string;
+  /** Extra classes on the outer <section> — e.g. "sticky top-6 self-start"
+   * to pin a Section in place within a grid column. */
+  className?: string;
 }
 
-export function Section({ title, meta, children, titleClassName, borderClassName }: SectionProps) {
+export function Section({ title, meta, children, titleClassName, borderClassName, className }: SectionProps) {
   return (
-    <section className="space-y-3">
+    <section className={cn('space-y-3', className)}>
       <div className="flex items-center justify-between">
         <p className={cn('text-xs font-medium uppercase tracking-widest text-muted-foreground', titleClassName)}>
           {title}

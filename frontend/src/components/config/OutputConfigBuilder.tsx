@@ -235,7 +235,11 @@ export function OutputConfigBuilder({ sourceColumns = [], onChange }: OutputConf
           </div>
         </Section>
 
-        <Section title="Preview" titleClassName="font-bold text-foreground">
+        <Section
+          title="Preview"
+          titleClassName="font-bold text-foreground"
+          className="sticky top-6 self-start"
+        >
           <div className="space-y-6">
             <OutputSummary output={outputConfig} />
             <ConfigJsonPanel data={outputConfig} title="Raw OutputConfig JSON" />
