@@ -1,18 +1,16 @@
-import { SourceSummary } from './SourceSummary'
-import { OutputSummary } from './OutputSummary'
-import { OptionsSummary } from './OptionsSummary'
-import { MappingTable } from './MappingTable'
-import { ConfigJsonPanel } from './ConfigJsonPanel'
-import type { Config } from '@/lib/config/types'
+import { OutputSummary } from './OutputSummary';
+import { OptionsSummary } from './OptionsSummary';
+import { MappingTable } from './MappingTable';
+import { ConfigJsonPanel } from './ConfigJsonPanel';
+import type { Config } from '@/lib/config/types';
 
 interface ConfigurationSummaryProps {
-  config: Config
+  config: Config;
 }
 
 export function ConfigurationSummary({ config }: ConfigurationSummaryProps) {
   return (
     <div className="space-y-6">
-      <SourceSummary source={config.source} />
       <OutputSummary output={config.output} />
       <OptionsSummary options={config.options} />
       <MappingTable
@@ -27,5 +25,5 @@ export function ConfigurationSummary({ config }: ConfigurationSummaryProps) {
       />
       <ConfigJsonPanel data={config} />
     </div>
-  )
+  );
 }
