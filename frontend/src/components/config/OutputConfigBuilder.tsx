@@ -9,7 +9,7 @@ import { OutputSummary } from './OutputSummary';
 import { ConfigJsonPanel } from './ConfigJsonPanel';
 import { saveOutputConfig } from '@/lib/config/persist';
 import type { Delimiter } from '@/lib/file-reader';
-import type { OutputConfig } from '@/lib/config/types';
+import type { DestinationType, OutputConfig } from '@/lib/config/types';
 
 // The only fileGenerator values the Go core actually builds a writer for
 // (writer.newLocalWriter / newBlobWriter in go/writer/writer.go); any other
@@ -19,6 +19,11 @@ const SUPPORTED_GENERATORS = [
   { value: 'default-generator', label: 'Default (delimited)' },
   { value: 'json-generator', label: 'JSON' },
 ] as const;
+
+const DESTINATION_TYPES: { value: DestinationType; label: string }[] = [
+  { value: 'local', label: 'Local' },
+  { value: 'azure-blob', label: 'Azure Blob' },
+];
 
 const NO_UNIQUE_KEY = '__none__';
 
@@ -33,6 +38,7 @@ interface OutputConfigBuilderProps {
 }
 
 export function OutputConfigBuilder({ sourceColumns = [], onChange }: OutputConfigBuilderProps) {
+  const [type, setType] = useState<DestinationType>('local');
   const [fileGenerator, setFileGenerator] = useState<string>('default-generator');
   const [filename, setFilename] = useState('');
   const [footer, setFooter] = useState('');
@@ -62,6 +68,7 @@ export function OutputConfigBuilder({ sourceColumns = [], onChange }: OutputConf
 
   const outputConfig: OutputConfig = useMemo(
     () => ({
+      type,
       fileGenerator,
       filename,
       separator: isDelimited ? separator : '',
@@ -72,7 +79,7 @@ export function OutputConfigBuilder({ sourceColumns = [], onChange }: OutputConf
       uniqueKey: isDelimited ? uniqueKey : '',
       metadata: {}, // populated at runtime, not authored here
     }),
-    [fileGenerator, filename, isDelimited, separator, header, footer, uniqueKey],
+    [type, fileGenerator, filename, isDelimited, separator, header, footer, uniqueKey],
   );
 
   useEffect(() => {
@@ -88,6 +95,21 @@ export function OutputConfigBuilder({ sourceColumns = [], onChange }: OutputConf
     <div className="space-y-6">
       <Section title="Sample output file">
         <FileUpload onFileSelected={handleFileSelected} />
+      </Section>
+
+      <Section title="Output Destination">
+        <Select value={type} onValueChange={(v) => setType(v as DestinationType)}>
+          <SelectTrigger className="w-56">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {DESTINATION_TYPES.map((t) => (
+              <SelectItem key={t.value} value={t.value}>
+                {t.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </Section>
 
       <Section title="File generator">

@@ -5,7 +5,11 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { ConfigurationSummary } from '@/components/config/ConfigurationSummary'
 import { LineConfigBuilder } from '@/components/config/LineConfigBuilder'
 import { OutputConfigBuilder } from '@/components/config/OutputConfigBuilder'
-import type { Config, LineConfig, OutputConfig } from '@/lib/config/types'
+import type { Config, LineConfig, OutputConfig, SourceConfig } from '@/lib/config/types'
+
+const EMPTY_SOURCE_CONFIG: SourceConfig = {
+  type: 'local',
+}
 
 const EMPTY_LINE_CONFIG: LineConfig = {
   columns: [],
@@ -30,19 +34,20 @@ const EMPTY_OUTPUT_CONFIG: OutputConfig = {
 
 export default function ConfigBuilder() {
   const [sourceColumns, setSourceColumns] = useState<string[]>([])
+  const [sourceConfig, setSourceConfig] = useState<SourceConfig>(EMPTY_SOURCE_CONFIG)
   const [lineConfig, setLineConfig] = useState<LineConfig>(EMPTY_LINE_CONFIG)
   const [outputConfig, setOutputConfig] = useState<OutputConfig>(EMPTY_OUTPUT_CONFIG)
 
-  // `source` (reader.SourceConfig — path/url/auth for the actual pipeline
-  // run) has no builder UI yet, so it stays empty here; only options.line
-  // and output are live.
+  // path/url/auth on source and output are populated at runtime, not
+  // authored here — only `type` (which source/destination the config
+  // targets) is set in the builder.
   const config: Config = useMemo(
     () => ({
-      source: {},
+      source: sourceConfig,
       output: outputConfig,
       options: { line: lineConfig, rejectOnInvalidRow: false },
     }),
-    [lineConfig, outputConfig],
+    [sourceConfig, lineConfig, outputConfig],
   )
 
   return (
@@ -76,7 +81,11 @@ export default function ConfigBuilder() {
           </TabsList>
 
           <TabsContent value="line" className="mt-6" keepMounted>
-            <LineConfigBuilder onColumnsChange={setSourceColumns} onChange={setLineConfig} />
+            <LineConfigBuilder
+              onColumnsChange={setSourceColumns}
+              onChange={setLineConfig}
+              onSourceChange={setSourceConfig}
+            />
           </TabsContent>
 
           <TabsContent value="output" className="mt-6" keepMounted>
@@ -85,8 +94,8 @@ export default function ConfigBuilder() {
 
           <TabsContent value="summary" className="mt-6 space-y-4" keepMounted>
             <p className="text-xs text-muted-foreground">
-              Live from the Source / Output tabs — <code className="font-mono">source</code> is
-              omitted (no builder for it yet).
+              Live from the Source / Output tabs — only <code className="font-mono">type</code> is
+              authored for source/destination; path/url/auth are populated at runtime.
             </p>
             <ConfigurationSummary config={config} />
           </TabsContent>

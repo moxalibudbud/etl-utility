@@ -1,16 +1,22 @@
-import { useEffect, useMemo, useState } from 'react'
-import { FileUpload } from '@/components/transform/FileUpload'
-import { Button } from '@/components/ui/button'
-import { Section } from './Section'
-import { LineConfigSummary } from './LineConfigSummary'
-import { MappingTable } from './MappingTable'
-import { ConfigJsonPanel } from './ConfigJsonPanel'
-import { saveLineConfig } from '@/lib/config/persist'
-import type { Delimiter } from '@/lib/file-reader'
-import type { LineConfig, Mapping } from '@/lib/config/types'
+import { useEffect, useMemo, useState } from 'react';
+import { FileUpload } from '@/components/transform/FileUpload';
+import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Section } from './Section';
+import { LineConfigSummary } from './LineConfigSummary';
+import { MappingTable } from './MappingTable';
+import { ConfigJsonPanel } from './ConfigJsonPanel';
+import { saveLineConfig } from '@/lib/config/persist';
+import type { Delimiter } from '@/lib/file-reader';
+import type { LineConfig, Mapping, SourceConfig, SourceType } from '@/lib/config/types';
+
+const SOURCE_TYPES: { value: SourceType; label: string }[] = [
+  { value: 'local', label: 'Local' },
+  { value: 'azure-blob', label: 'Azure Blob' },
+];
 
 function toggle(list: string[], col: string): string[] {
-  return list.includes(col) ? list.filter((c) => c !== col) : [...list, col]
+  return list.includes(col) ? list.filter((c) => c !== col) : [...list, col];
 }
 
 function ColumnCheckboxes({
@@ -18,9 +24,9 @@ function ColumnCheckboxes({
   selected,
   onToggle,
 }: {
-  columns: string[]
-  selected: string[]
-  onToggle: (col: string) => void
+  columns: string[];
+  selected: string[];
+  onToggle: (col: string) => void;
 }) {
   return (
     <div className="flex flex-wrap gap-3">
@@ -36,44 +42,49 @@ function ColumnCheckboxes({
         </label>
       ))}
     </div>
-  )
+  );
 }
 
 interface LineConfigBuilderProps {
   /** Notified whenever the source columns change, so a sibling (e.g. the
    * output uniqueKey select, which must reference a source column via
    * SourceLine.JSONLine) can offer them without re-uploading the file. */
-  onColumnsChange?: (columns: string[]) => void
+  onColumnsChange?: (columns: string[]) => void;
   /** Notified with the assembled LineConfig on every change, so the page can
    * feed a live options.line into the Summary tab. */
-  onChange?: (line: LineConfig) => void
+  onChange?: (line: LineConfig) => void;
+  /** Notified with the assembled SourceConfig on every change. Only `type` is
+   * authored here — path/url/auth are populated at runtime, not in this
+   * tool, so the config just needs to say which source the pipeline reads. */
+  onSourceChange?: (source: SourceConfig) => void;
 }
 
-export function LineConfigBuilder({ onColumnsChange, onChange }: LineConfigBuilderProps = {}) {
-  const [columns, setColumns] = useState<string[]>([])
-  const [separator, setSeparator] = useState<Delimiter>(';')
-  const [withHeader, setWithHeader] = useState(true)
-  const [mandatoryFields, setMandatoryFields] = useState<string[]>([])
-  const [identifierColumns, setIdentifierColumns] = useState<string[]>([])
-  const [savedAt, setSavedAt] = useState<number | null>(null)
+export function LineConfigBuilder({ onColumnsChange, onChange, onSourceChange }: LineConfigBuilderProps = {}) {
+  const [type, setType] = useState<SourceType>('local');
+  const [columns, setColumns] = useState<string[]>([]);
+  const [separator, setSeparator] = useState<Delimiter>(';');
+  const [withHeader, setWithHeader] = useState(true);
+  const [mandatoryFields, setMandatoryFields] = useState<string[]>([]);
+  const [identifierColumns, setIdentifierColumns] = useState<string[]>([]);
+  const [savedAt, setSavedAt] = useState<number | null>(null);
 
   function handleFileSelected(_file: File, cols: string[], delimiter: Delimiter, hasHeader: boolean) {
-    setColumns(cols)
-    setSeparator(delimiter)
-    setWithHeader(hasHeader)
-    setMandatoryFields([])
-    setIdentifierColumns([])
-    setSavedAt(null)
+    setColumns(cols);
+    setSeparator(delimiter);
+    setWithHeader(hasHeader);
+    setMandatoryFields([]);
+    setIdentifierColumns([]);
+    setSavedAt(null);
   }
 
   useEffect(() => {
-    onColumnsChange?.(columns)
-  }, [columns, onColumnsChange])
+    onColumnsChange?.(columns);
+  }, [columns, onColumnsChange]);
 
   const identifierMappings: Mapping[] = useMemo(
     () => identifierColumns.map((col) => ({ out: col, src: col })),
     [identifierColumns],
-  )
+  );
 
   const lineConfig: LineConfig = useMemo(
     () => ({
@@ -85,21 +96,42 @@ export function LineConfigBuilder({ onColumnsChange, onChange }: LineConfigBuild
       withHeader,
     }),
     [columns, mandatoryFields, identifierMappings, separator, withHeader],
-  )
+  );
 
   useEffect(() => {
-    onChange?.(lineConfig)
-  }, [lineConfig, onChange])
+    onChange?.(lineConfig);
+  }, [lineConfig, onChange]);
+
+  const sourceConfig: SourceConfig = useMemo(() => ({ type }), [type]);
+
+  useEffect(() => {
+    onSourceChange?.(sourceConfig);
+  }, [sourceConfig, onSourceChange]);
 
   function handleSave() {
-    setSavedAt(Date.now())
-    void saveLineConfig(lineConfig)
+    setSavedAt(Date.now());
+    void saveLineConfig(lineConfig);
   }
 
   return (
     <div className="space-y-6">
       <Section title="Sample source file">
         <FileUpload onFileSelected={handleFileSelected} />
+      </Section>
+
+      <Section title="Data Source">
+        <Select value={type} onValueChange={(v) => setType(v as SourceType)}>
+          <SelectTrigger className="w-56">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {SOURCE_TYPES.map((t) => (
+              <SelectItem key={t.value} value={t.value}>
+                {t.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </Section>
 
       {columns.length > 0 && (
@@ -109,38 +141,36 @@ export function LineConfigBuilder({ onColumnsChange, onChange }: LineConfigBuild
               columns={columns}
               selected={mandatoryFields}
               onToggle={(col) => {
-                setMandatoryFields((prev) => toggle(prev, col))
-                setSavedAt(null)
+                setMandatoryFields((prev) => toggle(prev, col));
+                setSavedAt(null);
               }}
             />
           </Section>
 
-          <Section title="Identifier mappings" meta={<span className="text-xs text-muted-foreground">from columns</span>}>
+          <Section
+            title="Identifier mappings"
+            meta={<span className="text-xs text-muted-foreground">from columns</span>}
+          >
             <ColumnCheckboxes
               columns={columns}
               selected={identifierColumns}
               onToggle={(col) => {
-                setIdentifierColumns((prev) => toggle(prev, col))
-                setSavedAt(null)
+                setIdentifierColumns((prev) => toggle(prev, col));
+                setSavedAt(null);
               }}
             />
           </Section>
 
           <p className="text-xs text-muted-foreground">
-            Output mappings are hidden for now — the config carries no{' '}
-            <code className="font-mono">outputMappings</code>, so the engine falls back to
-            all source columns, in order.
+            Output mappings are hidden for now — the config carries no <code className="font-mono">outputMappings</code>
+            , so the engine falls back to all source columns, in order.
           </p>
 
           <div className="flex items-center gap-3">
             <Button onClick={handleSave} className="flex-1">
               Save configuration
             </Button>
-            {savedAt && (
-              <span className="text-xs text-muted-foreground">
-                Saved — check the console.
-              </span>
-            )}
+            {savedAt && <span className="text-xs text-muted-foreground">Saved — check the console.</span>}
           </div>
 
           <Section title="options.line preview">
@@ -159,5 +189,5 @@ export function LineConfigBuilder({ onColumnsChange, onChange }: LineConfigBuild
         </>
       )}
     </div>
-  )
+  );
 }
