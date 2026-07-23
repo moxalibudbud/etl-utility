@@ -8,7 +8,10 @@
     "header": "TYPE_MOUVEMENT;CODE_ARTICLE;MAIN_EAN",
    "template": "M;{ITEM};{BARCODE};{ITEM};{ITEM_DESC};[dateTime YYYYMMDDHHmmss];;[sanitizeString data.metadata.store_id];;;;;;;;;;;;;;;;;;;;;;;;",
     "separator": ";",
-    "path": "/var/tmp"
+    "path": "/var/tmp",
+    "metadata": {
+      "store_id": "X101X"
+    }
   },
   "options": {
     "line": {

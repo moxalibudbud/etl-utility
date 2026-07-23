@@ -15,7 +15,10 @@
     "filename": "ItemMast_251015_3147_12706_XXX.csv",
     "header": "SKU;BARCODE",
     "template": "{ITEM};{BARCODE}",
-    "separator": ";"
+    "separator": ";",
+     "metadata": {
+      "store_id": "X101X"
+    }
   },
   "options": {
     "line": {
