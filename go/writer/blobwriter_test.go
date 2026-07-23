@@ -546,6 +546,45 @@ func TestJSONBlobWriterSuccessfulCompletion(t *testing.T) {
 	}
 }
 
+// TestJSONBlobWriterStructuredTemplateSuccessfulCompletion proves the
+// structuredTemplate renderer is destination-independent: the same compiled
+// template used by the local writer produces a valid, typed JSON document
+// through the Azure Blob sink.
+func TestJSONBlobWriterStructuredTemplateSuccessfulCompletion(t *testing.T) {
+	w, fake := newJSONBlobWriterForTest(t, OutputConfig{
+		FileGenerator: "json-generator",
+		Filename:      "products.json",
+		ArrayField:    "items",
+		StructuredTemplate: StructuredTemplate{
+			"SKU":      {Type: "string", Value: json.RawMessage(`"{SKU}"`)},
+			"Quantity": {Type: "number", Value: json.RawMessage(`"{QTY}"`)},
+			"Received": {Type: "boolean", Value: json.RawMessage(`true`)},
+		},
+	})
+	if err := w.Push(jsonTestLine("1005;A1;10;Widget", 1)); err != nil {
+		t.Fatalf("push: %v", err)
+	}
+	if err := w.End(); err != nil {
+		t.Fatalf("end: %v", err)
+	}
+	if want := testContainerURL + "/products.json"; fake.uploadedURL != want {
+		t.Fatalf("uploaded URL = %q, want %q", fake.uploadedURL, want)
+	}
+	var doc struct {
+		Items []map[string]any `json:"items"`
+	}
+	if err := json.Unmarshal(fake.uploadedData, &doc); err != nil {
+		t.Fatalf("uploaded data is not valid JSON: %v\n%s", err, fake.uploadedData)
+	}
+	if len(doc.Items) != 1 {
+		t.Fatalf("items = %d, want 1", len(doc.Items))
+	}
+	item := doc.Items[0]
+	if item["SKU"] != "A1" || item["Quantity"] != float64(10) || item["Received"] != true {
+		t.Fatalf("item = %#v", item)
+	}
+}
+
 // TestJSONBlobWriterDeleteAbortsUnfinishedUpload proves Delete before End
 // aborts the in-flight upload without deadlocking or leaving the goroutine
 // running. Nothing is committed, so no blob-level delete is issued.

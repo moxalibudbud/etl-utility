@@ -57,10 +57,17 @@ Phase 3 — Writer integration:
 - [x] Local writer integration tests: end-to-end row output, conversion
       failure removes the partial file, precedence rejection, invalid config
       rejected before output begins.
-- [ ] Azure Blob regression coverage
-      ([`go/writer/blobwriter_test.go`](../go/writer/blobwriter_test.go)).
-- [ ] End-to-end CSV-to-typed-JSON coverage
-      ([`go/etl/etl_test.go`](../go/etl/etl_test.go)).
+- [x] Azure Blob regression coverage: `TestJSONBlobWriterStructuredTemplateSuccessfulCompletion`
+      in [`go/writer/blobwriter_test.go`](../go/writer/blobwriter_test.go)
+      proves the same compiled template renders through the Azure sink.
+- [x] End-to-end CSV-to-typed-JSON coverage:
+      `TestProcessJSONGeneratorStructuredTemplateValidRows` (happy path,
+      typed number/boolean in the output document) and
+      `TestProcessJSONGeneratorStructuredTemplateOutput` (a conversion
+      failure surfaces with field context and leaves no output file) in
+      [`go/etl/etl_test.go`](../go/etl/etl_test.go).
+
+**Phase 3 is complete.**
 
 Phase 4 — Verification and documentation:
 

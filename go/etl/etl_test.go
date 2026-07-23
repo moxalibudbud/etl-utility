@@ -246,6 +246,97 @@ func TestProcessJSONGeneratorLocalOutput(t *testing.T) {
 	}
 }
 
+// TestProcessJSONGeneratorStructuredTemplateOutput is the end-to-end
+// CSV-to-typed-JSON case: a structuredTemplate resolves against the same
+// source rows and mandatory-field validation as the string-template path
+// above, but converts QTY to a JSON number and Received to a JSON boolean
+// instead of leaving every field as a string.
+func TestProcessJSONGeneratorStructuredTemplateOutput(t *testing.T) {
+	outDir := t.TempDir()
+	src := writeFixture(t,
+		"BARCODE,SKU,NAME,QTY\n"+
+			"111,AAA,Widget A,7\n"+
+			",BBB,Widget B,3\n"+
+			"333,CCC,Widget C,not-a-number\n",
+	)
+
+	cfg := baseConfig(src, outDir)
+	cfg.Output.FileGenerator = "json-generator"
+	cfg.Output.Filename = "products.json"
+	cfg.Output.Header = `{"kind":"products"}`
+	cfg.Output.Footer = ""
+	cfg.Output.ArrayField = "items"
+	cfg.Output.Template = ""
+	cfg.Output.StructuredTemplate = writer.StructuredTemplate{
+		"sku":      {Type: "string", Value: json.RawMessage(`"{SKU}"`)},
+		"quantity": {Type: "number", Value: json.RawMessage(`"{QTY}"`)},
+		"received": {Type: "boolean", Value: json.RawMessage(`true`)},
+	}
+	cfg.Options.Line.Columns = []string{"BARCODE", "SKU", "NAME", "QTY"}
+
+	res, err := Run(cfg)
+	if err == nil || !strings.Contains(err.Error(), `field "quantity"`) {
+		t.Fatalf("Run() error = %v, want a structured-field conversion error naming \"quantity\"", err)
+	}
+	if _, statErr := os.Stat(filepath.Join(outDir, "products.json")); !os.IsNotExist(statErr) {
+		t.Fatalf("a failed row must not leave a final-looking output file, stat err = %v", statErr)
+	}
+	_ = res
+}
+
+// TestProcessJSONGeneratorStructuredTemplateValidRows proves the happy path:
+// every row converts cleanly and the output document has typed, not
+// stringified, numbers and booleans.
+func TestProcessJSONGeneratorStructuredTemplateValidRows(t *testing.T) {
+	outDir := t.TempDir()
+	src := writeFixture(t,
+		"BARCODE,SKU,NAME,QTY\n"+
+			"111,AAA,Widget A,7\n"+
+			",BBB,Widget B,3\n"+
+			"333,CCC,Widget C,5\n",
+	)
+
+	cfg := baseConfig(src, outDir)
+	cfg.Output.FileGenerator = "json-generator"
+	cfg.Output.Filename = "products.json"
+	cfg.Output.Header = `{"kind":"products"}`
+	cfg.Output.Footer = ""
+	cfg.Output.ArrayField = "items"
+	cfg.Output.Template = ""
+	cfg.Output.StructuredTemplate = writer.StructuredTemplate{
+		"sku":      {Type: "string", Value: json.RawMessage(`"{SKU}"`)},
+		"quantity": {Type: "number", Value: json.RawMessage(`"{QTY}"`)},
+		"received": {Type: "boolean", Value: json.RawMessage(`true`)},
+	}
+	cfg.Options.Line.Columns = []string{"BARCODE", "SKU", "NAME", "QTY"}
+
+	res, err := Run(cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !res.Valid || !res.WithErrors || res.TotalErrors != 1 {
+		t.Fatalf("result = %+v, want valid with one skipped invalid (missing BARCODE) row", res)
+	}
+
+	content, err := os.ReadFile(res.LocalOutputFile)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var got struct {
+		Kind  string           `json:"kind"`
+		Items []map[string]any `json:"items"`
+	}
+	if err := json.Unmarshal(content, &got); err != nil {
+		t.Fatalf("output is not valid JSON: %v\n%s", err, content)
+	}
+	if got.Kind != "products" || len(got.Items) != 2 {
+		t.Fatalf("decoded output = %+v", got)
+	}
+	if got.Items[0]["quantity"] != float64(7) || got.Items[0]["received"] != true {
+		t.Fatalf("quantity/received must be typed JSON values, not strings: %#v", got.Items[0])
+	}
+}
+
 // fakeWriter is a minimal writer.Writer double that lets cleanUp tests inject
 // failures at End/Delete without touching the filesystem.
 type fakeWriter struct {
