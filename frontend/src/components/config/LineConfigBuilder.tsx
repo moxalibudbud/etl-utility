@@ -115,79 +115,93 @@ export function LineConfigBuilder({ onColumnsChange, onChange, onSourceChange }:
 
   return (
     <div className="space-y-6">
-      <Section title="Sample source file">
-        <FileUpload onFileSelected={handleFileSelected} />
-      </Section>
+      <div className="grid grid-cols-2 gap-6">
+        <Section title="Builder">
+          <div className="space-y-6">
+            <Section title="Sample source file">
+              <FileUpload onFileSelected={handleFileSelected} />
+            </Section>
 
-      <Section title="Data Source">
-        <Select value={type} onValueChange={(v) => setType(v as SourceType)}>
-          <SelectTrigger className="w-56">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {SOURCE_TYPES.map((t) => (
-              <SelectItem key={t.value} value={t.value}>
-                {t.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </Section>
+            <Section title="Data Source">
+              <Select value={type} onValueChange={(v) => setType(v as SourceType)}>
+                <SelectTrigger className="w-56">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {SOURCE_TYPES.map((t) => (
+                    <SelectItem key={t.value} value={t.value}>
+                      {t.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </Section>
 
-      {columns.length > 0 && (
-        <>
-          <Section title="Mandatory fields" meta={<span className="text-xs text-muted-foreground">from columns</span>}>
-            <ColumnCheckboxes
-              columns={columns}
-              selected={mandatoryFields}
-              onToggle={(col) => {
-                setMandatoryFields((prev) => toggle(prev, col));
-                setSavedAt(null);
-              }}
-            />
-          </Section>
+            {columns.length > 0 && (
+              <>
+                <Section
+                  title="Mandatory fields"
+                  meta={<span className="text-xs text-muted-foreground">from columns</span>}
+                >
+                  <ColumnCheckboxes
+                    columns={columns}
+                    selected={mandatoryFields}
+                    onToggle={(col) => {
+                      setMandatoryFields((prev) => toggle(prev, col));
+                      setSavedAt(null);
+                    }}
+                  />
+                </Section>
 
-          <Section
-            title="Identifier mappings"
-            meta={<span className="text-xs text-muted-foreground">from columns</span>}
-          >
-            <ColumnCheckboxes
-              columns={columns}
-              selected={identifierColumns}
-              onToggle={(col) => {
-                setIdentifierColumns((prev) => toggle(prev, col));
-                setSavedAt(null);
-              }}
-            />
-          </Section>
+                <Section
+                  title="Identifier mappings"
+                  meta={<span className="text-xs text-muted-foreground">from columns</span>}
+                >
+                  <ColumnCheckboxes
+                    columns={columns}
+                    selected={identifierColumns}
+                    onToggle={(col) => {
+                      setIdentifierColumns((prev) => toggle(prev, col));
+                      setSavedAt(null);
+                    }}
+                  />
+                </Section>
 
-          <p className="text-xs text-muted-foreground">
-            Output mappings are hidden for now — the config carries no <code className="font-mono">outputMappings</code>
-            , so the engine falls back to all source columns, in order.
-          </p>
+                <p className="text-xs text-muted-foreground">
+                  Output mappings are hidden for now — the config carries no{' '}
+                  <code className="font-mono">outputMappings</code>, so the engine falls back to all source columns,
+                  in order.
+                </p>
 
-          <div className="flex items-center gap-3">
-            <Button onClick={handleSave} className="flex-1">
-              Save configuration
-            </Button>
-            {savedAt && <span className="text-xs text-muted-foreground">Saved — check the console.</span>}
+                <div className="flex items-center gap-3">
+                  <Button onClick={handleSave} className="flex-1">
+                    Save configuration
+                  </Button>
+                  {savedAt && <span className="text-xs text-muted-foreground">Saved — check the console.</span>}
+                </div>
+              </>
+            )}
           </div>
+        </Section>
 
-          <Section title="options.line preview">
-            <div className="divide-y divide-border">
-              <LineConfigSummary line={lineConfig} />
-            </div>
-          </Section>
+        <Section title="Preview">
+          <div className="space-y-6">
+            <Section title="options.line preview">
+              <div className="divide-y divide-border">
+                <LineConfigSummary line={lineConfig} />
+              </div>
+            </Section>
 
-          <MappingTable
-            title="Identifier mappings"
-            mappings={lineConfig.identifierMappings}
-            columns={lineConfig.columns}
-          />
+            <MappingTable
+              title="Identifier mappings"
+              mappings={lineConfig.identifierMappings}
+              columns={lineConfig.columns}
+            />
 
-          <ConfigJsonPanel data={lineConfig} title="Raw LineConfig JSON" />
-        </>
-      )}
+            <ConfigJsonPanel data={lineConfig} title="Raw LineConfig JSON" />
+          </div>
+        </Section>
+      </div>
     </div>
   );
 }

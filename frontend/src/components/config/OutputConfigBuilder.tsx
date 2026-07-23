@@ -93,127 +93,138 @@ export function OutputConfigBuilder({ sourceColumns = [], onChange }: OutputConf
 
   return (
     <div className="space-y-6">
-      <Section title="Sample output file">
-        <FileUpload onFileSelected={handleFileSelected} />
-      </Section>
+      <div className="grid grid-cols-2 gap-6">
+        <Section title="Builder">
+          <div className="space-y-6">
+            <Section title="Sample output file">
+              <FileUpload onFileSelected={handleFileSelected} />
+            </Section>
 
-      <Section title="Output Destination">
-        <Select value={type} onValueChange={(v) => setType(v as DestinationType)}>
-          <SelectTrigger className="w-56">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {DESTINATION_TYPES.map((t) => (
-              <SelectItem key={t.value} value={t.value}>
-                {t.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </Section>
+            <Section title="Output Destination">
+              <Select value={type} onValueChange={(v) => setType(v as DestinationType)}>
+                <SelectTrigger className="w-56">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {DESTINATION_TYPES.map((t) => (
+                    <SelectItem key={t.value} value={t.value}>
+                      {t.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </Section>
 
-      <Section title="File generator">
-        <Select value={fileGenerator} onValueChange={(v) => setFileGenerator(v as string)}>
-          <SelectTrigger className="w-56">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {SUPPORTED_GENERATORS.map((g) => (
-              <SelectItem key={g.value} value={g.value}>
-                {g.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </Section>
+            <Section title="File generator">
+              <Select value={fileGenerator} onValueChange={(v) => setFileGenerator(v as string)}>
+                <SelectTrigger className="w-56">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {SUPPORTED_GENERATORS.map((g) => (
+                    <SelectItem key={g.value} value={g.value}>
+                      {g.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </Section>
 
-      <Section
-        title="Metadata keys"
-        meta={<span className="text-xs text-muted-foreground">values are populated at runtime</span>}
-      >
-        <MetadataKeysEditor keys={metadataKeys} onChange={setMetadataKeys} />
-      </Section>
-
-      <Section
-        title="Filename"
-        meta={<span className="text-xs text-muted-foreground">free text + [func ...] tokens</span>}
-      >
-        <TemplatedTextField
-          value={filename}
-          onChange={(v) => {
-            setFilename(v);
-            setSavedAt(null);
-          }}
-          placeholder="products_[dateTime YYYY-MM-DD].csv"
-          metadataKeys={metadataKeys}
-        />
-      </Section>
-
-      {isDelimited ? (
-        <>
-          <Section
-            title="Footer"
-            meta={<span className="text-xs text-muted-foreground">free text + [func ...] tokens</span>}
-          >
-            <TemplatedTextField
-              value={footer}
-              onChange={(v) => {
-                setFooter(v);
-                setSavedAt(null);
-              }}
-              placeholder="END OF FILE"
-              metadataKeys={metadataKeys}
-            />
-          </Section>
-
-          <Section
-            title="Unique key"
-            meta={<span className="text-xs text-muted-foreground">de-duplicates rows by this source column</span>}
-          >
-            <Select
-              value={uniqueKey === '' ? NO_UNIQUE_KEY : uniqueKey}
-              onValueChange={(v) => {
-                setUniqueKey(v === NO_UNIQUE_KEY ? '' : (v as string));
-                setSavedAt(null);
-              }}
-              disabled={sourceColumns.length === 0}
+            <Section
+              title="Metadata keys"
+              meta={<span className="text-xs text-muted-foreground">values are populated at runtime</span>}
             >
-              <SelectTrigger className="w-56">
-                <SelectValue placeholder="no source columns yet" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value={NO_UNIQUE_KEY}>— none —</SelectItem>
-                {sourceColumns.map((col) => (
-                  <SelectItem key={col} value={col}>
-                    {col}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {sourceColumns.length === 0 && (
-              <p className="mt-2 text-[10px] text-muted-foreground">Build the Source tab first to populate columns.</p>
+              <MetadataKeysEditor keys={metadataKeys} onChange={setMetadataKeys} />
+            </Section>
+
+            <Section
+              title="Filename"
+              meta={<span className="text-xs text-muted-foreground">free text + [func ...] tokens</span>}
+            >
+              <TemplatedTextField
+                value={filename}
+                onChange={(v) => {
+                  setFilename(v);
+                  setSavedAt(null);
+                }}
+                placeholder="products_[dateTime YYYY-MM-DD].csv"
+                metadataKeys={metadataKeys}
+              />
+            </Section>
+
+            {isDelimited ? (
+              <>
+                <Section
+                  title="Footer"
+                  meta={<span className="text-xs text-muted-foreground">free text + [func ...] tokens</span>}
+                >
+                  <TemplatedTextField
+                    value={footer}
+                    onChange={(v) => {
+                      setFooter(v);
+                      setSavedAt(null);
+                    }}
+                    placeholder="END OF FILE"
+                    metadataKeys={metadataKeys}
+                  />
+                </Section>
+
+                <Section
+                  title="Unique key"
+                  meta={<span className="text-xs text-muted-foreground">de-duplicates rows by this source column</span>}
+                >
+                  <Select
+                    value={uniqueKey === '' ? NO_UNIQUE_KEY : uniqueKey}
+                    onValueChange={(v) => {
+                      setUniqueKey(v === NO_UNIQUE_KEY ? '' : (v as string));
+                      setSavedAt(null);
+                    }}
+                    disabled={sourceColumns.length === 0}
+                  >
+                    <SelectTrigger className="w-56">
+                      <SelectValue placeholder="no source columns yet" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value={NO_UNIQUE_KEY}>— none —</SelectItem>
+                      {sourceColumns.map((col) => (
+                        <SelectItem key={col} value={col}>
+                          {col}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {sourceColumns.length === 0 && (
+                    <p className="mt-2 text-[10px] text-muted-foreground">
+                      Build the Source tab first to populate columns.
+                    </p>
+                  )}
+                </Section>
+
+                {columns.length > 0 && (
+                  <div className="flex items-center gap-3">
+                    <Button onClick={handleSave} className="flex-1">
+                      Save configuration
+                    </Button>
+                    {savedAt && <span className="text-xs text-muted-foreground">Saved — check the console.</span>}
+                  </div>
+                )}
+              </>
+            ) : (
+              <p className="text-xs text-muted-foreground">
+                Sample-output scaffolding for the JSON generator (template + arrayField inference) isn't implemented
+                yet.
+              </p>
             )}
-          </Section>
+          </div>
+        </Section>
 
-          {columns.length > 0 && (
-            <>
-              <div className="flex items-center gap-3">
-                <Button onClick={handleSave} className="flex-1">
-                  Save configuration
-                </Button>
-                {savedAt && <span className="text-xs text-muted-foreground">Saved — check the console.</span>}
-              </div>
-
-              <OutputSummary output={outputConfig} />
-              <ConfigJsonPanel data={outputConfig} title="Raw OutputConfig JSON" />
-            </>
-          )}
-        </>
-      ) : (
-        <p className="text-xs text-muted-foreground">
-          Sample-output scaffolding for the JSON generator (template + arrayField inference) isn't implemented yet.
-        </p>
-      )}
+        <Section title="Preview">
+          <div className="space-y-6">
+            <OutputSummary output={outputConfig} />
+            <ConfigJsonPanel data={outputConfig} title="Raw OutputConfig JSON" />
+          </div>
+        </Section>
+      </div>
     </div>
   );
 }
