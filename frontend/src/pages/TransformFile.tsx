@@ -134,7 +134,7 @@ export default function TransformFile() {
           className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors mb-8"
         >
           <ArrowLeft className="h-3 w-3" strokeWidth={1.5} />
-          Octo+ Portal
+          GoGlatFile Portal
         </Link>
 
         {/* Page heading */}

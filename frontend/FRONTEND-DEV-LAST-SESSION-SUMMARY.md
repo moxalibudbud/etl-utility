@@ -1,7 +1,7 @@
 # Frontend Dev — Last Session Summary
 
 Context for picking this work back up. Covers the Config Builder work built
-across sessions on top of the existing Octo+ Portal boilerplate. This
+across sessions on top of the existing GoGlatFile Portal boilerplate. This
 supersedes the previous version of this file — the Summary tab is now wired
 to live state, the Source/Output tabs both author a `type`, and a
 `output.template` editor exists.
@@ -15,7 +15,7 @@ hand-writing JSON. Three parts of `Config`: `source`, `output`,
 `options` (`line` + `rejectOnInvalidRow`).
 
 This repo's `frontend/` already existed before this work as a *different*
-app ("Octo+ Portal") — a schema-driven CSV mapping tool for a fixed set of
+app ("GoGlatFile Portal") — a schema-driven CSV mapping tool for a fixed set of
 customer file schemas (`frontend/src/lib/schema/`). Per `frontend/AGENTS.md`,
 the Config Builder is being added **alongside** it in the same app/stack
 (Vite + React 19 + TypeScript + React Router SPA + shadcn/ui + Tailwind 4),
@@ -59,7 +59,7 @@ exists yet — see "Go shape notes" for what's still open on that side.
 
 ### Source tab (`LineConfigBuilder.tsx`)
 
-- Reuses the existing `FileUpload` component (from the Octo+ Portal's
+- Reuses the existing `FileUpload` component (from the GoGlatFile Portal's
   `components/transform/`) to get columns/separator/header from an uploaded
   sample source file, then checkbox-driven `mandatoryFields` and
   `identifierMappings` (pass-through `{out: col, src: col}` per checked

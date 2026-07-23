@@ -240,7 +240,7 @@ add sample-output scaffolding and live preview once the core loop is proven.
 ## Current implementation status
 
 A frontend-only prototype exists at `frontend/src/pages/ConfigBuilder.tsx`
-(`/config-builder` route), alongside the pre-existing Octo+ Portal app. Full
+(`/config-builder` route), alongside the pre-existing GoGlatFile Portal app. Full
 detail lives in `frontend/FRONTEND-DEV-LAST-SESSION-SUMMARY.md`; the short
 version:
 

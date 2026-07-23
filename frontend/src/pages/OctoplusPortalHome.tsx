@@ -34,7 +34,7 @@ export default function OctoplusPortalHome() {
             <ArrowLeft className="h-3 w-3" strokeWidth={1.5} />
             Home
           </Link>
-          <h1 className="text-3xl font-semibold tracking-tight">Octo+ Portal</h1>
+          <h1 className="text-3xl font-semibold tracking-tight">GoGlatFile Portal</h1>
           <p className="mt-3 text-muted-foreground leading-relaxed max-w-lg">
             Generate valid Octo+ CSV files in English and deliver them
             automatically to the right customer SFTP instance — no mapping
