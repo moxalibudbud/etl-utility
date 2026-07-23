@@ -86,6 +86,16 @@ Concretely, this plan's proposals were **not** followed as written:
 - S3, the `Result` `outputLocation` fields, and upload tuning remain
   unimplemented — the phased design below is still the reference for that
   future work.
+- A browser-based config-authoring UI (the Config Builder, `frontend/`,
+  `/config-builder`) has shipped for the `default-generator`/`json-generator`
+  `OutputConfig` shape described above — including a form for the JSON
+  generator's `structuredTemplate`, root object, and `arrayField` (see
+  [`structured-typed-json-template-refactor.md`](structured-typed-json-template-refactor.md)).
+  It authors `type` only for the destination (`path`/`url`/`auth` stay
+  runtime-populated) and has no backend of its own yet — see
+  [`config-builder-ui-improvement.md`](config-builder-ui-improvement.md) for
+  status. This is unrelated to the S3/Azure destination work below, which
+  remains backend-only.
 
 ## Motivation
 

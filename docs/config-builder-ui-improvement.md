@@ -244,19 +244,30 @@ A frontend-only prototype exists at `frontend/src/pages/ConfigBuilder.tsx`
 detail lives in `frontend/FRONTEND-DEV-LAST-SESSION-SUMMARY.md`; the short
 version:
 
-- **Built**: Source and Output tabs that read a sample file client-side (no
-  backend inference — this all runs in the browser) and fill in
-  `options.line` / `output`, including a `template` editor for delimited
-  output (one field per header column, inserting `{sourceColumn}`,
-  `{metadata.key}`, or `[func ...]` tokens via a searchable combobox); a
-  Summary tab composing the live `Config` from both tabs' state (not the
-  hand-written mock this doc's earlier drafts assumed); a single save action
-  that currently only logs the assembled `Config` to the console.
+- **Built — delimited (`default-generator`)**: Source and Output tabs that
+  read a sample file client-side (no backend inference — this all runs in the
+  browser) and fill in `options.line` / `output`, including a `template`
+  editor (one field per header column, inserting `{sourceColumn}`,
+  `{metadata.key}`, or `[func ...]` tokens via a searchable combobox).
+- **Built — JSON (`json-generator`)**: a form for `output.structuredTemplate`
+  (add/remove typed fields — `string`/`number`/`boolean`/`null`/`literal` —
+  each with a type-appropriate value control) and the root/header object
+  (the same row editor, rendered to a templated JSON *string* for
+  `output.header` rather than a structured contract, since the Go writer
+  doesn't accept a typed root yet); `arrayField`; and an optional sample-JSON
+  upload that infers field names/JSON-types for both editors and the array
+  field (never the `{sourceColumn}` mapping — that's always a human
+  decision). See
+  [`structured-typed-json-template-refactor.md`](structured-typed-json-template-refactor.md)
+  §"Frontend implementation" for the detailed shape.
+- **Built — shared**: a Summary tab composing the live `Config` from both
+  tabs' state (not the hand-written mock this doc's earlier drafts assumed);
+  a single save action, on the Summary tab only, that currently just logs the
+  assembled `Config` to the console.
 - **Deliberately narrower than this plan for now**: `source`/`output` only
   author `type` (`local` / `azure-blob`) — `path`, `url`, and `auth` are left
   for a runtime/deploy step to fill in, not authored in the browser. No
-  `outputMappings` editor. No sample-output scaffolding for the JSON
-  generator (delimited-only so far).
+  `outputMappings` editor for delimited output.
 - **Not started**: everything in Phase 1 (no `cmd/configui`, no
   `/api/infer`, `/api/validate`, `/api/preview`, no generated schema/contract
   test). Without `/api/validate`, the frontend does not yet enforce the Go

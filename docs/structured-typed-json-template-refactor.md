@@ -103,6 +103,54 @@ See "Phase 5: Extended capabilities" under Implementation outline for scope
 notes on each item. None of these block the Phase 1–4 feature; add one only
 when a real consumer needs it.
 
+## Frontend implementation (Config Builder UI)
+
+**Shipped**, alongside the Go work above. The browser-based Config Builder
+(`frontend/`, `/config-builder` route — see
+[`config-builder-ui-improvement.md`](config-builder-ui-improvement.md)) now
+authors `output.structuredTemplate` and the JSON generator's root object
+through a form, instead of hand-writing either as JSON text.
+
+- **`StructuredTemplateEditor`**
+  (`frontend/src/components/config/StructuredTemplateEditor.tsx`) — an
+  add/remove list of `{name, type, value}` rows matching the five node types
+  (`string`/`number`/`boolean`/`null`/`literal`). `string`/`number` values are
+  edited as a template expression via `TemplatedTextField` (with an
+  insert-combobox for source columns, metadata keys, and `[func ...]`
+  tokens); `boolean` is constant-only (a checkbox, matching this doc's
+  `"Received": true` example — no dynamic-expression mode was built);
+  `literal` is a raw-JSON textarea with inline parse-error feedback; `null`
+  has no value control. `toStructuredTemplate(rows)` converts the row list to
+  the wire `StructuredTemplate` map, dropping blank names and (until fixed)
+  unparsable literal JSON, so nothing sent to the writer is malformed on its
+  face.
+- **Root object editor** — the exact same row editor, reused for
+  `output.header`, but converted by a *different* function,
+  `toHeaderTemplateString(rows)`, which builds a templated JSON **string**
+  (`{"store":"{LOC}"}`, `{"store":"[timestamp]","date":"[dateTime
+  YYYYMMDDHHmmss]"}`) instead of a structured map. This is a frontend-only
+  convenience — the wire contract for `header` is still the plain
+  string-templating layer (`go/template/field.go`), not a structured
+  contract. It is **not** the "Typed root/header templates" item under Phase
+  5 below; that would require the Go writer to accept a `StructuredTemplate`
+  for the root too, which hasn't been built.
+- **Sample JSON upload inference** (`frontend/src/lib/config/jsonSample.ts`,
+  `JsonSampleUpload.tsx`) — uploading a sample JSON *document* (root object +
+  row array) seeds both editors and `arrayField`: the first top-level array
+  found becomes the row-array field, its first element's keys seed the
+  Array-object rows, and the remaining top-level keys seed the Root-object
+  rows. Only the field **name** and **JSON type** are inferred (a nested
+  object/array becomes a `literal` row prefilled with its JSON, since
+  recursive typed templating isn't implemented — see Phase 5); the actual
+  `{sourceColumn}`/`[func ...]` mapping is always left for the person to fill
+  in, never guessed.
+- `OutputConfigBuilder.tsx` puts the file-generator choice first, so the
+  matching sample uploader (CSV `FileUpload` vs. JSON `JsonSampleUpload`)
+  renders right under it instead of a CSV-shaped uploader showing
+  unconditionally regardless of generator.
+
+Full detail: `frontend/FRONTEND-DEV-LAST-SESSION-SUMMARY.md`.
+
 ## Effort estimate
 
 This is a medium-sized refactor.
@@ -378,7 +426,10 @@ conversion rules above (see "Confirmed conversion decisions").
   above about adding a fixed `{"id": "123", "lines": [...]}` root today via
   `header`. This item would let `header` accept the same
   `StructuredTemplate` shape as rows, reusing `compileStructuredTemplate` and
-  `renderRow` for the root object instead of `renderJSONTemplate`.
+  `renderRow` for the root object instead of `renderJSONTemplate`. (The Config
+  Builder frontend already has a form for authoring the root object — see
+  "Frontend implementation" above — but it still emits a templated JSON
+  *string* for `header`, because this backend item isn't done yet.)
 - **Default values for missing source fields.** Add an optional `default`
   alongside a node's `value`, so a missing or empty resolved value falls back
   to a configured constant instead of `""` (string) or a conversion error

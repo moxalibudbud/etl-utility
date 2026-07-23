@@ -49,6 +49,14 @@ this plan's proposals were **not** followed as written:
   `go/reader/blobreader.go` and `go/etl/run.go`.
 - S3, configurable max line size, and object versioning remain unimplemented —
   the phased design below is still the reference for that future work.
+- A browser-based config-authoring UI (the Config Builder, `frontend/`,
+  `/config-builder`) has shipped and authors `source.type` (`local` /
+  `azure-blob`) from a form — `path`/`url`/`auth` are left for a
+  runtime/deploy step, not authored in the browser. No backend for this tool
+  exists yet. See
+  [`config-builder-ui-improvement.md`](config-builder-ui-improvement.md) for
+  status; this is unrelated to the S3/streaming work below, which remains
+  backend-only.
 
 ## Current State
 

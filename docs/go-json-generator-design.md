@@ -761,6 +761,14 @@ below: recursively templated nested objects/arrays inside a node's `value`,
 typed root/header templates, default values for missing source fields, and
 configurable (non-strict) coercion rules.
 
+**Frontend authoring UI — shipped.** The browser-based Config Builder
+(`frontend/`, `/config-builder`) now has a form for `structuredTemplate` and
+the JSON root object, plus sample-JSON upload to infer field names/types. See
+[`structured-typed-json-template-refactor.md`](structured-typed-json-template-refactor.md)
+§"Frontend implementation" for what was built and
+[`config-builder-ui-improvement.md`](config-builder-ui-improvement.md) for
+the tool's overall status.
+
 ### Deferred features
 
 Three capabilities are intentionally left for later. They are additive shape
