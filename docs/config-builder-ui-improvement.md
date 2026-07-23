@@ -149,15 +149,24 @@ It is **stateless** and holds nothing between requests. Uploaded samples are
 read in memory, inspected, and discarded — never written to disk — because a
 sample source file may contain real, sensitive data.
 
-Suggested endpoints:
+Suggested endpoints, using a REST-style `/config` resource so the roadmap
+(named/saved configs, not just one-shot validation) has somewhere to grow
+without reshaping the URL scheme later:
 
 | Endpoint | Purpose |
 |---|---|
-| `POST /api/infer/source` | Take an uploaded sample, return the inferred `options.line` (separator, header, columns) plus a small parsed preview. |
-| `POST /api/infer/output` | Take an uploaded sample output, return the field list / JSON structure to scaffold the mapping. |
-| `POST /api/validate` | Take a candidate `Config`, run it through `configjson.Decode` and the `Validate()` methods, and return structured field-level errors. |
-| `POST /api/preview` | Optional: run the engine against the **uploaded sample only**, into an in-memory output, and return the first N rows of the result so the user sees what the config produces. |
-| `GET /api/health` | Liveness. |
+| `POST /config` | Take a candidate `Config`, run it through `configjson.Decode` and the `Validate()` methods, and return structured field-level errors. Doubles as "create" once configs are persisted. |
+| `GET /config/{id}` | Retrieve a previously created/saved config by id. |
+| `PUT /config/{id}` | Replace a saved config by id (re-runs the same validation as `POST /config`). |
+| `DELETE /config/{id}` | Remove a saved config by id. |
+| `POST /infer/source` | Take an uploaded sample, return the inferred `options.line` (separator, header, columns) plus a small parsed preview. |
+| `POST /infer/output` | Take an uploaded sample output, return the field list / JSON structure to scaffold the mapping. |
+| `POST /preview` | Optional: run the engine against the **uploaded sample only**, into an in-memory output, and return the first N rows of the result so the user sees what the config produces. |
+| `GET /health` | Liveness. |
+
+`GET`/`PUT`/`DELETE /config/{id}` only make sense once configs are persisted
+(see the "Open questions" below) — until that lands they are stubs that
+accept the request and report success without storing anything.
 
 ### Frontend — a plain single-page app
 
@@ -268,20 +277,28 @@ version:
   author `type` (`local` / `azure-blob`) — `path`, `url`, and `auth` are left
   for a runtime/deploy step to fill in, not authored in the browser. No
   `outputMappings` editor for delimited output.
-- **Not started**: everything in Phase 1 (no `cmd/configui`, no
-  `/api/infer`, `/api/validate`, `/api/preview`, no generated schema/contract
-  test). Without `/api/validate`, the frontend does not yet enforce the Go
-  `Validate()` rules (e.g. rejecting `auth` on a local source). No
-  persistence of any kind.
+- **Built — backend scaffold only**: `go/cmd/configui` stands up the REST
+  `/config` resource (`POST /config`, `GET/PUT/DELETE /config/{id}`) plus
+  `GET /health`. All handlers are stubs today — they accept the request,
+  log it, and return a success response with no `Validate()` checks and no
+  storage behind `{id}`.
+- **Not started**: real validation (wiring `POST`/`PUT /config` through
+  `configjson.Decode` and the `Validate()` methods), persistence behind
+  `GET`/`DELETE /config/{id}`, `/infer/source`, `/infer/output`, `/preview`,
+  and the generated schema/contract test. Without real validation, the
+  frontend does not yet enforce the Go `Validate()` rules (e.g. rejecting
+  `auth` on a local source).
 
 ## Implementation phases
 
 ### Phase 1 — Backend inference and validation service
 
-- Stand up the separate `cmd/configui` HTTP server reusing the core packages.
-- Implement `/api/infer/source` (separator, header, column detection + preview).
-- Implement `/api/validate` over `configjson.Decode` + the `Validate()` methods,
-  returning field-level errors.
+- Stand up the separate `cmd/configui` HTTP server reusing the core packages
+  (done — REST `/config` routes exist as stubs, see "Current implementation
+  status").
+- Wire `POST`/`PUT /config` through `configjson.Decode` + the `Validate()`
+  methods, returning field-level errors (still a stub today).
+- Implement `/infer/source` (separator, header, column detection + preview).
 - Emit a JSON Schema (or generated TS types) from the Go structs, with a
   contract test guarding against drift.
 
@@ -290,17 +307,17 @@ version:
 - Vite + React Router + TypeScript + shadcn/ui + Tailwind scaffold.
 - The three-step wizard, conditional fields, and the order-preserving mapping
   editor.
-- Live validation against `/api/validate` and a "download config.json" action.
+- Live validation against `POST /config` and a "download config.json" action.
 
 ### Phase 3 — Sample-output scaffolding
 
-- Implement `/api/infer/output` for delimited and JSON samples.
+- Implement `/infer/output` for delimited and JSON samples.
 - Wire the mapping editor to pre-fill `out` keys and offer source columns as
   `src` options.
 
 ### Phase 4 — Live preview (optional, high value)
 
-- Implement `/api/preview` fenced to the uploaded sample and an in-memory sink.
+- Implement `/preview` fenced to the uploaded sample and an in-memory sink.
 - Add the preview panel to the SPA.
 
 ## Testing strategy
@@ -309,13 +326,13 @@ version:
   with/without headers, ragged rows, quoted fields, and empty input — asserting
   the detected `options.line`.
 - **Validation parity:** the same invalid configs the engine rejects must be
-  rejected by `/api/validate` with a clear field-level message.
+  rejected by `POST /config` with a clear field-level message.
 - **Schema-drift contract test:** fails when the Go `Config` shape and the
   emitted schema diverge.
 - **Frontend:** component tests for the mapping editor's order preservation and
   the conditional-field rules; an end-to-end test that uploads a sample, fills
   the form, and downloads a config the backend then accepts.
-- **Preview safety:** a test proving `/api/preview` cannot reach a network
+- **Preview safety:** a test proving `/preview` cannot reach a network
   destination.
 
 ## Open questions
