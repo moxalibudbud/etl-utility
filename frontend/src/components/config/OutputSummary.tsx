@@ -42,6 +42,7 @@ export function OutputSummary({ output }: OutputSummaryProps) {
           <>
             <FieldRow label="separator">{delimiterLabel(output.separator)}</FieldRow>
             <FieldRow label="header">{output.header || '—'}</FieldRow>
+            <FieldRow label="template">{output.template || '(defaults to source columns)'}</FieldRow>
             <FieldRow label="footer">{output.footer || '—'}</FieldRow>
           </>
         )}

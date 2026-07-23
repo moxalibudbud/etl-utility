@@ -49,6 +49,11 @@ export function OutputConfigBuilder({ sourceColumns = [], onChange }: OutputConf
   const [metadataKeys, setMetadataKeys] = useState<string[]>([]);
   const [columns, setColumns] = useState<string[]>([]);
   const [separator, setSeparator] = useState<Delimiter>(';');
+  // One template segment per header column, in order — joined by `separator`
+  // to build output.template. Each segment is a {sourceColumn}/{metadata.key}
+  // reference, a [func ...] token, or literal text (go/writer/render.go
+  // renders the whole row through the same template layer as filename/header).
+  const [templateValues, setTemplateValues] = useState<string[]>([]);
   const [savedAt, setSavedAt] = useState<number | null>(null);
 
   const isDelimited = fileGenerator !== 'json-generator';
@@ -60,11 +65,29 @@ export function OutputConfigBuilder({ sourceColumns = [], onChange }: OutputConf
     // Prefill from the sample's own name — but don't clobber a filename the
     // user already typed/edited by re-uploading a new sample.
     setFilename((prev) => (prev === '' ? file.name : prev));
+    // Column positions may no longer line up with a previous sample's shape.
+    setTemplateValues(new Array(cols.length).fill(''));
+  }
+
+  function setTemplateValueAt(index: number, value: string) {
+    setTemplateValues((prev) => {
+      const next = [...prev];
+      next[index] = value;
+      return next;
+    });
+    setSavedAt(null);
   }
 
   // Header is the literal header line written to delimited output — a sample
   // output file's columns, rejoined with the same separator they were split on.
   const header = useMemo(() => columns.join(separator), [columns, separator]);
+
+  // Empty when every segment is blank, so the writer falls back to its
+  // default row-building behavior instead of rendering an all-empty row.
+  const template = useMemo(
+    () => (templateValues.some((v) => v !== '') ? templateValues.join(separator) : ''),
+    [templateValues, separator],
+  );
 
   const outputConfig: OutputConfig = useMemo(
     () => ({
@@ -74,12 +97,12 @@ export function OutputConfigBuilder({ sourceColumns = [], onChange }: OutputConf
       separator: isDelimited ? separator : '',
       header: isDelimited ? header : '',
       footer: isDelimited ? footer : '',
-      template: '',
+      template: isDelimited ? template : '',
       arrayField: '',
       uniqueKey: isDelimited ? uniqueKey : '',
       metadata: {}, // populated at runtime, not authored here
     }),
-    [type, fileGenerator, filename, isDelimited, separator, header, footer, uniqueKey],
+    [type, fileGenerator, filename, isDelimited, separator, header, footer, template, uniqueKey],
   );
 
   useEffect(() => {
@@ -199,6 +222,32 @@ export function OutputConfigBuilder({ sourceColumns = [], onChange }: OutputConf
                     </p>
                   )}
                 </Section>
+
+                {columns.length > 0 && (
+                  <Section
+                    title="Template"
+                    meta={
+                      <span className="text-xs text-muted-foreground">
+                        one value per header column, in order
+                      </span>
+                    }
+                  >
+                    <div className="space-y-4">
+                      {columns.map((col, i) => (
+                        <div key={`${col}-${i}`}>
+                          <p className="mb-1 text-[10px] font-mono text-muted-foreground">{col}</p>
+                          <TemplatedTextField
+                            value={templateValues[i] ?? ''}
+                            onChange={(v) => setTemplateValueAt(i, v)}
+                            placeholder="{sourceColumn} or literal text"
+                            metadataKeys={metadataKeys}
+                            sourceColumns={sourceColumns}
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  </Section>
+                )}
 
                 {columns.length > 0 && (
                   <div className="flex items-center gap-3">
