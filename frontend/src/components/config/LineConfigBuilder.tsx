@@ -44,9 +44,12 @@ interface LineConfigBuilderProps {
    * output uniqueKey select, which must reference a source column via
    * SourceLine.JSONLine) can offer them without re-uploading the file. */
   onColumnsChange?: (columns: string[]) => void
+  /** Notified with the assembled LineConfig on every change, so the page can
+   * feed a live options.line into the Summary tab. */
+  onChange?: (line: LineConfig) => void
 }
 
-export function LineConfigBuilder({ onColumnsChange }: LineConfigBuilderProps = {}) {
+export function LineConfigBuilder({ onColumnsChange, onChange }: LineConfigBuilderProps = {}) {
   const [columns, setColumns] = useState<string[]>([])
   const [separator, setSeparator] = useState<Delimiter>(';')
   const [withHeader, setWithHeader] = useState(true)
@@ -83,6 +86,10 @@ export function LineConfigBuilder({ onColumnsChange }: LineConfigBuilderProps = 
     }),
     [columns, mandatoryFields, identifierMappings, separator, withHeader],
   )
+
+  useEffect(() => {
+    onChange?.(lineConfig)
+  }, [lineConfig, onChange])
 
   function handleSave() {
     setSavedAt(Date.now())

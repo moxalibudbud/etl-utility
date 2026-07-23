@@ -1,21 +1,15 @@
-import { useMemo, useState } from 'react'
-import { FileUpload } from '@/components/transform/FileUpload'
-import { Button } from '@/components/ui/button'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
-import { Section } from './Section'
-import { TemplatedTextField } from './TemplatedTextField'
-import { MetadataKeysEditor } from './MetadataKeysEditor'
-import { OutputSummary } from './OutputSummary'
-import { ConfigJsonPanel } from './ConfigJsonPanel'
-import { saveOutputConfig } from '@/lib/config/persist'
-import type { Delimiter } from '@/lib/file-reader'
-import type { OutputConfig } from '@/lib/config/types'
+import { useEffect, useMemo, useState } from 'react';
+import { FileUpload } from '@/components/transform/FileUpload';
+import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Section } from './Section';
+import { TemplatedTextField } from './TemplatedTextField';
+import { MetadataKeysEditor } from './MetadataKeysEditor';
+import { OutputSummary } from './OutputSummary';
+import { ConfigJsonPanel } from './ConfigJsonPanel';
+import { saveOutputConfig } from '@/lib/config/persist';
+import type { Delimiter } from '@/lib/file-reader';
+import type { OutputConfig } from '@/lib/config/types';
 
 // The only fileGenerator values the Go core actually builds a writer for
 // (writer.newLocalWriter / newBlobWriter in go/writer/writer.go); any other
@@ -24,41 +18,47 @@ import type { OutputConfig } from '@/lib/config/types'
 const SUPPORTED_GENERATORS = [
   { value: 'default-generator', label: 'Default (delimited)' },
   { value: 'json-generator', label: 'JSON' },
-] as const
+] as const;
 
-const NO_UNIQUE_KEY = '__none__'
+const NO_UNIQUE_KEY = '__none__';
 
 interface OutputConfigBuilderProps {
   /** Source columns from the Source tab — uniqueKey must name one of these,
    * since the writer looks it up as sl.JSONLine[UniqueKey]
    * (go/writer/render.go), and JSONLine is keyed by options.line.columns. */
-  sourceColumns?: string[]
+  sourceColumns?: string[];
+  /** Notified with the assembled OutputConfig on every change, so the page
+   * can feed a live output into the Summary tab. */
+  onChange?: (output: OutputConfig) => void;
 }
 
-export function OutputConfigBuilder({ sourceColumns = [] }: OutputConfigBuilderProps) {
-  const [fileGenerator, setFileGenerator] = useState<string>('default-generator')
-  const [filename, setFilename] = useState('')
-  const [footer, setFooter] = useState('')
-  const [uniqueKey, setUniqueKey] = useState('')
+export function OutputConfigBuilder({ sourceColumns = [], onChange }: OutputConfigBuilderProps) {
+  const [fileGenerator, setFileGenerator] = useState<string>('default-generator');
+  const [filename, setFilename] = useState('');
+  const [footer, setFooter] = useState('');
+  const [uniqueKey, setUniqueKey] = useState('');
   // Key names only — output.metadata's values are populated at runtime by
   // the pipeline, not authored here. This just tells the templated fields
   // below which data.metadata.<key> tokens are valid to insert.
-  const [metadataKeys, setMetadataKeys] = useState<string[]>([])
-  const [columns, setColumns] = useState<string[]>([])
-  const [separator, setSeparator] = useState<Delimiter>(';')
-  const [savedAt, setSavedAt] = useState<number | null>(null)
+  const [metadataKeys, setMetadataKeys] = useState<string[]>([]);
+  const [columns, setColumns] = useState<string[]>([]);
+  const [separator, setSeparator] = useState<Delimiter>(';');
+  const [savedAt, setSavedAt] = useState<number | null>(null);
 
-  const isDelimited = fileGenerator !== 'json-generator'
+  const isDelimited = fileGenerator !== 'json-generator';
 
-  function handleFileSelected(_file: File, cols: string[], delimiter: Delimiter, _hasHeader: boolean) {
-    setColumns(cols)
-    setSeparator(delimiter)
-    setSavedAt(null)
+  function handleFileSelected(file: File, cols: string[], delimiter: Delimiter, _hasHeader: boolean) {
+    setColumns(cols);
+    setSeparator(delimiter);
+    setSavedAt(null);
+    // Prefill from the sample's own name — but don't clobber a filename the
+    // user already typed/edited by re-uploading a new sample.
+    setFilename((prev) => (prev === '' ? file.name : prev));
   }
 
   // Header is the literal header line written to delimited output — a sample
   // output file's columns, rejoined with the same separator they were split on.
-  const header = useMemo(() => columns.join(separator), [columns, separator])
+  const header = useMemo(() => columns.join(separator), [columns, separator]);
 
   const outputConfig: OutputConfig = useMemo(
     () => ({
@@ -73,15 +73,23 @@ export function OutputConfigBuilder({ sourceColumns = [] }: OutputConfigBuilderP
       metadata: {}, // populated at runtime, not authored here
     }),
     [fileGenerator, filename, isDelimited, separator, header, footer, uniqueKey],
-  )
+  );
+
+  useEffect(() => {
+    onChange?.(outputConfig);
+  }, [outputConfig, onChange]);
 
   function handleSave() {
-    setSavedAt(Date.now())
-    void saveOutputConfig(outputConfig)
+    setSavedAt(Date.now());
+    void saveOutputConfig(outputConfig);
   }
 
   return (
     <div className="space-y-6">
+      <Section title="Sample output file">
+        <FileUpload onFileSelected={handleFileSelected} />
+      </Section>
+
       <Section title="File generator">
         <Select value={fileGenerator} onValueChange={(v) => setFileGenerator(v as string)}>
           <SelectTrigger className="w-56">
@@ -111,8 +119,8 @@ export function OutputConfigBuilder({ sourceColumns = [] }: OutputConfigBuilderP
         <TemplatedTextField
           value={filename}
           onChange={(v) => {
-            setFilename(v)
-            setSavedAt(null)
+            setFilename(v);
+            setSavedAt(null);
           }}
           placeholder="products_[dateTime YYYY-MM-DD].csv"
           metadataKeys={metadataKeys}
@@ -128,8 +136,8 @@ export function OutputConfigBuilder({ sourceColumns = [] }: OutputConfigBuilderP
             <TemplatedTextField
               value={footer}
               onChange={(v) => {
-                setFooter(v)
-                setSavedAt(null)
+                setFooter(v);
+                setSavedAt(null);
               }}
               placeholder="END OF FILE"
               metadataKeys={metadataKeys}
@@ -143,8 +151,8 @@ export function OutputConfigBuilder({ sourceColumns = [] }: OutputConfigBuilderP
             <Select
               value={uniqueKey === '' ? NO_UNIQUE_KEY : uniqueKey}
               onValueChange={(v) => {
-                setUniqueKey(v === NO_UNIQUE_KEY ? '' : (v as string))
-                setSavedAt(null)
+                setUniqueKey(v === NO_UNIQUE_KEY ? '' : (v as string));
+                setSavedAt(null);
               }}
               disabled={sourceColumns.length === 0}
             >
@@ -161,14 +169,8 @@ export function OutputConfigBuilder({ sourceColumns = [] }: OutputConfigBuilderP
               </SelectContent>
             </Select>
             {sourceColumns.length === 0 && (
-              <p className="mt-2 text-[10px] text-muted-foreground">
-                Build the Source tab first to populate columns.
-              </p>
+              <p className="mt-2 text-[10px] text-muted-foreground">Build the Source tab first to populate columns.</p>
             )}
-          </Section>
-
-          <Section title="Sample output file">
-            <FileUpload onFileSelected={handleFileSelected} />
           </Section>
 
           {columns.length > 0 && (
@@ -177,11 +179,7 @@ export function OutputConfigBuilder({ sourceColumns = [] }: OutputConfigBuilderP
                 <Button onClick={handleSave} className="flex-1">
                   Save configuration
                 </Button>
-                {savedAt && (
-                  <span className="text-xs text-muted-foreground">
-                    Saved — check the console.
-                  </span>
-                )}
+                {savedAt && <span className="text-xs text-muted-foreground">Saved — check the console.</span>}
               </div>
 
               <OutputSummary output={outputConfig} />
@@ -191,10 +189,9 @@ export function OutputConfigBuilder({ sourceColumns = [] }: OutputConfigBuilderP
         </>
       ) : (
         <p className="text-xs text-muted-foreground">
-          Sample-output scaffolding for the JSON generator (template + arrayField inference)
-          isn't implemented yet.
+          Sample-output scaffolding for the JSON generator (template + arrayField inference) isn't implemented yet.
         </p>
       )}
     </div>
-  )
+  );
 }

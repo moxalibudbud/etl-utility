@@ -1,14 +1,49 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { Link } from 'react-router'
 import { ArrowLeft } from 'lucide-react'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { ConfigurationSummary } from '@/components/config/ConfigurationSummary'
 import { LineConfigBuilder } from '@/components/config/LineConfigBuilder'
 import { OutputConfigBuilder } from '@/components/config/OutputConfigBuilder'
-import { mockConfig } from '@/lib/config/mock'
+import type { Config, LineConfig, OutputConfig } from '@/lib/config/types'
+
+const EMPTY_LINE_CONFIG: LineConfig = {
+  columns: [],
+  mandatoryFields: [],
+  identifierMappings: [],
+  outputMappings: [],
+  separator: '',
+  withHeader: true,
+}
+
+const EMPTY_OUTPUT_CONFIG: OutputConfig = {
+  fileGenerator: 'default-generator',
+  filename: '',
+  separator: '',
+  header: '',
+  footer: '',
+  template: '',
+  arrayField: '',
+  uniqueKey: '',
+  metadata: {},
+}
 
 export default function ConfigBuilder() {
   const [sourceColumns, setSourceColumns] = useState<string[]>([])
+  const [lineConfig, setLineConfig] = useState<LineConfig>(EMPTY_LINE_CONFIG)
+  const [outputConfig, setOutputConfig] = useState<OutputConfig>(EMPTY_OUTPUT_CONFIG)
+
+  // `source` (reader.SourceConfig — path/url/auth for the actual pipeline
+  // run) has no builder UI yet, so it stays empty here; only options.line
+  // and output are live.
+  const config: Config = useMemo(
+    () => ({
+      source: {},
+      output: outputConfig,
+      options: { line: lineConfig, rejectOnInvalidRow: false },
+    }),
+    [lineConfig, outputConfig],
+  )
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -41,18 +76,19 @@ export default function ConfigBuilder() {
           </TabsList>
 
           <TabsContent value="line" className="mt-6" keepMounted>
-            <LineConfigBuilder onColumnsChange={setSourceColumns} />
+            <LineConfigBuilder onColumnsChange={setSourceColumns} onChange={setLineConfig} />
           </TabsContent>
 
           <TabsContent value="output" className="mt-6" keepMounted>
-            <OutputConfigBuilder sourceColumns={sourceColumns} />
+            <OutputConfigBuilder sourceColumns={sourceColumns} onChange={setOutputConfig} />
           </TabsContent>
 
           <TabsContent value="summary" className="mt-6 space-y-4" keepMounted>
             <p className="text-xs text-muted-foreground">
-              Mock data — not wired up to the Source / Output tabs yet.
+              Live from the Source / Output tabs — <code className="font-mono">source</code> is
+              omitted (no builder for it yet).
             </p>
-            <ConfigurationSummary config={mockConfig} />
+            <ConfigurationSummary config={config} />
           </TabsContent>
         </Tabs>
       </div>
