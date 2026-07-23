@@ -39,7 +39,22 @@ export interface OutputConfig extends DestinationConfig {
   uniqueKey: string
   metadata: Record<string, unknown>
   options?: { errorReport?: boolean; [key: string]: unknown }
+  structuredTemplate?: StructuredTemplate
 }
+
+// Mirrors go/writer/json_template.go's StructuredNode/StructuredTemplate: a
+// typed alternative to the string `template`, additive and mutually
+// exclusive with it (enforced by the writer, not by decode). `value` is a
+// template expression string for string/number/boolean, always absent for
+// null, and arbitrary JSON for literal.
+export type StructuredNodeType = 'string' | 'number' | 'boolean' | 'null' | 'literal'
+
+export interface StructuredNode {
+  type: StructuredNodeType
+  value?: unknown
+}
+
+export type StructuredTemplate = Record<string, StructuredNode>
 
 export interface Mapping {
   out: string

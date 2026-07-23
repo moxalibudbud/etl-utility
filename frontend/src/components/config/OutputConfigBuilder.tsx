@@ -1,9 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
 import { FileUpload } from '@/components/transform/FileUpload';
+import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Section } from './Section';
 import { TemplatedTextField } from './TemplatedTextField';
 import { MetadataKeysEditor } from './MetadataKeysEditor';
+import { StructuredTemplateEditor, toStructuredTemplate, type StructuredTemplateRow } from './StructuredTemplateEditor';
 import { OutputSummary } from './OutputSummary';
 import { ConfigJsonPanel } from './ConfigJsonPanel';
 import type { Delimiter } from '@/lib/file-reader';
@@ -52,6 +54,10 @@ export function OutputConfigBuilder({ sourceColumns = [], onChange }: OutputConf
   // reference, a [func ...] token, or literal text (go/writer/render.go
   // renders the whole row through the same template layer as filename/header).
   const [templateValues, setTemplateValues] = useState<string[]>([]);
+  // JSON generator only: output.arrayField and the typed structuredTemplate
+  // alternative to the string template (go/writer/json_template.go).
+  const [arrayField, setArrayField] = useState('');
+  const [structuredRows, setStructuredRows] = useState<StructuredTemplateRow[]>([]);
 
   const isDelimited = fileGenerator !== 'json-generator';
 
@@ -84,6 +90,10 @@ export function OutputConfigBuilder({ sourceColumns = [], onChange }: OutputConf
     [templateValues, separator],
   );
 
+  // Mutually exclusive with `template` on the writer side — only populated
+  // in JSON mode, where `template` above is always forced to ''.
+  const structuredTemplate = useMemo(() => toStructuredTemplate(structuredRows), [structuredRows]);
+
   const outputConfig: OutputConfig = useMemo(
     () => ({
       type,
@@ -93,11 +103,24 @@ export function OutputConfigBuilder({ sourceColumns = [], onChange }: OutputConf
       header: isDelimited ? header : '',
       footer: isDelimited ? footer : '',
       template: isDelimited ? template : '',
-      arrayField: '',
+      arrayField: isDelimited ? '' : arrayField,
       uniqueKey: isDelimited ? uniqueKey : '',
       metadata: {}, // populated at runtime, not authored here
+      structuredTemplate: isDelimited ? {} : structuredTemplate,
     }),
-    [type, fileGenerator, filename, isDelimited, separator, header, footer, template, uniqueKey],
+    [
+      type,
+      fileGenerator,
+      filename,
+      isDelimited,
+      separator,
+      header,
+      footer,
+      template,
+      arrayField,
+      uniqueKey,
+      structuredTemplate,
+    ],
   );
 
   useEffect(() => {
@@ -228,10 +251,35 @@ export function OutputConfigBuilder({ sourceColumns = [], onChange }: OutputConf
                 )}
               </>
             ) : (
-              <p className="text-xs text-muted-foreground">
-                Sample-output scaffolding for the JSON generator (template + arrayField inference) isn't implemented
-                yet.
-              </p>
+              <>
+                <Section
+                  title="Array field"
+                  meta={<span className="text-xs text-muted-foreground">key rows nest under, e.g. "lines"</span>}
+                >
+                  <Input value={arrayField} onChange={(e) => setArrayField(e.target.value)} placeholder="lines" />
+                </Section>
+
+                <Section
+                  title="Structured template"
+                  meta={
+                    <span className="text-xs text-muted-foreground">
+                      typed alternative to a string template — mutually exclusive with it
+                    </span>
+                  }
+                >
+                  <StructuredTemplateEditor
+                    rows={structuredRows}
+                    onChange={setStructuredRows}
+                    metadataKeys={metadataKeys}
+                    sourceColumns={sourceColumns}
+                  />
+                </Section>
+
+                <p className="text-xs text-muted-foreground">
+                  Sample-output JSON upload to infer fields, and a typed root/header template, aren't implemented
+                  yet — fields above are added by hand.
+                </p>
+              </>
             )}
           </div>
         </Section>

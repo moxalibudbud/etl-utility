@@ -13,6 +13,7 @@ export function OutputSummary({ output }: OutputSummaryProps) {
   const isJson = output.fileGenerator === 'json-generator';
   const metadataEntries = Object.entries(output.metadata ?? {});
   const errorReport = output.options?.errorReport === true;
+  const structuredFields = Object.entries(output.structuredTemplate ?? {});
 
   return (
     <Section title="Output">
@@ -35,8 +36,24 @@ export function OutputSummary({ output }: OutputSummaryProps) {
 
         {isJson ? (
           <>
-            <FieldRow label="template">{output.template || '—'}</FieldRow>
             <FieldRow label="arrayField">{output.arrayField || '—'}</FieldRow>
+            <FieldRow label="template">{output.template || '—'}</FieldRow>
+            {structuredFields.length > 0 && (
+              <div className="py-1.5">
+                <span className="text-xs text-muted-foreground">structuredTemplate</span>
+                <div className="mt-1.5 space-y-1">
+                  {structuredFields.map(([name, node]) => (
+                    <div key={name} className="flex items-center justify-between gap-4 text-xs font-mono">
+                      <span className="text-muted-foreground">{name}</span>
+                      <span className="text-right break-all">
+                        {node.type}
+                        {node.type !== 'null' ? `: ${JSON.stringify(node.value)}` : ''}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </>
         ) : (
           <>
