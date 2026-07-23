@@ -38,23 +38,50 @@ export function delimiterLabel(delimiter: Delimiter): string {
   return `"${delimiter}"`
 }
 
+export function positionalNames(n: number): string[] {
+  return Array.from({ length: n }, (_, i) => `Column ${i + 1}`)
+}
+
 export async function readHeader(
   file: File,
   delimiterOverride?: Delimiter,
   hasHeader = true,
-): Promise<{ columns: string[]; delimiter: Delimiter }> {
+): Promise<{ headerLabels: string[]; columns: string[]; delimiter: Delimiter; sampleRow: string[] }> {
   const slice = file.slice(0, 2048)
   const text = await slice.text()
-  const firstLine = text.split(/\r?\n/)[0]
+  const lines = text.split(/\r?\n/)
+  const firstLine = lines[0]
   if (firstLine === undefined || firstLine.trim() === '') {
     throw new Error('Could not read header row — file appears to be empty.')
   }
   const delimiter = delimiterOverride || detectDelimiter(text)
-  const firstRowCells = parseLine(firstLine, delimiter)
-  const columns = hasHeader
-    ? firstRowCells.map((c) => c.trim())
-    : firstRowCells.map((_, i) => `Column ${i + 1}`)
-  return { columns, delimiter }
+  const firstRowCells = parseLine(firstLine, delimiter).map((c) => c.trim())
+
+  // The literal header line's own cells — always row 1, independent of the
+  // data rows' actual shape. Some flat files carry a header/trailer line
+  // with a completely different field count than the data lines that
+  // follow (e.g. a 3-field control record ahead of 7-field data records),
+  // so this must never be assumed to describe the data row structure.
+  const headerLabels = hasHeader ? firstRowCells : []
+
+  // The row that actually describes each data line's field positions — the
+  // row after the header when there is one (it may have a different field
+  // count than the header!), otherwise row 1 itself, which is already data.
+  const dataLine = hasHeader ? lines[1] : lines[0]
+  const sampleRow =
+    dataLine !== undefined && dataLine.trim() !== '' ? parseLine(dataLine, delimiter).map((c) => c.trim()) : []
+
+  // Structural column names for the data rows — reuses the header's labels
+  // only when they actually line up with the data (same field count).
+  // Otherwise the header doesn't reliably describe the data shape, so this
+  // falls back to positional names sized to the real data row.
+  const columns = !hasHeader
+    ? positionalNames(firstRowCells.length)
+    : sampleRow.length === 0 || headerLabels.length === sampleRow.length
+      ? headerLabels
+      : positionalNames(sampleRow.length)
+
+  return { headerLabels, columns, delimiter, sampleRow }
 }
 
 export async function* streamRows(

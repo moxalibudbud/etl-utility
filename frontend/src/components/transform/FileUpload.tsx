@@ -1,11 +1,25 @@
-import { useRef, useState } from 'react';
+import { useId, useRef, useState } from 'react';
 import { Upload } from 'lucide-react';
 import { Label } from '@/components/ui/label';
 import { readHeader, delimiterLabel } from '@/lib/file-reader';
 import type { Delimiter } from '@/lib/file-reader';
 
 interface FileUploadProps {
-  onFileSelected: (file: File, columns: string[], delimiter: Delimiter, hasHeader: boolean) => void;
+  /** `columns` are structural field names for the data rows (from sampleRow's
+   * shape, reusing header labels only when the count actually matches — some
+   * flat files carry a header/trailer line shaped differently from their
+   * data lines). `sampleRow` is an example data row. `headerLabels` is the
+   * literal header row's own cells (row 1, only meaningful when hasHeader),
+   * independent of the data shape — for building a literal header line, not
+   * for describing per-row field structure. */
+  onFileSelected: (
+    file: File,
+    columns: string[],
+    delimiter: Delimiter,
+    hasHeader: boolean,
+    sampleRow: string[],
+    headerLabels: string[],
+  ) => void;
   /** Also accept .json files in the file picker/drop zone, alongside the default CSV/TSV/TXT. */
   acceptJson?: boolean;
 }
@@ -24,6 +38,12 @@ const SEPARATOR_PRESETS: { value: Delimiter; label: string }[] = [
 ];
 
 export function FileUpload({ onFileSelected, acceptJson = false }: FileUploadProps) {
+  // Multiple FileUpload instances can be mounted at once (the Source/Output
+  // tabs stay mounted via Tabs' keepMounted) — a hardcoded id here would
+  // duplicate across instances, and `htmlFor` resolves to the *first*
+  // matching id in the whole document, so clicking one instance's label
+  // could toggle a different instance's checkbox.
+  const hasHeaderId = useId();
   const inputRef = useRef<HTMLInputElement>(null);
   const [status, setStatus] = useState<'idle' | 'reading' | 'done' | 'error'>('idle');
   const [info, setInfo] = useState<{ name: string; columns: number; delimiter: string } | null>(null);
@@ -37,10 +57,14 @@ export function FileUpload({ onFileSelected, acceptJson = false }: FileUploadPro
     setStatus('reading');
     setErrorMsg(null);
     try {
-      const { columns, delimiter } = await readHeader(file, separatorOverride || undefined, hasHeaderOverride);
+      const { columns, delimiter, sampleRow, headerLabels } = await readHeader(
+        file,
+        separatorOverride || undefined,
+        hasHeaderOverride,
+      );
       setInfo({ name: file.name, columns: columns.length, delimiter });
       setStatus('done');
-      onFileSelected(file, columns, delimiter, hasHeaderOverride);
+      onFileSelected(file, columns, delimiter, hasHeaderOverride, sampleRow, headerLabels);
     } catch (err) {
       setErrorMsg(err instanceof Error ? err.message : 'Failed to read file.');
       setStatus('error');
@@ -119,9 +143,9 @@ export function FileUpload({ onFileSelected, acceptJson = false }: FileUploadPro
           </div>
         </div>
 
-        <label htmlFor="has-header" className="flex items-center gap-2 cursor-pointer select-none">
+        <label htmlFor={hasHeaderId} className="flex items-center gap-2 cursor-pointer select-none">
           <input
-            id="has-header"
+            id={hasHeaderId}
             type="checkbox"
             checked={hasHeader}
             onChange={handleHasHeaderChange}

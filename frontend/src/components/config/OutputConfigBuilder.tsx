@@ -16,6 +16,7 @@ import { JsonSampleUpload } from './JsonSampleUpload';
 import { OutputSummary } from './OutputSummary';
 import { ConfigJsonPanel } from './ConfigJsonPanel';
 import { inferFromJsonSample } from '@/lib/config/jsonSample';
+import { positionalNames } from '@/lib/file-reader';
 import type { Delimiter } from '@/lib/file-reader';
 import type { DestinationType, OutputConfig } from '@/lib/config/types';
 
@@ -59,23 +60,41 @@ export function OutputConfigBuilder({ sourceColumns = [], onChange, initialOutpu
   // below which data.metadata.<key> tokens are valid to insert. Seeded from
   // an existing config's metadata *keys* only, never its (runtime-populated) values.
   const [metadataKeys, setMetadataKeys] = useState<string[]>(Object.keys(initialOutput?.metadata ?? {}));
-  // header is a joined string on the wire, not an array — split it back into
-  // columns using the config's own separator so re-loading looks the same
-  // as having just re-uploaded the original sample.
+  // header and template are independent — a sample file's header/trailer
+  // line can have a completely different field count than its data lines
+  // (e.g. a 3-field control record ahead of 7-field data records), so
+  // neither can be derived from the other. Both are joined strings on the
+  // wire, split back apart here using the config's own separator so
+  // re-loading looks the same as having just re-uploaded the original sample.
   const initialSeparator = initialOutput?.separator || ';';
-  const initialColumns =
-    initialOutput?.header && initialOutput.separator ? initialOutput.header.split(initialOutput.separator) : [];
-  const [columns, setColumns] = useState<string[]>(initialColumns);
   const [separator, setSeparator] = useState<Delimiter>(initialSeparator);
-  // One template segment per header column, in order — joined by `separator`
-  // to build output.template. Each segment is a {sourceColumn}/{metadata.key}
+
+  // headerLabels are the literal header row's own cells (independent of the
+  // data rows' shape) — used only to label/size the Header section.
+  const initialHeaderValues =
+    initialOutput?.header && initialOutput.separator ? initialOutput.header.split(initialOutput.separator) : [];
+  const [headerLabels, setHeaderLabels] = useState<string[]>(initialHeaderValues);
+  // One header segment per header cell, in order — joined by `separator` to
+  // build output.header. Each value is left blank until explicitly
+  // typed/picked — it is not auto-filled from the header's own label, even
+  // though that's the common choice. Same {sourceColumn}/{metadata.key}/
+  // [func ...] token vocabulary as Filename/Template, since go/writer/render.go
+  // renders header through the identical template layer.
+  const [headerValues, setHeaderValues] = useState<string[]>(initialHeaderValues);
+
+  // columns are structural names for the data rows (from the sample's actual
+  // data row shape, not the header) — used only to label/size the Template
+  // section. On load there's no real column names to recover (only the
+  // template's own expressions), so this is positional ("Column 1", …) sized
+  // to however many segments the loaded template has.
+  const initialTemplateValues =
+    initialOutput?.template && initialOutput.separator ? initialOutput.template.split(initialOutput.separator) : [];
+  const [columns, setColumns] = useState<string[]>(positionalNames(initialTemplateValues.length));
+  // One template segment per column, in order — joined by `separator` to
+  // build output.template. Each segment is a {sourceColumn}/{metadata.key}
   // reference, a [func ...] token, or literal text (go/writer/render.go
   // renders the whole row through the same template layer as filename/header).
-  const [templateValues, setTemplateValues] = useState<string[]>(
-    initialOutput?.template && initialOutput.separator
-      ? initialOutput.template.split(initialOutput.separator)
-      : new Array(initialColumns.length).fill(''),
-  );
+  const [templateValues, setTemplateValues] = useState<string[]>(initialTemplateValues);
   // JSON generator only: output.arrayField and the typed structuredTemplate
   // alternative to the string template (go/writer/json_template.go).
   const [arrayField, setArrayField] = useState(initialOutput?.arrayField ?? '');
@@ -90,17 +109,39 @@ export function OutputConfigBuilder({ sourceColumns = [], onChange, initialOutpu
   // into rows, which this tool doesn't attempt; the raw value is still
   // visible in the Summary/JSON panels either way.
   const [headerRows, setHeaderRows] = useState<StructuredTemplateRow[]>([]);
+  // An example data row (the row after the header, not the header itself) —
+  // shown as each Template cell's placeholder so the hint is a realistic
+  // value; aligned with `columns`, since both are derived from this same row.
+  const [sampleRow, setSampleRow] = useState<string[]>([]);
 
   const isDelimited = fileGenerator !== 'json-generator';
 
-  function handleFileSelected(file: File, cols: string[], delimiter: Delimiter, _hasHeader: boolean) {
+  function handleFileSelected(
+    file: File,
+    cols: string[],
+    delimiter: Delimiter,
+    _hasHeader: boolean,
+    row: string[],
+    labels: string[],
+  ) {
     setColumns(cols);
     setSeparator(delimiter);
     // Prefill from the sample's own name — but don't clobber a filename the
     // user already typed/edited by re-uploading a new sample.
     setFilename((prev) => (prev === '' ? file.name : prev));
-    // Column positions may no longer line up with a previous sample's shape.
+    // Positions may no longer line up with a previous sample's shape.
+    setHeaderLabels(labels);
+    setHeaderValues(new Array(labels.length).fill(''));
     setTemplateValues(new Array(cols.length).fill(''));
+    setSampleRow(row);
+  }
+
+  function setHeaderValueAt(index: number, value: string) {
+    setHeaderValues((prev) => {
+      const next = [...prev];
+      next[index] = value;
+      return next;
+    });
   }
 
   function setTemplateValueAt(index: number, value: string) {
@@ -122,9 +163,13 @@ export function OutputConfigBuilder({ sourceColumns = [], onChange, initialOutpu
     if (inferred.arrayField !== '') setArrayField(inferred.arrayField);
   }
 
-  // Header is the literal header line written to delimited output — a sample
-  // output file's columns, rejoined with the same separator they were split on.
-  const header = useMemo(() => columns.join(separator), [columns, separator]);
+  // Empty when every cell is blank, matching header()'s "" == "no header"
+  // check in go/writer/render.go — no header row is written unless at least
+  // one cell was explicitly filled in.
+  const header = useMemo(
+    () => (headerValues.some((v) => v !== '') ? headerValues.join(separator) : ''),
+    [headerValues, separator],
+  );
 
   // Empty when every segment is blank, so the writer falls back to its
   // default row-building behavior instead of rendering an all-empty row.
@@ -248,6 +293,32 @@ export function OutputConfigBuilder({ sourceColumns = [], onChange, initialOutpu
 
             {isDelimited ? (
               <>
+                {headerLabels.length > 0 && (
+                  <Section
+                    title="Header"
+                    meta={
+                      <span className="text-xs text-muted-foreground">
+                        one value per header cell, in order — independent of Template below
+                      </span>
+                    }
+                  >
+                    <div className="space-y-4">
+                      {headerLabels.map((label, i) => (
+                        <div key={`${label}-${i}`}>
+                          <p className="mb-1 text-[10px] font-mono text-muted-foreground">{label}</p>
+                          <TemplatedTextField
+                            value={headerValues[i] ?? ''}
+                            onChange={(v) => setHeaderValueAt(i, v)}
+                            placeholder={label}
+                            metadataKeys={metadataKeys}
+                            sourceColumns={sourceColumns}
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  </Section>
+                )}
+
                 <Section
                   title="Footer"
                   meta={<span className="text-xs text-muted-foreground">free text + [func ...] tokens</span>}
@@ -291,7 +362,11 @@ export function OutputConfigBuilder({ sourceColumns = [], onChange, initialOutpu
                 {columns.length > 0 && (
                   <Section
                     title="Template"
-                    meta={<span className="text-xs text-muted-foreground">one value per header column, in order</span>}
+                    meta={
+                      <span className="text-xs text-muted-foreground">
+                        one value per data field, in order — independent of Header above
+                      </span>
+                    }
                   >
                     <div className="space-y-4">
                       {columns.map((col, i) => (
@@ -300,7 +375,7 @@ export function OutputConfigBuilder({ sourceColumns = [], onChange, initialOutpu
                           <TemplatedTextField
                             value={templateValues[i] ?? ''}
                             onChange={(v) => setTemplateValueAt(i, v)}
-                            placeholder="{sourceColumn} or fixed text"
+                            placeholder={sampleRow[i] ?? '{sourceColumn} or fixed text'}
                             metadataKeys={metadataKeys}
                             sourceColumns={sourceColumns}
                           />
