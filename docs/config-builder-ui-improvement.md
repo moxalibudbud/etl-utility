@@ -237,6 +237,32 @@ are reasons to build those specific pieces deliberately.
 and validation first, since they carry the most value for the least risk, and
 add sample-output scaffolding and live preview once the core loop is proven.
 
+## Current implementation status
+
+A frontend-only prototype exists at `frontend/src/pages/ConfigBuilder.tsx`
+(`/config-builder` route), alongside the pre-existing Octo+ Portal app. Full
+detail lives in `frontend/FRONTEND-DEV-LAST-SESSION-SUMMARY.md`; the short
+version:
+
+- **Built**: Source and Output tabs that read a sample file client-side (no
+  backend inference — this all runs in the browser) and fill in
+  `options.line` / `output`, including a `template` editor for delimited
+  output (one field per header column, inserting `{sourceColumn}`,
+  `{metadata.key}`, or `[func ...]` tokens via a searchable combobox); a
+  Summary tab composing the live `Config` from both tabs' state (not the
+  hand-written mock this doc's earlier drafts assumed); a single save action
+  that currently only logs the assembled `Config` to the console.
+- **Deliberately narrower than this plan for now**: `source`/`output` only
+  author `type` (`local` / `azure-blob`) — `path`, `url`, and `auth` are left
+  for a runtime/deploy step to fill in, not authored in the browser. No
+  `outputMappings` editor. No sample-output scaffolding for the JSON
+  generator (delimited-only so far).
+- **Not started**: everything in Phase 1 (no `cmd/configui`, no
+  `/api/infer`, `/api/validate`, `/api/preview`, no generated schema/contract
+  test). Without `/api/validate`, the frontend does not yet enforce the Go
+  `Validate()` rules (e.g. rejecting `auth` on a local source). No
+  persistence of any kind.
+
 ## Implementation phases
 
 ### Phase 1 — Backend inference and validation service
