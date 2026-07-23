@@ -1,12 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
 import { FileUpload } from '@/components/transform/FileUpload';
-import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Section } from './Section';
 import { LineConfigSummary } from './LineConfigSummary';
 import { MappingTable } from './MappingTable';
 import { ConfigJsonPanel } from './ConfigJsonPanel';
-import { saveLineConfig } from '@/lib/config/persist';
 import type { Delimiter } from '@/lib/file-reader';
 import type { LineConfig, Mapping, SourceConfig, SourceType } from '@/lib/config/types';
 
@@ -66,7 +64,6 @@ export function LineConfigBuilder({ onColumnsChange, onChange, onSourceChange }:
   const [withHeader, setWithHeader] = useState(true);
   const [mandatoryFields, setMandatoryFields] = useState<string[]>([]);
   const [identifierColumns, setIdentifierColumns] = useState<string[]>([]);
-  const [savedAt, setSavedAt] = useState<number | null>(null);
 
   function handleFileSelected(_file: File, cols: string[], delimiter: Delimiter, hasHeader: boolean) {
     setColumns(cols);
@@ -74,7 +71,6 @@ export function LineConfigBuilder({ onColumnsChange, onChange, onSourceChange }:
     setWithHeader(hasHeader);
     setMandatoryFields([]);
     setIdentifierColumns([]);
-    setSavedAt(null);
   }
 
   useEffect(() => {
@@ -108,15 +104,10 @@ export function LineConfigBuilder({ onColumnsChange, onChange, onSourceChange }:
     onSourceChange?.(sourceConfig);
   }, [sourceConfig, onSourceChange]);
 
-  function handleSave() {
-    setSavedAt(Date.now());
-    void saveLineConfig(lineConfig);
-  }
-
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-2 gap-6">
-        <Section title="Builder">
+        <Section title="Builder" titleClassName="font-bold text-foreground">
           <div className="space-y-6">
             <Section title="Sample source file">
               <FileUpload onFileSelected={handleFileSelected} />
@@ -146,10 +137,7 @@ export function LineConfigBuilder({ onColumnsChange, onChange, onSourceChange }:
                   <ColumnCheckboxes
                     columns={columns}
                     selected={mandatoryFields}
-                    onToggle={(col) => {
-                      setMandatoryFields((prev) => toggle(prev, col));
-                      setSavedAt(null);
-                    }}
+                    onToggle={(col) => setMandatoryFields((prev) => toggle(prev, col))}
                   />
                 </Section>
 
@@ -160,31 +148,21 @@ export function LineConfigBuilder({ onColumnsChange, onChange, onSourceChange }:
                   <ColumnCheckboxes
                     columns={columns}
                     selected={identifierColumns}
-                    onToggle={(col) => {
-                      setIdentifierColumns((prev) => toggle(prev, col));
-                      setSavedAt(null);
-                    }}
+                    onToggle={(col) => setIdentifierColumns((prev) => toggle(prev, col))}
                   />
                 </Section>
 
                 <p className="text-xs text-muted-foreground">
                   Output mappings are hidden for now — the config carries no{' '}
-                  <code className="font-mono">outputMappings</code>, so the engine falls back to all source columns,
-                  in order.
+                  <code className="font-mono">outputMappings</code>, so the engine falls back to all source columns, in
+                  order.
                 </p>
-
-                <div className="flex items-center gap-3">
-                  <Button onClick={handleSave} className="flex-1">
-                    Save configuration
-                  </Button>
-                  {savedAt && <span className="text-xs text-muted-foreground">Saved — check the console.</span>}
-                </div>
               </>
             )}
           </div>
         </Section>
 
-        <Section title="Preview">
+        <Section title="Preview" titleClassName="font-bold text-foreground">
           <div className="space-y-6">
             <Section title="options.line preview">
               <div className="divide-y divide-border">

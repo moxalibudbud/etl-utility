@@ -1,13 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
 import { FileUpload } from '@/components/transform/FileUpload';
-import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Section } from './Section';
 import { TemplatedTextField } from './TemplatedTextField';
 import { MetadataKeysEditor } from './MetadataKeysEditor';
 import { OutputSummary } from './OutputSummary';
 import { ConfigJsonPanel } from './ConfigJsonPanel';
-import { saveOutputConfig } from '@/lib/config/persist';
 import type { Delimiter } from '@/lib/file-reader';
 import type { DestinationType, OutputConfig } from '@/lib/config/types';
 
@@ -54,14 +52,12 @@ export function OutputConfigBuilder({ sourceColumns = [], onChange }: OutputConf
   // reference, a [func ...] token, or literal text (go/writer/render.go
   // renders the whole row through the same template layer as filename/header).
   const [templateValues, setTemplateValues] = useState<string[]>([]);
-  const [savedAt, setSavedAt] = useState<number | null>(null);
 
   const isDelimited = fileGenerator !== 'json-generator';
 
   function handleFileSelected(file: File, cols: string[], delimiter: Delimiter, _hasHeader: boolean) {
     setColumns(cols);
     setSeparator(delimiter);
-    setSavedAt(null);
     // Prefill from the sample's own name — but don't clobber a filename the
     // user already typed/edited by re-uploading a new sample.
     setFilename((prev) => (prev === '' ? file.name : prev));
@@ -75,7 +71,6 @@ export function OutputConfigBuilder({ sourceColumns = [], onChange }: OutputConf
       next[index] = value;
       return next;
     });
-    setSavedAt(null);
   }
 
   // Header is the literal header line written to delimited output — a sample
@@ -109,15 +104,10 @@ export function OutputConfigBuilder({ sourceColumns = [], onChange }: OutputConf
     onChange?.(outputConfig);
   }, [outputConfig, onChange]);
 
-  function handleSave() {
-    setSavedAt(Date.now());
-    void saveOutputConfig(outputConfig);
-  }
-
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-2 gap-6">
-        <Section title="Builder">
+        <Section title="Builder" titleClassName="font-bold text-foreground">
           <div className="space-y-6">
             <Section title="Sample output file">
               <FileUpload onFileSelected={handleFileSelected} />
@@ -166,10 +156,7 @@ export function OutputConfigBuilder({ sourceColumns = [], onChange }: OutputConf
             >
               <TemplatedTextField
                 value={filename}
-                onChange={(v) => {
-                  setFilename(v);
-                  setSavedAt(null);
-                }}
+                onChange={setFilename}
                 placeholder="products_[dateTime YYYY-MM-DD].csv"
                 metadataKeys={metadataKeys}
               />
@@ -183,10 +170,7 @@ export function OutputConfigBuilder({ sourceColumns = [], onChange }: OutputConf
                 >
                   <TemplatedTextField
                     value={footer}
-                    onChange={(v) => {
-                      setFooter(v);
-                      setSavedAt(null);
-                    }}
+                    onChange={setFooter}
                     placeholder="END OF FILE"
                     metadataKeys={metadataKeys}
                   />
@@ -198,10 +182,7 @@ export function OutputConfigBuilder({ sourceColumns = [], onChange }: OutputConf
                 >
                   <Select
                     value={uniqueKey === '' ? NO_UNIQUE_KEY : uniqueKey}
-                    onValueChange={(v) => {
-                      setUniqueKey(v === NO_UNIQUE_KEY ? '' : (v as string));
-                      setSavedAt(null);
-                    }}
+                    onValueChange={(v) => setUniqueKey(v === NO_UNIQUE_KEY ? '' : (v as string))}
                     disabled={sourceColumns.length === 0}
                   >
                     <SelectTrigger className="w-56">
@@ -226,11 +207,7 @@ export function OutputConfigBuilder({ sourceColumns = [], onChange }: OutputConf
                 {columns.length > 0 && (
                   <Section
                     title="Template"
-                    meta={
-                      <span className="text-xs text-muted-foreground">
-                        one value per header column, in order
-                      </span>
-                    }
+                    meta={<span className="text-xs text-muted-foreground">one value per header column, in order</span>}
                   >
                     <div className="space-y-4">
                       {columns.map((col, i) => (
@@ -248,15 +225,6 @@ export function OutputConfigBuilder({ sourceColumns = [], onChange }: OutputConf
                     </div>
                   </Section>
                 )}
-
-                {columns.length > 0 && (
-                  <div className="flex items-center gap-3">
-                    <Button onClick={handleSave} className="flex-1">
-                      Save configuration
-                    </Button>
-                    {savedAt && <span className="text-xs text-muted-foreground">Saved — check the console.</span>}
-                  </div>
-                )}
               </>
             ) : (
               <p className="text-xs text-muted-foreground">
@@ -267,7 +235,7 @@ export function OutputConfigBuilder({ sourceColumns = [], onChange }: OutputConf
           </div>
         </Section>
 
-        <Section title="Preview">
+        <Section title="Preview" titleClassName="font-bold text-foreground">
           <div className="space-y-6">
             <OutputSummary output={outputConfig} />
             <ConfigJsonPanel data={outputConfig} title="Raw OutputConfig JSON" />

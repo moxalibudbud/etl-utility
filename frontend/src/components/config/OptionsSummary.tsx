@@ -1,10 +1,10 @@
-import { Badge } from '@/components/ui/badge'
-import { Section, FieldRow } from './Section'
-import { LineConfigSummary } from './LineConfigSummary'
-import type { Options } from '@/lib/config/types'
+import { Badge } from '@/components/ui/badge';
+import { Section, FieldRow } from './Section';
+import { LineConfigSummary } from './LineConfigSummary';
+import type { Options } from '@/lib/config/types';
 
 interface OptionsSummaryProps {
-  options: Options
+  options: Options;
 }
 
 export function OptionsSummary({ options }: OptionsSummaryProps) {
@@ -19,5 +19,5 @@ export function OptionsSummary({ options }: OptionsSummaryProps) {
         </FieldRow>
       </div>
     </Section>
-  )
+  );
 }
