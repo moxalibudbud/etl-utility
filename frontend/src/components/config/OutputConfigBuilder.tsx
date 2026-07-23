@@ -5,9 +5,16 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Section } from './Section';
 import { TemplatedTextField } from './TemplatedTextField';
 import { MetadataKeysEditor } from './MetadataKeysEditor';
-import { StructuredTemplateEditor, toStructuredTemplate, type StructuredTemplateRow } from './StructuredTemplateEditor';
+import {
+  StructuredTemplateEditor,
+  toStructuredTemplate,
+  toHeaderTemplateString,
+  type StructuredTemplateRow,
+} from './StructuredTemplateEditor';
+import { JsonSampleUpload } from './JsonSampleUpload';
 import { OutputSummary } from './OutputSummary';
 import { ConfigJsonPanel } from './ConfigJsonPanel';
+import { inferFromJsonSample } from '@/lib/config/jsonSample';
 import type { Delimiter } from '@/lib/file-reader';
 import type { DestinationType, OutputConfig } from '@/lib/config/types';
 
@@ -58,6 +65,10 @@ export function OutputConfigBuilder({ sourceColumns = [], onChange }: OutputConf
   // alternative to the string template (go/writer/json_template.go).
   const [arrayField, setArrayField] = useState('');
   const [structuredRows, setStructuredRows] = useState<StructuredTemplateRow[]>([]);
+  // Root/header object — reuses the same row editor as the structured
+  // template, but renders to a templated JSON *string* (output.header only
+  // supports the untyped string-templating layer, not a structured contract).
+  const [headerRows, setHeaderRows] = useState<StructuredTemplateRow[]>([]);
 
   const isDelimited = fileGenerator !== 'json-generator';
 
@@ -79,6 +90,17 @@ export function OutputConfigBuilder({ sourceColumns = [], onChange }: OutputConf
     });
   }
 
+  // Seeds the Root/Array object editors and arrayField from an uploaded
+  // sample JSON document — field names and JSON types only, never a
+  // {sourceColumn} guess. Replaces whatever was there before, same as
+  // re-uploading a sample source/output file resets its dependent state.
+  function handleJsonSample(data: unknown) {
+    const inferred = inferFromJsonSample(data);
+    setHeaderRows(inferred.headerRows);
+    setStructuredRows(inferred.structuredRows);
+    if (inferred.arrayField !== '') setArrayField(inferred.arrayField);
+  }
+
   // Header is the literal header line written to delimited output — a sample
   // output file's columns, rejoined with the same separator they were split on.
   const header = useMemo(() => columns.join(separator), [columns, separator]);
@@ -94,13 +116,16 @@ export function OutputConfigBuilder({ sourceColumns = [], onChange }: OutputConf
   // in JSON mode, where `template` above is always forced to ''.
   const structuredTemplate = useMemo(() => toStructuredTemplate(structuredRows), [structuredRows]);
 
+  // '' when empty, matching header()'s "" == "no header" check.
+  const jsonHeader = useMemo(() => toHeaderTemplateString(headerRows), [headerRows]);
+
   const outputConfig: OutputConfig = useMemo(
     () => ({
       type,
       fileGenerator,
       filename,
       separator: isDelimited ? separator : '',
-      header: isDelimited ? header : '',
+      header: isDelimited ? header : jsonHeader,
       footer: isDelimited ? footer : '',
       template: isDelimited ? template : '',
       arrayField: isDelimited ? '' : arrayField,
@@ -115,6 +140,7 @@ export function OutputConfigBuilder({ sourceColumns = [], onChange }: OutputConf
       isDelimited,
       separator,
       header,
+      jsonHeader,
       footer,
       template,
       arrayField,
@@ -132,9 +158,37 @@ export function OutputConfigBuilder({ sourceColumns = [], onChange }: OutputConf
       <div className="grid grid-cols-2 gap-6">
         <Section title="Builder" titleClassName="font-bold text-foreground">
           <div className="space-y-6">
-            <Section title="Sample output file">
-              <FileUpload onFileSelected={handleFileSelected} />
+            <Section title="File generator">
+              <Select value={fileGenerator} onValueChange={(v) => setFileGenerator(v as string)}>
+                <SelectTrigger className="w-56">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {SUPPORTED_GENERATORS.map((g) => (
+                    <SelectItem key={g.value} value={g.value}>
+                      {g.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </Section>
+
+            {isDelimited ? (
+              <Section title="Sample output file">
+                <FileUpload onFileSelected={handleFileSelected} />
+              </Section>
+            ) : (
+              <Section
+                title="Sample output JSON"
+                meta={
+                  <span className="text-xs text-muted-foreground">
+                    optional — infers the fields below, never their source mapping
+                  </span>
+                }
+              >
+                <JsonSampleUpload onSample={handleJsonSample} />
+              </Section>
+            )}
 
             <Section title="Output Destination">
               <Select value={type} onValueChange={(v) => setType(v as DestinationType)}>
@@ -145,21 +199,6 @@ export function OutputConfigBuilder({ sourceColumns = [], onChange }: OutputConf
                   {DESTINATION_TYPES.map((t) => (
                     <SelectItem key={t.value} value={t.value}>
                       {t.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </Section>
-
-            <Section title="File generator">
-              <Select value={fileGenerator} onValueChange={(v) => setFileGenerator(v as string)}>
-                <SelectTrigger className="w-56">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {SUPPORTED_GENERATORS.map((g) => (
-                    <SelectItem key={g.value} value={g.value}>
-                      {g.label}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -253,14 +292,30 @@ export function OutputConfigBuilder({ sourceColumns = [], onChange }: OutputConf
             ) : (
               <>
                 <Section
-                  title="Array field"
+                  title="Root object"
+                  meta={
+                    <span className="text-xs text-muted-foreground">
+                      wraps the array field — rendered as a templated JSON string, not a structured contract
+                    </span>
+                  }
+                >
+                  <StructuredTemplateEditor
+                    rows={headerRows}
+                    onChange={setHeaderRows}
+                    metadataKeys={metadataKeys}
+                    sourceColumns={sourceColumns}
+                  />
+                </Section>
+
+                <Section
+                  title="JSON array field"
                   meta={<span className="text-xs text-muted-foreground">key rows nest under, e.g. "lines"</span>}
                 >
                   <Input value={arrayField} onChange={(e) => setArrayField(e.target.value)} placeholder="lines" />
                 </Section>
 
                 <Section
-                  title="Structured template"
+                  title="Array object"
                   meta={
                     <span className="text-xs text-muted-foreground">
                       typed alternative to a string template — mutually exclusive with it
@@ -274,11 +329,6 @@ export function OutputConfigBuilder({ sourceColumns = [], onChange }: OutputConf
                     sourceColumns={sourceColumns}
                   />
                 </Section>
-
-                <p className="text-xs text-muted-foreground">
-                  Sample-output JSON upload to infer fields, and a typed root/header template, aren't implemented
-                  yet — fields above are added by hand.
-                </p>
               </>
             )}
           </div>

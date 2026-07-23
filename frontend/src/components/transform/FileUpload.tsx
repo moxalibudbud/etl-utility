@@ -1,12 +1,17 @@
-import { useRef, useState } from 'react'
-import { Upload } from 'lucide-react'
-import { Label } from '@/components/ui/label'
-import { readHeader, delimiterLabel } from '@/lib/file-reader'
-import type { Delimiter } from '@/lib/file-reader'
+import { useRef, useState } from 'react';
+import { Upload } from 'lucide-react';
+import { Label } from '@/components/ui/label';
+import { readHeader, delimiterLabel } from '@/lib/file-reader';
+import type { Delimiter } from '@/lib/file-reader';
 
 interface FileUploadProps {
-  onFileSelected: (file: File, columns: string[], delimiter: Delimiter, hasHeader: boolean) => void
+  onFileSelected: (file: File, columns: string[], delimiter: Delimiter, hasHeader: boolean) => void;
+  /** Also accept .json files in the file picker/drop zone, alongside the default CSV/TSV/TXT. */
+  acceptJson?: boolean;
 }
+
+// Flat file extensions this tool supports as a source/output sample.
+const FLAT_FILE_EXTENSIONS = ['.csv', '.tsv', '.txt', '.out', '.dat', '.fil'];
 
 // Quick-select presets — typing an actual tab character into a text input
 // isn't practical (Tab moves focus instead of inserting \t in a browser).
@@ -16,52 +21,52 @@ const SEPARATOR_PRESETS: { value: Delimiter; label: string }[] = [
   { value: ';', label: 'Semicolon' },
   { value: '\t', label: 'Tab' },
   { value: '|', label: 'Pipe' },
-]
+];
 
-export function FileUpload({ onFileSelected }: FileUploadProps) {
-  const inputRef = useRef<HTMLInputElement>(null)
-  const [status, setStatus] = useState<'idle' | 'reading' | 'done' | 'error'>('idle')
-  const [info, setInfo] = useState<{ name: string; columns: number; delimiter: string } | null>(null)
-  const [errorMsg, setErrorMsg] = useState<string | null>(null)
-  const [separator, setSeparator] = useState('')
-  const [hasHeader, setHasHeader] = useState(true)
-  const [selectedFile, setSelectedFile] = useState<File | null>(null)
+export function FileUpload({ onFileSelected, acceptJson = false }: FileUploadProps) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [status, setStatus] = useState<'idle' | 'reading' | 'done' | 'error'>('idle');
+  const [info, setInfo] = useState<{ name: string; columns: number; delimiter: string } | null>(null);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [separator, setSeparator] = useState('');
+  const [hasHeader, setHasHeader] = useState(true);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
   async function handleFile(file: File, separatorOverride = separator, hasHeaderOverride = hasHeader) {
-    setSelectedFile(file)
-    setStatus('reading')
-    setErrorMsg(null)
+    setSelectedFile(file);
+    setStatus('reading');
+    setErrorMsg(null);
     try {
-      const { columns, delimiter } = await readHeader(file, separatorOverride || undefined, hasHeaderOverride)
-      setInfo({ name: file.name, columns: columns.length, delimiter })
-      setStatus('done')
-      onFileSelected(file, columns, delimiter, hasHeaderOverride)
+      const { columns, delimiter } = await readHeader(file, separatorOverride || undefined, hasHeaderOverride);
+      setInfo({ name: file.name, columns: columns.length, delimiter });
+      setStatus('done');
+      onFileSelected(file, columns, delimiter, hasHeaderOverride);
     } catch (err) {
-      setErrorMsg(err instanceof Error ? err.message : 'Failed to read file.')
-      setStatus('error')
+      setErrorMsg(err instanceof Error ? err.message : 'Failed to read file.');
+      setStatus('error');
     }
   }
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0]
-    if (file) handleFile(file)
+    const file = e.target.files?.[0];
+    if (file) handleFile(file);
   }
 
   function handleDrop(e: React.DragEvent<HTMLDivElement>) {
-    e.preventDefault()
-    const file = e.dataTransfer.files[0]
-    if (file) handleFile(file)
+    e.preventDefault();
+    const file = e.dataTransfer.files[0];
+    if (file) handleFile(file);
   }
 
   function applySeparator(value: string) {
-    setSeparator(value)
-    if (selectedFile) handleFile(selectedFile, value)
+    setSeparator(value);
+    if (selectedFile) handleFile(selectedFile, value);
   }
 
   function handleHasHeaderChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const value = e.target.checked
-    setHasHeader(value)
-    if (selectedFile) handleFile(selectedFile, separator, value)
+    const value = e.target.checked;
+    setHasHeader(value);
+    if (selectedFile) handleFile(selectedFile, separator, value);
   }
 
   return (
@@ -77,7 +82,8 @@ export function FileUpload({ onFileSelected }: FileUploadProps) {
       >
         <Upload className="h-5 w-5 text-muted-foreground" strokeWidth={1.5} />
         <p className="text-xs text-muted-foreground">
-          Drop a CSV / TSV file here, or <span className="underline">browse</span>
+          Drop a flat file ({FLAT_FILE_EXTENSIONS.map((ext) => ext.slice(1).toUpperCase()).join(' / ')}) here, or{' '}
+          <span className="underline">browse</span>
         </p>
         <p className="text-[10px] text-muted-foreground">
           Only the header row is read — large files are safe to upload.
@@ -85,7 +91,11 @@ export function FileUpload({ onFileSelected }: FileUploadProps) {
         <input
           ref={inputRef}
           type="file"
-          accept=".csv,.tsv,.txt"
+          accept={
+            acceptJson
+              ? [...FLAT_FILE_EXTENSIONS, '.json', 'application/json'].join(',')
+              : FLAT_FILE_EXTENSIONS.join(',')
+          }
           className="hidden"
           onChange={handleChange}
         />
@@ -121,9 +131,7 @@ export function FileUpload({ onFileSelected }: FileUploadProps) {
         </label>
       </div>
 
-      {status === 'reading' && (
-        <p className="text-xs text-muted-foreground">Reading header…</p>
-      )}
+      {status === 'reading' && <p className="text-xs text-muted-foreground">Reading header…</p>}
 
       {status === 'done' && info && (
         <div className="border border-border p-3 space-y-1">
@@ -135,9 +143,7 @@ export function FileUpload({ onFileSelected }: FileUploadProps) {
         </div>
       )}
 
-      {status === 'error' && (
-        <p className="text-xs text-destructive">{errorMsg}</p>
-      )}
+      {status === 'error' && <p className="text-xs text-destructive">{errorMsg}</p>}
     </div>
-  )
+  );
 }

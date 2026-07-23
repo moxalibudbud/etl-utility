@@ -65,6 +65,46 @@ export function toStructuredTemplate(rows: StructuredTemplateRow[]): StructuredT
   return result
 }
 
+// Converts the same editable row list into a templated JSON *string* instead
+// of a StructuredTemplate map — for output.header/root, which only supports
+// the untyped string-templating layer (go/template/field.go +
+// go/writer/render.go's renderValueTemplate), not the structured contract.
+// Each field's value is embedded as raw text — a {sourceColumn}/{metadata.key}
+// or [func ...] token is left unresolved for the writer to substitute later,
+// so the result is JSON-shaped text, not real JSON, until it's rendered:
+//   {"store":"{LOC}"}
+//   {"store":"[timestamp]"}
+//   {"store":"[timestamp]","date":"[dateTime YYYYMMDDHHmmss]"}
+// Returns '' when there's nothing to emit, matching header()'s "" == "no
+// header" check in go/writer/render.go.
+export function toHeaderTemplateString(rows: StructuredTemplateRow[]): string {
+  const parts: string[] = []
+  for (const row of rows) {
+    const name = row.name.trim()
+    if (name === '') continue
+    const key = JSON.stringify(name)
+
+    switch (row.type) {
+      case 'string':
+        parts.push(`${key}:${JSON.stringify(row.value)}`)
+        break
+      case 'number':
+        parts.push(`${key}:${row.value}`)
+        break
+      case 'boolean':
+        parts.push(`${key}:${row.boolValue}`)
+        break
+      case 'null':
+        parts.push(`${key}:null`)
+        break
+      case 'literal':
+        parts.push(`${key}:${row.value.trim() === '' ? 'null' : row.value.trim()}`)
+        break
+    }
+  }
+  return parts.length > 0 ? `{${parts.join(',')}}` : ''
+}
+
 function literalParseError(value: string): string | null {
   if (value.trim() === '') return null
   try {

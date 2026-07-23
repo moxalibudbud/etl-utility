@@ -36,6 +36,7 @@ export function OutputSummary({ output }: OutputSummaryProps) {
 
         {isJson ? (
           <>
+            <FieldRow label="header">{output.header || '(no root object)'}</FieldRow>
             <FieldRow label="arrayField">{output.arrayField || '—'}</FieldRow>
             <FieldRow label="template">{output.template || '—'}</FieldRow>
             {structuredFields.length > 0 && (
