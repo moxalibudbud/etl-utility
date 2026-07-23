@@ -86,10 +86,22 @@ Phase 4 — Verification and documentation:
       "Phase 4 — Structured typed JSON templates" section recording the
       accepted design, implementation files, and test coverage.
 
-**All phases complete. Acceptance criteria (see below) hold: full suite,
-`go vet`, `go build`, and `-race` all pass; existing `template` configs are
-unaffected; local and Azure Blob outputs share the same structured
-renderer.**
+**Phases 1–4 (the additive `structuredTemplate` feature) are complete.**
+Acceptance criteria (see below) hold: full suite, `go vet`, `go build`, and
+`-race` all pass; existing `template` configs are unaffected; local and
+Azure Blob outputs share the same structured renderer.
+
+Phase 5 — Extended capabilities (not started, optional):
+
+- [ ] Recursively templated nested objects and arrays.
+- [ ] Typed root/header templates.
+- [ ] Default values for missing source fields.
+- [ ] Configurable coercion rules.
+- [ ] TypeScript parity and shared cross-language fixtures.
+
+See "Phase 5: Extended capabilities" under Implementation outline for scope
+notes on each item. None of these block the Phase 1–4 feature; add one only
+when a real consumer needs it.
 
 ## Effort estimate
 
@@ -109,14 +121,6 @@ This is a medium-sized refactor.
 A narrow proof of concept would take approximately **2–3 days**, but it would
 not include the full validation, documentation, and regression coverage needed
 for production use.
-
-Allow an additional **2–3 days** if the first release must also include:
-
-- Recursively templated nested objects and arrays.
-- Typed root/header templates.
-- Default values for missing source fields.
-- Configurable coercion rules.
-- TypeScript parity and shared cross-language fixtures.
 
 ## Recommended configuration
 
@@ -351,6 +355,46 @@ become mixed.
 - Add sample configurations and update usage documentation.
 - Mark the feature complete in the JSON generator design after the acceptance
   criteria pass.
+
+### Phase 5: Extended capabilities
+
+Optional follow-on work, estimated at an additional 2–3 engineering days (see
+Effort estimate above). Not part of the Phase 1–4 acceptance criteria — scope
+one of these in only when a real consumer needs it, each behind its own
+config-shape decision and tests, following the same "confirm the decision,
+then implement it, then document it" pattern used for the strict boolean/number
+conversion rules above (see "Confirmed conversion decisions").
+
+- **Recursively templated nested objects and arrays.** Today `literal` is the
+  only way to emit nested JSON, and it is fully static — no `{path}` /
+  `[func ...]` placeholders are resolved inside it. This item would let a
+  nested object or array contain per-row typed nodes (the same five types,
+  nested), so a row could emit something like
+  `{"context": {"store": {"type": "string", "value": "{metadata.store.code}"}}}`
+  instead of a fixed value. Needs a decision on how deep nesting is allowed to
+  go and how a node distinguishes "static literal" from "nested typed node."
+- **Typed root/header templates.** The document root (outside `arrayField`) is
+  still built by the untyped string `header` template — see the discussion
+  above about adding a fixed `{"id": "123", "lines": [...]}` root today via
+  `header`. This item would let `header` accept the same
+  `StructuredTemplate` shape as rows, reusing `compileStructuredTemplate` and
+  `renderRow` for the root object instead of `renderJSONTemplate`.
+- **Default values for missing source fields.** Add an optional `default`
+  alongside a node's `value`, so a missing or empty resolved value falls back
+  to a configured constant instead of `""` (string) or a conversion error
+  (number/boolean). Needs a decision on whether `default` participates in the
+  same strict-vs-permissive conversion rules as `value`.
+- **Configurable coercion rules.** Let a template opt into more permissive
+  conversion — additional boolean spellings, additional locale number
+  formats beyond the comma-thousands accommodation already shipped — instead
+  of the fixed strict rules decided for the initial release. Should be
+  explicit, per-field-or-per-template configuration, not a global toggle, so
+  the strict default stays the default.
+- **TypeScript parity and shared cross-language fixtures.** Port the
+  `structuredTemplate` contract to the TypeScript implementation and add
+  fixture data shared between the Go and TypeScript test suites, so both
+  languages are verified against identical inputs and outputs rather than
+  parallel but independently-written test cases.
 
 ## Acceptance criteria
 

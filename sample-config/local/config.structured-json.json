@@ -7,15 +7,15 @@
     "fileGenerator": "json-generator",
     "filename": "item_master.json",
     "path": "/var/tmp",
-    "arrayField": "Lines",
+    "arrayField": "lines",
+    "header": "{\"store\":\"{LOC}\"}",
     "structuredTemplate": {
-      "Date": { "type": "string", "value": "{ITEM}" },
+      "date": { "type": "string", "value": "{ITEM}" },
       "label": { "type": "string", "value": "[removeWhiteSpaces data.ITEM_DESC]" },
-      "Quantity": { "type": "number", "value": "{AV_COST}" },
-      "SKU": { "type": "string", "value": "[removeWhiteSpaces data.ITEM]" },
-      "LocationID": { "type": "string", "value": "{LOC}" },
-      "Received": { "type": "boolean", "value": true },
-      "Context": {
+      "quantity": { "type": "number", "value": "{AV_COST}" },
+      "sku": { "type": "string", "value": "[removeWhiteSpaces data.ITEM]" },
+      "received": { "type": "boolean", "value": true },
+      "metadata": {
         "type": "literal",
         "value": { "source": "etl", "tags": ["imported", "inventory"] }
       }
