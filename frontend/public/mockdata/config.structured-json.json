@@ -1,0 +1,48 @@
+{
+  "source": {
+    "type": "local",
+    "path": "/Users/dev/dev/etl-utility/samples/sample-io-file/StockCountExport_260608_30062_21683.csv"
+  },
+  "output": {
+    "type": "local",
+    "fileGenerator": "json-generator",
+    "filename": "stoksmart_create_schedule_test_test_test.json",
+    "separator": "",
+    "header": "{\"name\":\"{STORE_ID}-{COUNT_ID}\",\"store\":\"{STORE_ID}\",\"dateStart\":\"[dateTime YYYY-MM-DD]\"}",
+    "footer": "",
+    "template": "",
+    "arrayField": "lines",
+    "uniqueKey": "",
+    "metadata": {},
+    "structuredTemplate": {
+      "sku": {
+        "type": "string",
+        "value": "{ITEM_ID}"
+      }
+    }
+  },
+  "options": {
+    "line": {
+      "columns": [
+        "COUNT_ID",
+        "DESCRIPTION",
+        "STORE_ID",
+        "ITEM_ID",
+        "DEPARTMENT_ID",
+        "CLASS_ID",
+        "SUBCLASS_ID",
+        "ITEM_DESC",
+        "ITEM_SNAPSHOT",
+        "UIN",
+        "BARCODE",
+        "VPN"
+      ],
+      "mandatoryFields": [],
+      "identifierMappings": [],
+      "outputMappings": [],
+      "separator": ",",
+      "withHeader": true
+    },
+    "rejectOnInvalidRow": false
+  }
+}
