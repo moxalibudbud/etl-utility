@@ -23,12 +23,13 @@ type jsonDocumentEncoder struct {
 	opts        OutputConfig
 	out         io.Writer
 	arrayField  string
+	structured  *compiledStructuredTemplate
 	started     bool
 	finalized   bool
 	rowsWritten int
 }
 
-func newJSONDocumentEncoder(opts OutputConfig, out io.Writer) (*jsonDocumentEncoder, error) {
+func newJSONDocumentEncoder(opts OutputConfig, out io.Writer, structured *compiledStructuredTemplate) (*jsonDocumentEncoder, error) {
 	arrayField := opts.ArrayField
 	if arrayField == "" {
 		arrayField = DefaultJSONArrayField
@@ -36,7 +37,7 @@ func newJSONDocumentEncoder(opts OutputConfig, out io.Writer) (*jsonDocumentEnco
 	if strings.TrimSpace(arrayField) == "" {
 		return nil, fmt.Errorf("output.arrayField must not be empty for json-generator")
 	}
-	return &jsonDocumentEncoder{opts: opts, out: out, arrayField: arrayField}, nil
+	return &jsonDocumentEncoder{opts: opts, out: out, arrayField: arrayField, structured: structured}, nil
 }
 
 func (e *jsonDocumentEncoder) Start(sl *line.SourceLine) error {
@@ -134,6 +135,9 @@ func (e *jsonDocumentEncoder) Finalize() error {
 }
 
 func (e *jsonDocumentEncoder) renderRow(sl *line.SourceLine) ([]byte, error) {
+	if e.structured != nil {
+		return e.structured.renderRow(e.opts, sl)
+	}
 	if e.opts.Template == "" {
 		return marshalOutputObject(sl.Output())
 	}

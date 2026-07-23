@@ -16,13 +16,14 @@ import (
 // Sink (an atomic LocalSink today, an AzureBlobSink once Phase 3 lands) — see
 // the design doc's "Destination abstraction" section.
 type JSONWriter struct {
-	opts      OutputConfig
-	sink      Sink
-	filename  string
-	encoder   *jsonDocumentEncoder
-	started   bool
-	finalized bool
-	failed    bool
+	opts       OutputConfig
+	sink       Sink
+	filename   string
+	encoder    *jsonDocumentEncoder
+	structured *compiledStructuredTemplate
+	started    bool
+	finalized  bool
+	failed     bool
 }
 
 func NewJSONWriter(opts OutputConfig) (*JSONWriter, error) {
@@ -45,7 +46,27 @@ func newJSONWriterWithSink(opts OutputConfig, sink Sink) (*JSONWriter, error) {
 	if opts.Filename == "" {
 		return nil, Permanent("configure json writer", "", fmt.Errorf(`output filename is empty; set "filename"`))
 	}
-	return &JSONWriter{opts: opts, sink: sink}, nil
+
+	// template and structuredTemplate are mutually exclusive: configuring both
+	// is rejected rather than silently choosing one. structuredTemplate takes
+	// precedence over template, which takes precedence over outputMappings.
+	if opts.StructuredTemplate.configured() && opts.Template != "" {
+		return nil, Permanent("configure json writer", "", fmt.Errorf("output.template and output.structuredTemplate are mutually exclusive; set only one"))
+	}
+
+	// Compile the structured template up front so invalid static configuration
+	// (unknown types, missing values, bad literals) fails before any output
+	// begins, not on the first row.
+	var structured *compiledStructuredTemplate
+	if opts.StructuredTemplate.configured() {
+		compiled, err := compileStructuredTemplate(opts.StructuredTemplate)
+		if err != nil {
+			return nil, Permanent("configure json writer", "", err)
+		}
+		structured = compiled
+	}
+
+	return &JSONWriter{opts: opts, sink: sink, structured: structured}, nil
 }
 
 // SetDeadlineContexts satisfies writer.DeadlineAware when the sink is an
@@ -127,7 +148,7 @@ func (w *JSONWriter) start(sl *line.SourceLine) error {
 		return err
 	}
 
-	encoder, err := newJSONDocumentEncoder(w.opts, out)
+	encoder, err := newJSONDocumentEncoder(w.opts, out, w.structured)
 	if err != nil {
 		return err
 	}

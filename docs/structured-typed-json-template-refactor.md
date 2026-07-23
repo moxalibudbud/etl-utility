@@ -23,6 +23,54 @@ errors against the exact field that caused them.
 This feature should be additive. Existing `template` configurations must keep
 working without changes.
 
+## Implementation progress
+
+Phase 1 — Configuration contract:
+
+- [x] Typed template node definitions (`StructuredTemplate` / `StructuredNode`)
+      in [`go/writer/json_template.go`](../go/writer/json_template.go).
+- [x] Template validation: unknown/missing type, missing `value`, bad value
+      shape, and invalid literals fail at compile time and name the field.
+- [x] Pre-validate and compact constant literal nodes.
+- [x] Focused unit tests for every type and failure mode in
+      [`go/writer/json_template_test.go`](../go/writer/json_template_test.go).
+- [x] Add `StructuredTemplate` to `OutputConfig` and document precedence in
+      [`go/writer/writer.go`](../go/writer/writer.go).
+- [x] Enforce `template` / `structuredTemplate` precedence and compile the
+      template during writer construction in
+      [`go/writer/json_writer.go`](../go/writer/json_writer.go).
+- [x] Config-decoding tests (wire shape, precedence conflict, invalid node)
+      in [`go/writer/writer_test.go`](../go/writer/writer_test.go) and
+      [`go/writer/json_writer_test.go`](../go/writer/json_writer_test.go).
+
+Phase 2 — Typed row renderer:
+
+- [x] Resolve source/metadata/function placeholders per field.
+- [x] Strict conversion for string, number, boolean, null, and literal.
+- [x] Encode rows with Go's JSON encoder; deterministic (sorted) field output.
+
+Phase 3 — Writer integration:
+
+- [x] Add the structured rendering path to `jsonDocumentEncoder.renderRow`
+      (dispatches to the compiled structured template when configured).
+- [x] Preserve the string-template and `outputMappings` paths.
+- [x] Local writer integration tests: end-to-end row output, conversion
+      failure removes the partial file, precedence rejection, invalid config
+      rejected before output begins.
+- [ ] Azure Blob regression coverage
+      ([`go/writer/blobwriter_test.go`](../go/writer/blobwriter_test.go)).
+- [ ] End-to-end CSV-to-typed-JSON coverage
+      ([`go/etl/etl_test.go`](../go/etl/etl_test.go)).
+
+Phase 4 — Verification and documentation:
+
+- [x] Full Go test suite, `go vet`, `go build`, and `-race` (writer + etl)
+      pass.
+- [ ] Samples (`sample-config/local/config.structured-json.json`,
+      `sample-config/azure-blob/config.structured-json.json`).
+- [ ] Update [`docs/usage.md`](usage.md) and
+      [`docs/go-json-generator-design.md`](go-json-generator-design.md).
+
 ## Effort estimate
 
 This is a medium-sized refactor.

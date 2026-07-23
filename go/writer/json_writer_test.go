@@ -175,6 +175,100 @@ func TestJSONWriterRejectsRootArrayFieldCollision(t *testing.T) {
 	}
 }
 
+func TestJSONWriterStructuredTemplateEndToEnd(t *testing.T) {
+	dir := t.TempDir()
+	w, err := NewJSONWriter(OutputConfig{
+		DestinationConfig: DestinationConfig{Path: dir},
+		FileGenerator:     "json-generator",
+		Filename:          "structured.json",
+		ArrayField:        "items",
+		StructuredTemplate: StructuredTemplate{
+			"SKU":      {Type: "string", Value: json.RawMessage(`"{SKU}"`)},
+			"Quantity": {Type: "number", Value: json.RawMessage(`"{QTY}"`)},
+			"Received": {Type: "boolean", Value: json.RawMessage(`true`)},
+			"Context":  {Type: "literal", Value: json.RawMessage(`{"source":"etl"}`)},
+		},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := w.Push(jsonTestLine(`1005;SKU-1;2;Widget`, 1)); err != nil {
+		t.Fatal(err)
+	}
+	if err := w.End(); err != nil {
+		t.Fatal(err)
+	}
+
+	content, err := os.ReadFile(w.Filepath())
+	if err != nil {
+		t.Fatal(err)
+	}
+	var got struct {
+		Items []map[string]any `json:"items"`
+	}
+	if err := json.Unmarshal(content, &got); err != nil {
+		t.Fatalf("output is not valid JSON: %v\n%s", err, content)
+	}
+	if len(got.Items) != 1 {
+		t.Fatalf("items = %#v, want exactly one row", got.Items)
+	}
+	item := got.Items[0]
+	if item["SKU"] != "SKU-1" || item["Quantity"] != float64(2) || item["Received"] != true {
+		t.Fatalf("item = %#v", item)
+	}
+	ctx, ok := item["Context"].(map[string]any)
+	if !ok || ctx["source"] != "etl" {
+		t.Fatalf("Context = %#v, want the literal preserved", item["Context"])
+	}
+}
+
+func TestJSONWriterRejectsTemplateAndStructuredTemplateTogether(t *testing.T) {
+	_, err := NewJSONWriter(OutputConfig{
+		DestinationConfig:  DestinationConfig{Path: t.TempDir()},
+		FileGenerator:      "json-generator",
+		Filename:           "conflict.json",
+		Template:           `{"sku":"{SKU}"}`,
+		StructuredTemplate: StructuredTemplate{"SKU": {Type: "string", Value: json.RawMessage(`"{SKU}"`)}},
+	})
+	if err == nil || !strings.Contains(err.Error(), "mutually exclusive") {
+		t.Fatalf("NewJSONWriter() error = %v, want a mutually-exclusive precedence error", err)
+	}
+}
+
+func TestJSONWriterRejectsInvalidStructuredTemplateBeforeOutput(t *testing.T) {
+	_, err := NewJSONWriter(OutputConfig{
+		DestinationConfig:  DestinationConfig{Path: t.TempDir()},
+		FileGenerator:      "json-generator",
+		Filename:           "invalid-structured.json",
+		StructuredTemplate: StructuredTemplate{"SKU": {Type: "not-a-type", Value: json.RawMessage(`"{SKU}"`)}},
+	})
+	if err == nil || !strings.Contains(err.Error(), `field "SKU"`) {
+		t.Fatalf("NewJSONWriter() error = %v, want a field-scoped configuration error", err)
+	}
+}
+
+func TestJSONWriterStructuredTemplateConversionFailureRemovesPartial(t *testing.T) {
+	dir := t.TempDir()
+	w, err := NewJSONWriter(OutputConfig{
+		DestinationConfig: DestinationConfig{Path: dir},
+		FileGenerator:     "json-generator",
+		Filename:          "structured-bad.json",
+		StructuredTemplate: StructuredTemplate{
+			"Quantity": {Type: "number", Value: json.RawMessage(`"{QTY}"`)},
+		},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = w.Push(jsonTestLine(`1005;SKU-1;not-a-number;Widget`, 7))
+	if err == nil || !strings.Contains(err.Error(), "source line 7") || !strings.Contains(err.Error(), `field "Quantity"`) {
+		t.Fatalf("Push() error = %v, want field and source line context", err)
+	}
+	if _, statErr := os.Stat(filepath.Join(dir, "structured-bad.json.partial")); !os.IsNotExist(statErr) {
+		t.Fatalf("partial should be removed after a conversion error, stat err = %v", statErr)
+	}
+}
+
 func TestJSONWriterEndIsIdempotent(t *testing.T) {
 	dir := t.TempDir()
 	w, err := NewJSONWriter(OutputConfig{

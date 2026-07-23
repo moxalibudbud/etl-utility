@@ -74,6 +74,45 @@ func TestOutputConfigUnmarshalOtherFieldsUntouched(t *testing.T) {
 	}
 }
 
+func TestOutputConfigUnmarshalStructuredTemplate(t *testing.T) {
+	in := `{
+		"fileGenerator": "json-generator",
+		"filename": "receipts.json",
+		"arrayField": "Lines",
+		"structuredTemplate": {
+			"Date": {"type": "string", "value": "{receiptDate}"},
+			"Quantity": {"type": "number", "value": "{controlQuantityProcessed}"},
+			"Received": {"type": "boolean", "value": true},
+			"Missing": {"type": "null"},
+			"Context": {"type": "literal", "value": {"source": "etl", "tags": ["imported", "inventory"]}}
+		}
+	}`
+	var cfg OutputConfig
+	if err := json.Unmarshal([]byte(in), &cfg); err != nil {
+		t.Fatalf("unmarshal: %v", err)
+	}
+	if !cfg.StructuredTemplate.configured() || len(cfg.StructuredTemplate) != 5 {
+		t.Fatalf("structuredTemplate did not decode: %#v", cfg.StructuredTemplate)
+	}
+	if cfg.StructuredTemplate["Date"].Type != "string" {
+		t.Fatalf("Date.Type = %q", cfg.StructuredTemplate["Date"].Type)
+	}
+	if _, err := compileStructuredTemplate(cfg.StructuredTemplate); err != nil {
+		t.Fatalf("compileStructuredTemplate: %v", err)
+	}
+}
+
+func TestOutputConfigUnmarshalWithoutStructuredTemplateLeavesItUnconfigured(t *testing.T) {
+	in := `{"fileGenerator": "json-generator", "filename": "plain.json", "template": "{\"sku\":\"{SKU}\"}"}`
+	var cfg OutputConfig
+	if err := json.Unmarshal([]byte(in), &cfg); err != nil {
+		t.Fatalf("unmarshal: %v", err)
+	}
+	if cfg.StructuredTemplate.configured() {
+		t.Fatalf("structuredTemplate = %#v, want unconfigured when absent from the wire config", cfg.StructuredTemplate)
+	}
+}
+
 func TestOutputConfigUnmarshalArbitraryJSONMetadata(t *testing.T) {
 	in := `{"metadata":{"store":{"code":"DXB"},"regions":["MEA",2],"active":true,"empty":null}}`
 	var cfg OutputConfig

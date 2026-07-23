@@ -108,18 +108,24 @@ func (c *DestinationConfig) Validate() error {
 // plain name contains no tokens and passes through unchanged. Template and
 // Separator select mutually exclusive row-building modes: when Template is
 // set, it takes precedence and Separator is ignored.
+//
+// For the json-generator, StructuredTemplate is an additive, typed alternative
+// to the string Template. The two are mutually exclusive — configuring both is
+// an error, enforced when the JSON writer is constructed — and StructuredTemplate
+// takes precedence over Template, which takes precedence over outputMappings.
 type OutputConfig struct {
 	DestinationConfig
 
-	FileGenerator string         `json:"fileGenerator"`
-	Filename      string         `json:"filename"`
-	Separator     string         `json:"separator"`
-	Header        string         `json:"header"`
-	Footer        string         `json:"footer"`
-	Template      string         `json:"template"`
-	ArrayField    string         `json:"arrayField"`
-	UniqueKey     string         `json:"uniqueKey"`
-	Metadata      map[string]any `json:"metadata"`
+	FileGenerator      string             `json:"fileGenerator"`
+	Filename           string             `json:"filename"`
+	Separator          string             `json:"separator"`
+	Header             string             `json:"header"`
+	Footer             string             `json:"footer"`
+	Template           string             `json:"template"`
+	StructuredTemplate StructuredTemplate `json:"structuredTemplate,omitempty"`
+	ArrayField         string             `json:"arrayField"`
+	UniqueKey          string             `json:"uniqueKey"`
+	Metadata           map[string]any     `json:"metadata"`
 
 	// Options holds optional writer behavior toggles that are not part of the
 	// document format itself. It is a map rather than typed fields so new
