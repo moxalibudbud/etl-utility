@@ -159,6 +159,7 @@ export function OutputConfigBuilder({ sourceColumns = [], onChange }: OutputConf
                 onChange={setFilename}
                 placeholder="products_[dateTime YYYY-MM-DD].csv"
                 metadataKeys={metadataKeys}
+                twoColumn={false}
               />
             </Section>
 
@@ -216,7 +217,7 @@ export function OutputConfigBuilder({ sourceColumns = [], onChange }: OutputConf
                           <TemplatedTextField
                             value={templateValues[i] ?? ''}
                             onChange={(v) => setTemplateValueAt(i, v)}
-                            placeholder="{sourceColumn} or literal text"
+                            placeholder="{sourceColumn} or fixed text"
                             metadataKeys={metadataKeys}
                             sourceColumns={sourceColumns}
                           />
@@ -235,11 +236,7 @@ export function OutputConfigBuilder({ sourceColumns = [], onChange }: OutputConf
           </div>
         </Section>
 
-        <Section
-          title="Preview"
-          titleClassName="font-bold text-foreground"
-          className="sticky top-6 self-start"
-        >
+        <Section title="Preview" titleClassName="font-bold text-foreground" className="sticky top-6 self-start">
           <div className="space-y-6">
             <OutputSummary output={outputConfig} />
             <ConfigJsonPanel data={outputConfig} title="Raw OutputConfig JSON" />
