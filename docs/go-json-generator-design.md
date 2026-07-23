@@ -357,9 +357,10 @@ This preserves common TypeScript templates such as:
 {"SKU":"{SKU}","Store":"{metadata.store.code}","Quantity":{Quantity},"Received":true}
 ```
 
-A future structured template format may provide explicit string, number,
-boolean, literal, and function nodes. It should be additive so existing string
-templates continue to work.
+A structured, typed template format is implemented as an additive alternative
+to the string template above — see Phase 4 below and
+[`docs/usage.md`](usage.md) §4.3.2 for the accepted design, configuration
+shape, and conversion rules.
 
 ### No whole-document sanitization
 
@@ -715,27 +716,58 @@ appears in the folder to explain the charge. This is fixed with a storage
 retention rule that clears abandoned uploads automatically — a configuration
 change on the storage account, not something this codebase can do.
 
+### Phase 4 — Structured typed JSON templates
+
+**Status: implemented.** Configuring `output.structuredTemplate` lets you
+spell out what each output field is meant to be — text, a number, true/false,
+an explicit `null`, or a fixed literal — instead of assembling a JSON string
+by hand and checking its grammar only after the blanks are filled. A bad
+source value (an empty number, an unexpected quote) now fails against the one
+field that caused it, named in the error along with the source line, instead
+of corrupting the whole row.
+
+This was accepted and built as an **additive** feature: existing `template`
+configurations are untouched, `template` and `structuredTemplate` are
+mutually exclusive (rejected as a config error, before output begins), and
+`structuredTemplate` takes precedence over `template`, which takes precedence
+over `outputMappings`. Conversion is strict for the first version — see the
+rules and full configuration reference in
+[`docs/usage.md`](usage.md) §4.3.2.
+
+Implementation:
+
+- [`go/writer/json_template.go`](../go/writer/json_template.go) — typed node
+  definitions (`StructuredTemplate`/`StructuredNode`), compile-time
+  validation, per-row value resolution, and strict type conversion.
+- [`go/writer/writer.go`](../go/writer/writer.go) — `OutputConfig.StructuredTemplate`.
+- [`go/writer/json_writer.go`](../go/writer/json_writer.go) — precedence
+  enforcement and template compilation at writer construction.
+- [`go/writer/json_encoder.go`](../go/writer/json_encoder.go) —
+  `renderRow` dispatches to the compiled structured template when configured.
+
+Tests: [`go/writer/json_template_test.go`](../go/writer/json_template_test.go)
+(every type and failure mode), local-writer integration and precedence cases
+in [`go/writer/json_writer_test.go`](../go/writer/json_writer_test.go),
+config-decoding cases in
+[`go/writer/writer_test.go`](../go/writer/writer_test.go), an Azure Blob
+regression case in
+[`go/writer/blobwriter_test.go`](../go/writer/blobwriter_test.go), and
+end-to-end CSV-to-typed-JSON coverage in
+[`go/etl/etl_test.go`](../go/etl/etl_test.go). The full Go test suite,
+`go vet`, `go build`, and `-race` all pass.
+
+Not included in this version — deferred alongside the other shape options
+below: recursively templated nested objects/arrays inside a node's `value`,
+typed root/header templates, default values for missing source fields, and
+configurable (non-strict) coercion rules.
+
 ### Deferred features
 
-Four capabilities are intentionally left for later. The first three are
-additive shape options — safe to add on because they do not disturb how the
-generator works today. The fourth is different in kind: it collides with the
+Three capabilities are intentionally left for later. They are additive shape
+options — safe to add on because they do not disturb how the generator works
+today — except the last, which is different in kind: it collides with the
 streaming model that keeps this generator cheap and reliable in short-lived
 cloud functions, so it needs caution rather than casual scheduling.
-
-**Structured typed JSON templates.** Today you describe each output row by
-writing a snippet of JSON as text, with placeholders the system fills in —
-something like `{"qty":{Quantity},"received":true}` — and the result is checked
-for validity only after the blanks are filled. This works, but it is like
-building a sentence and only checking the grammar at the end: if a source value
-contains an unexpected quote, or a number field comes in empty, the whole row
-can break. A *typed* template would let you spell out what each field is meant
-to be — this one is text, this one is a number, this one is true/false —
-instead of hoping the assembled text happens to come out valid. The payoff is
-fewer surprise failures from messy source data and clearer errors when
-something is wrong. It is deferred because the current string templates already
-cover the common cases, and it is meant to be added alongside them so nothing
-existing breaks.
 
 **Nested array paths.** Right now the list of rows sits at the top level of the
 document. Nested paths would let you place that list deeper inside a structure —

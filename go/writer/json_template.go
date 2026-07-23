@@ -221,13 +221,24 @@ func (f compiledStructuredField) render(meta map[string]any) (json.RawMessage, e
 // toJSONNumber applies the strict number rules: the resolved value must be a
 // single, valid JSON number. Empty values, trailing content, and non-numeric
 // values are errors, as are NaN and ±Inf, which are not valid JSON.
+//
+// A comma thousands separator (e.g. "1,250" or "1,250.50") is stripped before
+// parsing: structured templates are frequently driven by configuration saved
+// in a database, and the client that built the config may hand back a
+// pre-formatted numeric string rather than a bare number. Every other locale
+// convention (a comma decimal point, a space separator, ...) is still
+// rejected — this is the one accommodation, not general locale coercion.
 func toJSONNumber(resolved string) (json.RawMessage, error) {
 	trimmed := strings.TrimSpace(resolved)
 	if trimmed == "" {
 		return nil, fmt.Errorf("cannot convert %q to number: value is empty", previewRenderedValue(resolved))
 	}
+	stripped := strings.ReplaceAll(trimmed, ",", "")
+	if stripped == "" {
+		return nil, fmt.Errorf("cannot convert %q to number: value is empty", previewRenderedValue(resolved))
+	}
 
-	dec := json.NewDecoder(strings.NewReader(trimmed))
+	dec := json.NewDecoder(strings.NewReader(stripped))
 	dec.UseNumber()
 	var v any
 	if err := dec.Decode(&v); err != nil {

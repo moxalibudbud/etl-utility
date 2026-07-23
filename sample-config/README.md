@@ -11,6 +11,10 @@ described in [`docs/source-file-improvement.md`](../docs/source-file-improvement
   [`go/samples/csv-to-csv`](../go/samples/csv-to-csv).
 - [`azure-blob/`](azure-blob) — the Azure Blob source, one file per
   authentication mode.
+- `config.structured-json.json` (in both `local/` and `azure-blob/`) —
+  `json-generator` output using the typed `output.structuredTemplate` field
+  instead of the string `template`; see
+  [`docs/usage.md`](../docs/usage.md) §4.3.2.
 
 All paths inside these configs are relative to the repository root; build and
 run the binary from there:

@@ -1,0 +1,52 @@
+{
+   "source": {
+    "type": "local",
+    "path": "/var/tmp/ItemMast_260518_79207_21158.txt"
+  },
+  "output": {
+    "fileGenerator": "json-generator",
+    "filename": "item_master.json",
+    "path": "/var/tmp",
+    "arrayField": "Lines",
+    "structuredTemplate": {
+      "Date": { "type": "string", "value": "{ITEM}" },
+      "label": { "type": "string", "value": "[removeWhiteSpaces data.ITEM_DESC]" },
+      "Quantity": { "type": "number", "value": "{AV_COST}" },
+      "SKU": { "type": "string", "value": "[removeWhiteSpaces data.ITEM]" },
+      "LocationID": { "type": "string", "value": "{LOC}" },
+      "Received": { "type": "boolean", "value": true },
+      "Context": {
+        "type": "literal",
+        "value": { "source": "etl", "tags": ["imported", "inventory"] }
+      }
+    }
+  },
+  "options": {
+    "line": {
+      "columns": [
+        "LOC",
+        "ITEM",
+        "DEPT",
+        "DEPT_NAME",
+        "CLASS",
+        "CLASS_NAME",
+        "SUBCLASS",
+        "SUB_NAME",
+        "ITEM_DESC",
+        "AV_COST",
+        "SELLING_UNIT_RETAIL",
+        "CURRENCY_CODE",
+        "UDA_VALUE",
+        "ITEM_LOC_STATUS",
+        "SIZE",
+        "BARCODE"
+      ],
+      "mandatoryFields": [],
+      "identifierMappings": [],
+      "outputMappings": [],
+      "separator": ",",
+      "withHeader": true
+    },
+    "rejectOnInvalidRow": false
+  }
+}

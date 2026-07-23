@@ -134,10 +134,11 @@ func TestStructuredTemplateMissingStringIsEmpty(t *testing.T) {
 
 func TestStructuredTemplateNumberConversionFailures(t *testing.T) {
 	cases := map[string]string{
-		"empty":         `X;;N;t`,
-		"non-numeric":   `X;abc;N;t`,
-		"locale-comma":  `X;1,250;N;t`,
-		"trailing-text": `X;12px;N;t`,
+		"empty":           `X;;N;t`,
+		"non-numeric":     `X;abc;N;t`,
+		"trailing-text":   `X;12px;N;t`,
+		"comma-only":      `X;,;N;t`,
+		"space-thousands": `X;1 250;N;t`, // only a comma thousands separator is accepted, not a space
 	}
 	for name, raw := range cases {
 		t.Run(name, func(t *testing.T) {
@@ -163,11 +164,14 @@ func TestStructuredTemplateNumberAcceptsValidForms(t *testing.T) {
 		raw  string
 		want string
 	}{
-		"integer":  {`X;7;N;t`, `{"N":7}`},
-		"decimal":  {`X;1.5;N;t`, `{"N":1.5}`},
-		"negative": {`X;-3;N;t`, `{"N":-3}`},
-		"exponent": {`X;1e3;N;t`, `{"N":1e3}`},
-		"padded":   {`X; 42 ;N;t`, `{"N":42}`},
+		"integer":                 {`X;7;N;t`, `{"N":7}`},
+		"decimal":                 {`X;1.5;N;t`, `{"N":1.5}`},
+		"negative":                {`X;-3;N;t`, `{"N":-3}`},
+		"exponent":                {`X;1e3;N;t`, `{"N":1e3}`},
+		"padded":                  {`X; 42 ;N;t`, `{"N":42}`},
+		"comma-thousands":         {`X;1,250;N;t`, `{"N":1250}`},
+		"comma-thousands-many":    {`X;-1,234,567;N;t`, `{"N":-1234567}`},
+		"comma-thousands-decimal": {`X;1,250.50;N;t`, `{"N":1250.50}`},
 	}
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {

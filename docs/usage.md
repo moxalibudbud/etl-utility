@@ -339,14 +339,15 @@ account and write to another.
 
 | JSON key | Type | Required | Description |
 | --- | --- | --- | --- |
-| `fileGenerator` | `string` | ⬜ | Writer kind. `"default-generator"` (or empty) is the delimited/templated text writer. `"json-generator"` is supported for local output only. Other kinds (Excel/dedup variants, and JSON to cloud destinations) return an explicit "not supported yet" error. |
+| `fileGenerator` | `string` | ⬜ | Writer kind. `"default-generator"` (or empty) is the delimited/templated text writer. `"json-generator"` is supported for both local and `azure-blob` destinations. Other kinds (Excel/dedup variants) return an explicit "not supported yet" error. |
 | `type` | `string` | ⬜ | Destination kind: `"local"` (default) or `"azure-blob"`. Empty is inferred: `url` set → `azure-blob`, otherwise `local`. **S3 is not yet supported** and is rejected with an explicit error. |
 | `path` | `string` | ⬜ | Output directory for a local destination. Default: the OS temp dir. Must not be combined with `url`. |
 | `url` | `string` | ⬜ | Azure container/prefix URL for an `azure-blob` destination (required for that type). The rendered `filename` is appended to it. |
 | `auth` | `object` | ⬜ | Azure credentials for an `azure-blob` destination; same four shapes and precedence as the source `auth` (see the table in §4.1). |
 | `filename` | `string` | ✅ | Output filename, always rendered through the template layers from the **first pushed row** (supports `{path}` value tokens and `[func ...]`, see §5). A plain name contains no tokens and is used as-is. Also accepted for compatibility: the object form `{"template": "..."}` and the legacy `filenameTemplate` key (which keeps its old precedence if both are set). |
 | `separator` | `string` | ⬜ | Output column separator when using the default writer's `outputMappings` projection. Default: `"\|"`. Unused by JSON output. |
-| `template` | `string` | ⬜ | Full row template (see §5). For the default writer, it takes precedence over the `outputMappings` projection. For JSON output, it must render one JSON object per row; when omitted, JSON rows are built from `outputMappings`. |
+| `template` | `string` | ⬜ | Full row template (see §5). For the default writer, it takes precedence over the `outputMappings` projection. For JSON output, it must render one JSON object per row; when omitted, JSON rows are built from `outputMappings`. Mutually exclusive with `structuredTemplate` (see §4.3.2) — configuring both is a config error. |
+| `structuredTemplate` | `object` | ⬜ | JSON output only. Additive, typed alternative to `template` — see §4.3.2. When set, it takes precedence over `template`, which takes precedence over `outputMappings`. |
 | `header` | `string` | ⬜ | For the default writer, the first line of the output file, written once when the first row arrives. For JSON output, the root-object template; empty means `{}`. |
 | `footer` | `string` | ⬜ | Default writer only. Written raw at the end — **no leading newline**, so it concatenates onto the last row (`...WidgetEOF`). JSON output rejects `footer`. |
 | `arrayField` | `string` | ⬜ | JSON output only. Root array property name. Default: `"lines"`. |
@@ -386,6 +387,76 @@ way. When it is off, `localErrorReportFile` and `localErrorReportFilename` in
 the result are empty strings rather than naming a file that was never written —
 so check for a non-empty path before trying to read the report.
 
+#### 4.3.2 Structured typed JSON template — `structuredTemplate`
+
+`template` builds a JSON row by inserting values into a string before that
+string is parsed as JSON — flexible, but an empty number or an unexpected
+quote can make the whole row fail. `structuredTemplate` is an **additive**
+alternative for JSON output: each output field declares its JSON type
+up front, so a bad value fails against the one field that caused it, with the
+field name and source line in the error, instead of corrupting the whole row.
+
+`template` and `structuredTemplate` are mutually exclusive — configuring
+both is a config error raised when the writer is constructed, before any
+output begins. Precedence when a field is JSON output is
+`structuredTemplate` > `template` > `outputMappings`. Existing `template`
+configurations are unaffected; this is a new field, not a replacement.
+
+```json
+{
+  "output": {
+    "fileGenerator": "json-generator",
+    "filename": "receipts.json",
+    "arrayField": "Lines",
+    "structuredTemplate": {
+      "Date": { "type": "string", "value": "{receiptDate}" },
+      "Quantity": { "type": "number", "value": "{controlQuantityProcessed}" },
+      "SKU": { "type": "string", "value": "[removeWhiteSpaces data.skuCode]" },
+      "LocationID": { "type": "string", "value": "{toSiteCode}" },
+      "Received": { "type": "boolean", "value": true },
+      "Notes": { "type": "null" },
+      "Context": {
+        "type": "literal",
+        "value": { "source": "etl", "tags": ["imported", "inventory"] }
+      }
+    }
+  }
+}
+```
+
+Each field is a node `{"type": ..., "value": ...}`:
+
+| Type | `value` shape | Behavior |
+| --- | --- | --- |
+| `string` | template string | Resolved through the §5 templating layers (`{path}` and `[func ...]`) and encoded as a JSON string. Quotes, backslashes, Unicode, and control characters are always escaped safely. A missing path resolves to `""`, matching `template`'s lookup behavior. |
+| `number` | template string | Resolved, then parsed as a JSON number. Strict: empty, non-numeric, `NaN`, and `±Infinity` are all conversion errors. The one accommodation is a comma thousands separator — `"1,250"` and `"1,250.50"` convert to `1250` and `1250.50` — since structured templates are often built from database-saved config where the client hands back a pre-formatted string; every other locale convention (a comma decimal point, a space separator, ...) is still rejected. |
+| `boolean` | template string, or a literal `true`/`false` | A literal JSON boolean is written as-is — this covers config saved with a real boolean. A template string is resolved and matched case-insensitively against `true` / `false` only — this covers config-building clients (e.g. a database-backed config editor) that hand back a string instead; anything else (`"yes"`, `"1"`, empty) is a conversion error. |
+| `null` | omitted | Always writes JSON `null`. This is the only way to get an explicit `null` — an unresolved `string` field is `""`, not `null`. |
+| `literal` | any JSON value | Written verbatim on every row. Validated once, at writer construction, so a malformed literal is a config error, not a per-row failure. Useful for fixed nested objects/arrays without building JSON text by hand. |
+
+Output fields are written in a deterministic order (sorted by field name).
+
+Row-level conversion errors name the field, the requested type, and the
+source line, with the offending value bounded the same way other rendering
+errors are (§6):
+
+```text
+render structured JSON field "Quantity" at source line 42: cannot convert "" to number
+```
+
+A conversion error fails the row: no partial or final-looking output file is
+left behind (the writer deletes its `.partial` file the same way an invalid
+`template` row does).
+
+`structuredTemplate` works identically for local and `azure-blob`
+destinations — both use the same structured renderer, only the sink differs.
+
+**Not supported in this first version** (see the refactor plan for what a
+follow-up would add): recursively templated nested objects/arrays inside a
+`string`/`number`/`boolean` node, typed root/header templates, default values
+for missing source fields, and configurable (non-strict) coercion rules. Use
+`literal` for fixed nested content in the meantime.
+
 ### 4.4 Ordered mappings — why arrays, not objects
 
 `outputMappings` and `identifierMappings` are **arrays** of `{out, src}` pairs
@@ -411,7 +482,8 @@ For `identifierMappings`, `src` is a column lookup only.
 
 ## 5. Templating reference
 
-Two token kinds are available in `filename`, `header`, and `template`:
+Two token kinds are available in `filename`, `header`, `template`, and the
+`value` of `string`/`number`/`boolean` `structuredTemplate` nodes (§4.3.2):
 
 ### `{path}` — value substitution
 

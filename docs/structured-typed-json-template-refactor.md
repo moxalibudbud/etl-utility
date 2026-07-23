@@ -73,10 +73,23 @@ Phase 4 — Verification and documentation:
 
 - [x] Full Go test suite, `go vet`, `go build`, and `-race` (writer + etl)
       pass.
-- [ ] Samples (`sample-config/local/config.structured-json.json`,
-      `sample-config/azure-blob/config.structured-json.json`).
-- [ ] Update [`docs/usage.md`](usage.md) and
-      [`docs/go-json-generator-design.md`](go-json-generator-design.md).
+- [x] Samples: `sample-config/local/config.structured-json.json` and
+      `sample-config/azure-blob/config.structured-json.json`, both verified
+      to decode and compile against the real `OutputConfig` types. Indexed
+      in [`sample-config/README.md`](../sample-config/README.md).
+- [x] [`docs/usage.md`](usage.md) — new §4.3.2 documents `structuredTemplate`,
+      supported types, precedence, conversion rules, error format, and an
+      example; the config table and §5 templating intro cross-reference it.
+      Also corrected a stale claim that `json-generator` was local-only.
+- [x] [`docs/go-json-generator-design.md`](go-json-generator-design.md) —
+      moved structured typed templates out of "Deferred features" into a new
+      "Phase 4 — Structured typed JSON templates" section recording the
+      accepted design, implementation files, and test coverage.
+
+**All phases complete. Acceptance criteria (see below) hold: full suite,
+`go vet`, `go build`, and `-race` all pass; existing `template` configs are
+unaffected; local and Azure Blob outputs share the same structured
+renderer.**
 
 ## Effort estimate
 
@@ -183,20 +196,52 @@ safer format.
 
 ## Recommended conversion rules
 
-The first version should use strict conversion rules:
+The first version uses strict conversion rules, with one accommodation for
+comma-grouped numbers:
 
 - An empty or invalid number is an error.
 - `NaN` and positive or negative infinity are errors because they are not
   valid JSON numbers.
-- An empty or unrecognized boolean is an error.
-- Boolean strings may be limited to case-insensitive `true` and `false`.
+- A comma **thousands separator** is stripped before parsing, so `"1,250"`
+  and `"1,250.50"` convert to `1250` and `1250.50`. This is the one locale
+  accommodation; every other locale convention (a comma decimal point, a
+  space separator, ...) is still rejected. See "Confirmed conversion
+  decisions" below for why.
+- An empty or unrecognized boolean is an error. `"YES"`, `"1"`, and similar
+  are not accepted.
+- Boolean strings are limited to case-insensitive `true` and `false`; a
+  literal JSON `true`/`false` is also accepted directly.
 - A missing string resolves to an empty string, matching the current template
   lookup behavior.
 - A JSON null must be explicitly requested with `type: "null"`.
-- Locale-specific conversions such as `"1,250.50"` are not performed.
 
 Strict conversion prevents the ETL job from silently changing source data.
 More permissive rules can be introduced later as explicit configuration.
+
+## Confirmed conversion decisions
+
+`structuredTemplate` configuration is frequently saved in and served from a
+database, so the client that builds the config sometimes hands back a
+pre-formatted string rather than a bare value. The two open questions from
+the original proposal are resolved as follows:
+
+- **Booleans:** `"YES"` is *not* a boolean. Case-insensitive `"true"` /
+  `"false"` strings *are* — this covers a config-building client that passes
+  a string instead of a raw JSON boolean, without opening the door to
+  arbitrary truthy/falsy values.
+- **Numbers:** `"1,250"` *is* a number — a comma thousands separator is
+  stripped before parsing (`toJSONNumber` in
+  [`go/writer/json_template.go`](../go/writer/json_template.go)), for the
+  same database-sourced-config reason. No other locale convention is
+  accepted; an empty value is still an error, not `null`.
+
+Both rules are implemented and covered by
+[`go/writer/json_template_test.go`](../go/writer/json_template_test.go)
+(`TestStructuredTemplateNumberAcceptsValidForms`,
+`TestStructuredTemplateNumberConversionFailures`,
+`TestStructuredTemplateBooleanCaseInsensitive`,
+`TestStructuredTemplateBooleanConversionFailures`) and documented in
+[`docs/usage.md`](usage.md) §4.3.2.
 
 ## Error reporting
 
@@ -325,14 +370,3 @@ The refactor is complete when:
 - Memory use remains bounded; rows are still streamed and are not collected
   into one in-memory document.
 - The full Go test suite, race checks, vet, and build pass.
-
-## Main decision to confirm before implementation
-
-The main product decision is how permissive type conversion should be. For
-example, the implementation needs a clear answer on whether `"YES"` is a
-boolean, whether `"1,250"` is a number, and whether an empty value becomes
-`null` or fails.
-
-The recommended starting point is strict conversion. It provides predictable
-output and clear failures, while optional coercion rules can be added later
-without breaking the initial contract.
