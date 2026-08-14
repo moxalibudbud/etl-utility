@@ -8,14 +8,14 @@
     "fileGenerator": "default-generator",
     "filename": "I_SKU.csv",
     "separator": ";",
-    "header": "",
+    "header": "TYPE_MOVEMENT;SKU;MAIN_EAN;STYLE;DESC1;SEASON;SUBCATEGORY;COLOR;SIZE;PRIMARY_TYPE_TAG;SECONDARY_TYPE_TAG;PRICE;URL_PICTURE;TRACEABILITY_MODE",
     "footer": "",
-    "template": "M;{SKU};;;;;;;;;;;;;;;;;;;;;;;;;;;;;;",
+    "template": "M;{SKU};;;;;;;;;;;;",
     "arrayField": "",
-    "uniqueKey": "SKU",
+    "uniqueKey": "",
     "metadata": {},
-    "structuredTemplate": {},
-    "path": "/var/tmp"
+    "path": "/var/tmp",
+    "structuredTemplate": {}
   },
   "options": {
     "line": {
