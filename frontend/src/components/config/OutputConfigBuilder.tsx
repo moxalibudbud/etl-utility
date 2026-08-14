@@ -131,7 +131,7 @@ export function OutputConfigBuilder({ sourceColumns = [], onChange, initialOutpu
     setFilename((prev) => (prev === '' ? file.name : prev));
     // Positions may no longer line up with a previous sample's shape.
     setHeaderLabels(labels);
-    setHeaderValues(new Array(labels.length).fill(''));
+    setHeaderValues(labels);
     setTemplateValues(new Array(cols.length).fill(''));
     setSampleRow(row);
   }
