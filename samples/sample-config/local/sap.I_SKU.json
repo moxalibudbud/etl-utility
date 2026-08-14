@@ -1,0 +1,54 @@
+{
+  "source": {
+    "type": "local",
+    "path": "/var/tmp/stocktake_0482_[INT-772233]_20260810102825.txt"
+  },
+  "output": {
+    "type": "local",
+    "fileGenerator": "default-generator",
+    "filename": "I_SKU.csv",
+    "separator": ";",
+    "header": "",
+    "footer": "",
+    "template": "M;{SKU};;;;;;;;;;;;;;;;;;;;;;;;;;;;;;",
+    "arrayField": "",
+    "uniqueKey": "SKU",
+    "metadata": {},
+    "structuredTemplate": {},
+    "path": "/var/tmp"
+  },
+  "options": {
+    "line": {
+      "columns": [
+        "COUNT_ID",
+        "CHILD_ID",
+        "CODE_LOCATION",
+        "PLANNED_DATE",
+        "LINE_NUM",
+        "SKU",
+        "SHORT_LABEL",
+        "STOCK_TYPE",
+        "BARCODE",
+        "QUANTITY",
+        "BUYING_PRICE",
+        "SELLING_PRICE",
+        "CURRENCY_CODE",
+        "CHILD_CATEGORY",
+        "CHILD_CATEGORY_NAME",
+        "SUB_CATEGORY",
+        "SUB_CATEGORY_NAME",
+        "CATEGORY",
+        "CATEGORY_NAME",
+        "SUB_LOCATION",
+        "SPECIAL_STOCK_INDICATOR",
+        "SUPPLIER_CODE"
+      ],
+      "mandatoryFields": [],
+      "identifierMappings": [],
+      "outputMappings": [],
+      "separator": "|",
+      "withHeader": true
+    },
+    "rejectOnInvalidRow": false
+  }
+}

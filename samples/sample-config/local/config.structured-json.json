@@ -14,6 +14,7 @@
     "arrayField": "lines",
     "uniqueKey": "",
     "metadata": {},
+    "path": "/var/tmp",
     "structuredTemplate": {
       "sku": {
         "type": "string",
