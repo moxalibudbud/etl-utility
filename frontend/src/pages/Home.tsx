@@ -1,26 +1,4 @@
-import { Archive, Barcode, Building2, Folder, Package, Printer, Store, Truck } from 'lucide-react'
 import { Link } from 'react-router'
-import type { LucideIcon } from 'lucide-react'
-import type { RepoSlug, RepoKind } from '@/lib/schema'
-
-interface Repo {
-  name: string
-  domain: string
-  kind: RepoKind
-  icon: LucideIcon
-  slug: RepoSlug
-}
-
-const repos: Repo[] = [
-  { name: 'Category',      domain: 'Product',   kind: 'master',       icon: Folder,   slug: 'category' },
-  { name: 'SKU',           domain: 'Product',   kind: 'master',       icon: Package,  slug: 'sku' },
-  { name: 'Barcode',       domain: 'Product',   kind: 'master',       icon: Barcode,  slug: 'barcode' },
-  { name: 'Suppliers',     domain: 'Metadata',  kind: 'master',       icon: Building2, slug: 'suppliers' },
-  { name: 'Stores',        domain: 'Metadata',  kind: 'master',       icon: Store,    slug: 'stores' },
-  { name: 'Stock on-hand', domain: 'Inventory', kind: 'master',       icon: Archive,  slug: 'stock' },
-  { name: 'Delivery notice', domain: 'Shipping', kind: 'transactional', icon: Truck,  slug: 'delivery-notice' },
-  { name: 'Bulk printing', domain: 'Printing',  kind: 'transactional', icon: Printer, slug: 'bulk-printing' },
-]
 
 export default function Home() {
   return (

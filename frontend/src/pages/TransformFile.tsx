@@ -1,9 +1,10 @@
 import { useState, useCallback } from 'react'
-import { useParams, useNavigate, Link } from 'react-router'
+import { useParams, Navigate, Link } from 'react-router'
 import { ArrowLeft, Download } from 'lucide-react'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { Button } from '@/components/ui/button'
 import { getRepoSchema } from '@/lib/schema'
+import type { RepoSchema } from '@/lib/schema'
 import { streamRows, serializeCSV } from '@/lib/file-reader'
 import type { ColumnMapping, Delimiter } from '@/lib/file-reader'
 import { SchemaViewer } from '@/components/transform/SchemaViewer'
@@ -13,13 +14,20 @@ import { FileUpload } from '@/components/transform/FileUpload'
 import { ColumnMapper } from '@/components/transform/ColumnMapper'
 import { DataPreview } from '@/components/transform/DataPreview'
 
-type Mode = 'manual' | 'upload'
-
+// Resolves the :repo route param to a schema, and sends unknown slugs back to
+// the portal. Kept separate from the view below so every hook lives in a
+// component that only renders once the schema is known to exist — an early
+// return sitting above the hooks would change the hook count between renders.
 export default function TransformFile() {
   const { repo } = useParams<{ repo: string }>()
-  const navigate = useNavigate()
   const schema = repo ? getRepoSchema(repo) : undefined
 
+  if (!schema) return <Navigate to="/" replace />
+
+  return <TransformFileView schema={schema} />
+}
+
+function TransformFileView({ schema }: { schema: RepoSchema }) {
   // Manual form state
   const [currentRow, setCurrentRow] = useState<Record<string, string>>({})
   const [manualRows, setManualRows] = useState<string[][]>([])
@@ -37,12 +45,6 @@ export default function TransformFile() {
   // Download state
   const [isDownloading, setIsDownloading] = useState(false)
 
-  if (!schema) {
-    navigate('/', { replace: true })
-    return null
-  }
-
-  // eslint-disable-next-line react-hooks/rules-of-hooks
   const handleFieldChange = useCallback((name: string, value: string) => {
     setCurrentRow((prev) => ({ ...prev, [name]: value }))
   }, [])
