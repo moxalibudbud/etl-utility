@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { AlertCircle, CheckCircle2, Loader2 } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { AlertCircle, Check, CheckCircle2, Copy, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { OutputSummary } from './OutputSummary';
 import { OptionsSummary } from './OptionsSummary';
@@ -14,9 +14,30 @@ interface ConfigurationSummaryProps {
 }
 
 type SaveStatus = { state: 'idle' | 'saving' | 'saved' } | { state: 'error'; message: string };
+type CopyStatus = { state: 'idle' | 'copied' } | { state: 'error'; message: string };
 
 export function ConfigurationSummary({ config }: ConfigurationSummaryProps) {
   const [status, setStatus] = useState<SaveStatus>({ state: 'idle' });
+  const [copyStatus, setCopyStatus] = useState<CopyStatus>({ state: 'idle' });
+  const copyResetRef = useRef<number | null>(null);
+
+  useEffect(
+    () => () => {
+      if (copyResetRef.current !== null) window.clearTimeout(copyResetRef.current);
+    },
+    [],
+  );
+
+  async function handleCopy() {
+    if (copyResetRef.current !== null) window.clearTimeout(copyResetRef.current);
+    try {
+      await navigator.clipboard.writeText(JSON.stringify(config, null, 2));
+      setCopyStatus({ state: 'copied' });
+      copyResetRef.current = window.setTimeout(() => setCopyStatus({ state: 'idle' }), 2000);
+    } catch {
+      setCopyStatus({ state: 'error', message: 'Could not copy to the clipboard.' });
+    }
+  }
 
   async function handleSave() {
     setStatus({ state: 'saving' });
@@ -36,6 +57,20 @@ export function ConfigurationSummary({ config }: ConfigurationSummaryProps) {
           {status.state === 'saving' && <Loader2 className="size-3.5 animate-spin" strokeWidth={1.5} />}
           {status.state === 'saving' ? 'Saving…' : 'Save configuration'}
         </Button>
+        <Button variant="outline" onClick={handleCopy}>
+          {copyStatus.state === 'copied' ? (
+            <Check className="size-3.5 text-green-600" strokeWidth={1.5} />
+          ) : (
+            <Copy className="size-3.5" strokeWidth={1.5} />
+          )}
+          {copyStatus.state === 'copied' ? 'Copied' : 'Copy configuration'}
+        </Button>
+        {copyStatus.state === 'error' && (
+          <span className="flex items-center gap-1.5 text-xs text-destructive">
+            <AlertCircle className="size-3.5 shrink-0" strokeWidth={1.5} />
+            {copyStatus.message}
+          </span>
+        )}
         {status.state === 'saved' && (
           <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
             <CheckCircle2 className="size-3.5 text-green-600" strokeWidth={1.5} />
