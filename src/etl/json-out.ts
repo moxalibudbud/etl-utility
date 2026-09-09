@@ -141,10 +141,7 @@ export class JsonOutETL {
   }
 
   validateFinalResult() {
-    if (!this.sampleLineData || !this.identifiers) {
-      this.valid = false;
-      this.errorReportWriter.push('Unable to get data. File content is empty');
-    } else if (this.options.rejectOnInvalidRow && !!this.errorReportWriter.invalidRows) {
+    if (this.options.rejectOnInvalidRow && !!this.errorReportWriter.invalidRows) {
       this.valid = false;
     }
   }
